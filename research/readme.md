@@ -10,7 +10,7 @@ I believe I could compute a variance and add a prior for the [Nadaraya–Watson 
 
 ## K nearest neighbours
 
-We could compute the output of a point using only its k nearest neigbours.
+We could compute the output of a point using only its k nearest neigbours (which could be computed using [Rtree](https://docs.rs/spade/1.8.0/spade/rtree/struct.RTree.html)).
 Thus the algorithm would become `o(k^3 * log(n))` instead of `o(n^3)`.
 
 A downside is that with this formulation, we cannot reuse a Cholesky decomposition from a point to another.
