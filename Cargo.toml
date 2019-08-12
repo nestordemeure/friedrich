@@ -1,0 +1,16 @@
+[package]
+name = "gaussian_process"
+version = "0.1.0"
+authors = ["Nestor Demeure"]
+edition = "2018"
+
+# description of the crate
+# see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
+description = "A scalable Rust implementation of gaussian process regression."
+repository = "https://github.com/nestordemeure/gaussian_process"
+readme = "readme.md"
+keywords = ["regression", "gaussian process"]
+categories = ["algorithms", "science"] # crates.io/category_slugs
+license = "Apache-2.0"
+
+[dependencies]
