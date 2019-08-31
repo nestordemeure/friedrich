@@ -14,4 +14,4 @@ categories = ["algorithms", "science"] # crates.io/category_slugs
 license = "Apache-2.0"
 
 [dependencies]
-nalgebra = "0.18.0"
+nalgebra = "0.18.1"
