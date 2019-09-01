@@ -6,6 +6,10 @@ The algorithm can be used with **any** datatype as long as there is a distance f
 
 It can also be use with any outputs (including multidimentional outputs and complex numbers) as long as one can compute a weighted sum over the outputs.
 
+## Kernel
+
+Silverman's rule of thumb (using th emean distance between the points instead of the std) proved to be a very good default value for the bandwidth in my tests.
+
 ## Weighted variance
 
 The covariance (and variance) provided by the algorithm is **fully** independant of the value of the outputs.
@@ -39,3 +43,12 @@ For the nearest neighbours search, we could use one of :
 - [vpsearch](https://crates.io/crates/vpsearch)
 - [Rtree](https://docs.rs/spade/1.8.0/spade/rtree/struct.RTree.html)
 - [ball-tree](https://crates.io/crates/ball-tree)
+
+## Hierarchical gaussian process
+
+Inspired by [Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs](https://arxiv.org/pdf/1603.09320.pdf).
+
+One could use a hierarchical representation (build using the hnsw trick of random depth in order to deal with adding new points) where each layer is more precise / local than the previous one and uses the previous layer as a prior.
+This formulation could use precomputed choleski decomposition, be fast and localy accurate.
+
+The one difficulty is the frontier between local hierarchies...
