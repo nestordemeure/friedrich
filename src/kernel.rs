@@ -4,12 +4,15 @@
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 // TODO:
 // - implement parameter fit for kernels
-// - implement Matern Kernel
-// - clean-up comments and implementation
+// - simplify Matern Kernel
+// https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html
+// https://en.wikipedia.org/wiki/Matérn_covariance_function#Simplification_for_ν_half_integer
 // - make implementation generic on input type (how to compute the dot product based kernel on complex ?)
 
 use std::ops::{Add, Mul};
 use nalgebra::DVector;
+use statrs::function::gamma::gamma;
+use rgsl::bessel::Knu;
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -153,9 +156,11 @@ impl Kernel for Linear
    }
 }
 
+//-----------------------------------------------
+
 /// The Polynomial Kernel
 ///
-/// k(x,y) = (αx^Ty + c)<sup>d</sup>
+/// k(x,y) = (αx^Ty + c)^d
 #[derive(Clone, Copy, Debug)]
 pub struct Polynomial
 {
@@ -198,6 +203,8 @@ impl Kernel for Polynomial
       (self.alpha * x1.dot(x2) + self.c).powf(self.d)
    }
 }
+
+//-----------------------------------------------
 
 /// Gaussian kernel
 ///
@@ -258,6 +265,8 @@ impl Kernel for SquaredExp
    }
 }
 
+//-----------------------------------------------
+
 /// The Exponential Kernel
 ///
 /// k(x,y) = A exp(-||x-y|| / 2l²)
@@ -306,6 +315,62 @@ impl Kernel for Exponential
    }
 }
 
+//-----------------------------------------------
+
+/// The Matèrn Kernel
+///
+/// k(x,y) = 2^(1-nu) * ( sqrt(2nu)*d / ls )^nu * Knu( sqrt(2nu)*d / ls ) / Gamma(nu)
+///
+/// Where ls is the lenght scale, Gamma is the gamma function and Knu is the modified bessel function of order nu.
+/// This kernel is ceil(nu) - 1 differentiable.
+#[derive(Clone, Copy, Debug)]
+pub struct Matern
+{
+   /// The length scale of the kernel.
+   pub ls: f64,
+   /// The differentiability of the kernel
+   /// 1.5 for once differentiable, 2.5 for twice differentiable and infinity for gaussian kernel.
+   /// TODO We would cut dependencies and make the code more understandable by restricting ourselves to an integer instead of nu
+   /// https://en.wikipedia.org/wiki/Matérn_covariance_function#Simplification_for_ν_half_integer
+   pub nu: f64
+}
+
+impl Matern
+{
+   /// Construct a new matèrn kernel.
+   pub fn new(ls: f64, nu: f64) -> Matern
+   {
+      Matern { ls: ls, nu: nu }
+   }
+}
+
+/// Constructs the default Matèrn kernel.
+///
+/// The defaults are:
+///
+/// - ls = 1
+/// - nu = 1.5
+impl Default for Matern
+{
+   fn default() -> Matern
+   {
+      Matern { ls: 1f64, nu: 1.5f64 }
+   }
+}
+
+impl Kernel for Matern
+{
+   /// The matèrn kernel function.
+   fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64
+   {
+      let distance = (x1 - x2).norm();
+      let term = (2f64 * self.nu).sqrt() * distance / self.ls;
+      (2f64).powf(1f64 - self.nu) * term.powf(self.nu) * Knu(self.nu, term) / gamma(self.nu)
+   }
+}
+
+//-----------------------------------------------
+
 /// The Hyperbolic Tangent Kernel.
 ///
 /// ker(x,y) = _tanh_(αx^Ty + c)
@@ -349,6 +414,8 @@ impl Kernel for HyperTan
    }
 }
 
+//-----------------------------------------------
+
 /// The Multiquadric Kernel.
 ///
 /// k(x,y) = sqrt(||x-y||² + c²)
@@ -388,6 +455,8 @@ impl Kernel for Multiquadric
       (x1 - x2).norm_squared().hypot(self.c)
    }
 }
+
+//-----------------------------------------------
 
 /// The Rational Quadratic Kernel.
 ///

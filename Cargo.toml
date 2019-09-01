@@ -15,4 +15,6 @@ license = "Apache-2.0"
 
 [dependencies]
 nalgebra = "0.18.1"
-rolling-stats = "0.3.0"
+#rolling-stats = "0.3.0"
+statrs = "0.11.0"
+GSL = "1.1.0"
