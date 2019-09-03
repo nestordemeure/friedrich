@@ -11,8 +11,6 @@
 
 use std::ops::{Add, Mul};
 use nalgebra::DVector;
-use statrs::function::gamma::gamma;
-use rgsl::bessel::Knu;
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -317,55 +315,101 @@ impl Kernel for Exponential
 
 //-----------------------------------------------
 
-/// The Matèrn Kernel
+/// The Matèrn1 kernel which is 1 differentiable and correspond to a classical Matèrn kernel with nu=3/2
 ///
-/// k(x,y) = 2^(1-nu) * ( sqrt(2nu)*d / ls )^nu * Knu( sqrt(2nu)*d / ls ) / Gamma(nu)
+/// k(x,y) = A (1 + ||x-y||sqrt(3)/l) exp(-||x-y||sqrt(3)/l)
 ///
-/// Where ls is the lenght scale, Gamma is the gamma function and Knu is the modified bessel function of order nu.
-/// This kernel is ceil(nu) - 1 differentiable.
+/// Where A is the amplitude and l is the length scale.
 #[derive(Clone, Copy, Debug)]
-pub struct Matern
+pub struct Matern1
 {
    /// The length scale of the kernel.
    pub ls: f64,
-   /// The differentiability of the kernel
-   /// 1.5 for once differentiable, 2.5 for twice differentiable and infinity for gaussian kernel.
-   /// TODO We would cut dependencies and make the code more understandable by restricting ourselves to an integer instead of nu
-   /// https://en.wikipedia.org/wiki/Matérn_covariance_function#Simplification_for_ν_half_integer
-   pub nu: f64
+   /// The amplitude of the kernel.
+   pub ampl: f64
 }
 
-impl Matern
+impl Matern1
 {
-   /// Construct a new matèrn kernel.
-   pub fn new(ls: f64, nu: f64) -> Matern
+   /// Construct a new matèrn1 kernel.
+   pub fn new(ls: f64, ampl: f64) -> Matern1
    {
-      Matern { ls: ls, nu: nu }
+      Matern1 { ls: ls, ampl: ampl }
    }
 }
 
-/// Constructs the default Matèrn kernel.
+/// Constructs the default Matern1 kernel.
 ///
 /// The defaults are:
 ///
 /// - ls = 1
-/// - nu = 1.5
-impl Default for Matern
+/// - amplitude = 1
+impl Default for Matern1
 {
-   fn default() -> Matern
+   fn default() -> Matern1
    {
-      Matern { ls: 1f64, nu: 1.5f64 }
+      Matern1 { ls: 1f64, ampl: 1f64 }
    }
 }
 
-impl Kernel for Matern
+impl Kernel for Matern1
 {
-   /// The matèrn kernel function.
+   /// The matèrn1 kernel function.
    fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64
    {
       let distance = (x1 - x2).norm();
-      let term = (2f64 * self.nu).sqrt() * distance / self.ls;
-      (2f64).powf(1f64 - self.nu) * term.powf(self.nu) * Knu(self.nu, term) / gamma(self.nu)
+      let x = (3f64).sqrt() * distance / self.ls;
+      self.ampl * (1f64 + x) * (-x).exp()
+   }
+}
+
+//-----------------------------------------------
+
+/// The Matèrn2 kernel which is 2 differentiable and correspond to a classical Matèrn kernel with nu=5/2
+///
+/// k(x,y) = A (1 + ||x-y||sqrt(5)/l + ||x-y||²5/3l²) exp(-||x-y||sqrt(5)/l)
+///
+/// Where A is the amplitude and l is the length scale.
+#[derive(Clone, Copy, Debug)]
+pub struct Matern2
+{
+   /// The length scale of the kernel.
+   pub ls: f64,
+   /// The amplitude of the kernel.
+   pub ampl: f64
+}
+
+impl Matern2
+{
+   /// Construct a new matèrn2 kernel.
+   pub fn new(ls: f64, ampl: f64) -> Matern2
+   {
+      Matern2 { ls: ls, ampl: ampl }
+   }
+}
+
+/// Constructs the default Matern2 kernel.
+///
+/// The defaults are:
+///
+/// - ls = 1
+/// - amplitude = 1
+impl Default for Matern2
+{
+   fn default() -> Matern2
+   {
+      Matern2 { ls: 1f64, ampl: 1f64 }
+   }
+}
+
+impl Kernel for Matern2
+{
+   /// The matèrn2 kernel function.
+   fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64
+   {
+      let distance = (x1 - x2).norm();
+      let x = (5f64).sqrt() * distance / self.ls;
+      self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
    }
 }
 
