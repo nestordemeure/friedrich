@@ -10,7 +10,8 @@
 // - make implementation generic on input type (how to compute the dot product based kernel on complex ?)
 
 use std::ops::{Add, Mul};
-use nalgebra::DVector;
+use nalgebra::{DVector, DMatrix};
+// TODO nalgebra as a distance and distancesquared functions but they are only defined on metric spaces
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -24,6 +25,46 @@ pub trait Kernel
    ///
    /// Takes two equal length slices and returns a scalar.
    fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64;
+
+   /// Optional, function that performs an automatic fit of the kernel parameters
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>) {}
+}
+
+//---------------------------------------------------------------------------------------
+// FIT
+
+/// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) to have a guess at the bandwith
+/// this might be way too large if the distribution of the distances is not normal but is fast to compute (o(n²) of the number of samples)
+fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
+{
+   // builds the sum of all distances between different samples
+   let mut sum_distances = 0.;
+   for (sample_index, sample) in training_inputs.row_iter().enumerate()
+   {
+      for sample2 in training_inputs.row_iter().skip(sample_index + 1)
+      // TODO check wether +1 is correct
+      {
+         let distance = (sample - sample2).norm();
+         sum_distances += distance;
+      }
+   }
+
+   // counts the number of distances that have been computed
+   let nb_samples = training_inputs.nrows();
+   let nb_distances = ((nb_samples * nb_samples - nb_samples) / 2) as f64;
+
+   // computes silverman's formula for the univariate case
+   let mean_distance = sum_distances / nb_distances;
+   mean_distance * (4f64 / (3f64 * nb_distances)).powf(0.2f64)
+}
+
+/// outputs the variance of the outputs as a best guess of the amplitude
+///
+/// when the output has several dimensions, use the mean of the variances of the columns
+/// which might not make a lot of sense if they are not normalized
+fn fit_amplitude(training_outputs: &DMatrix<f64>) -> f64
+{
+   training_outputs.column_variance().mean()
 }
 
 //---------------------------------------------------------------------------------------
@@ -55,6 +96,12 @@ impl<T, U> Kernel for KernelSum<T, U>
    {
       self.k1.kernel(x1, x2) + self.k2.kernel(x1, x2)
    }
+
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      self.k1.fit(training_inputs, training_outputs);
+      self.k2.fit(training_inputs, training_outputs);
+   }
 }
 
 /// The pointwise product of two kernels
@@ -82,6 +129,12 @@ impl<T, U> Kernel for KernelProd<T, U>
    fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64
    {
       self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
+   }
+
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      self.k1.fit(training_inputs, training_outputs);
+      self.k2.fit(training_inputs, training_outputs);
    }
 }
 
@@ -261,6 +314,12 @@ impl Kernel for SquaredExp
       let x = -distance_squared / (2f64 * self.ls * self.ls);
       self.ampl * x.exp()
    }
+
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ampl = fit_amplitude(training_outputs);
+   }
 }
 
 //-----------------------------------------------
@@ -310,6 +369,12 @@ impl Kernel for Exponential
       let distance = (x1 - x2).norm();
       let x = -distance / (2f64 * self.ls * self.ls);
       self.ampl * x.exp()
+   }
+
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ampl = fit_amplitude(training_outputs);
    }
 }
 
@@ -361,6 +426,12 @@ impl Kernel for Matern1
       let x = (3f64).sqrt() * distance / self.ls;
       self.ampl * (1f64 + x) * (-x).exp()
    }
+
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ampl = fit_amplitude(training_outputs);
+   }
 }
 
 //-----------------------------------------------
@@ -410,6 +481,12 @@ impl Kernel for Matern2
       let distance = (x1 - x2).norm();
       let x = (5f64).sqrt() * distance / self.ls;
       self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
+   }
+
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ampl = fit_amplitude(training_outputs);
    }
 }
 
