@@ -11,7 +11,6 @@
 
 use std::ops::{Add, Mul};
 use nalgebra::{DVector, DMatrix};
-// TODO nalgebra as a distance and distancesquared functions but they are only defined on metric spaces
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -21,8 +20,6 @@ use nalgebra::{DVector, DMatrix};
 /// Requires a function mapping two vectors to a scalar.
 pub trait Kernel
 {
-   /// The kernel function.
-   ///
    /// Takes two equal length slices and returns a scalar.
    fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64;
 
@@ -34,7 +31,7 @@ pub trait Kernel
 // FIT
 
 /// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) to have a guess at the bandwith
-/// this might be way too large if the distribution of the distances is not normal but is fast to compute (o(n²) of the number of samples)
+/// this might be too large if the distribution of the distances is not normal but is fast to compute, o(n²) of the number of samples
 fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
 {
    // builds the sum of all distances between different samples
@@ -42,7 +39,6 @@ fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
    for (sample_index, sample) in training_inputs.row_iter().enumerate()
    {
       for sample2 in training_inputs.row_iter().skip(sample_index + 1)
-      // TODO check wether +1 is correct
       {
          let distance = (sample - sample2).norm();
          sum_distances += distance;
@@ -55,7 +51,8 @@ fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
 
    // computes silverman's formula for the univariate case
    let mean_distance = sum_distances / nb_distances;
-   mean_distance * (4f64 / (3f64 * nb_distances)).powf(0.2f64)
+   // 0.9 instead of 1.059 as also been observed in order to avoid too large values
+   mean_distance * 1.056 * nb_distances.powf(0.2f64)
 }
 
 /// outputs the variance of the outputs as a best guess of the amplitude
