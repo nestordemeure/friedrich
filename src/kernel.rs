@@ -18,7 +18,7 @@ use nalgebra::{DVector, DMatrix};
 /// The Kernel trait
 ///
 /// Requires a function mapping two vectors to a scalar.
-pub trait Kernel
+pub trait Kernel: Default
 {
    /// Takes two equal length slices and returns a scalar.
    fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64;
@@ -101,6 +101,16 @@ impl<T, U> Kernel for KernelSum<T, U>
    }
 }
 
+impl<T:Kernel, U:Kernel> Default for KernelSum<T, U>
+{
+   fn default() -> Self
+   {
+      let k1 = T::default();
+      let k2 = U::default();
+      KernelSum { k1, k2 }
+   }
+}
+
 /// The pointwise product of two kernels
 ///
 /// This struct should not be directly instantiated but instead
@@ -132,6 +142,16 @@ impl<T, U> Kernel for KernelProd<T, U>
    {
       self.k1.fit(training_inputs, training_outputs);
       self.k2.fit(training_inputs, training_outputs);
+   }
+}
+
+impl<T:Kernel, U:Kernel> Default for KernelProd<T, U>
+{
+   fn default() -> Self
+   {
+      let k1 = T::default();
+      let k2 = U::default();
+      KernelProd { k1, k2 }
    }
 }
 
