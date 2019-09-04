@@ -51,8 +51,8 @@ fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
 
    // computes silverman's formula for the univariate case
    let mean_distance = sum_distances / nb_distances;
-   // 0.9 instead of 1.059 as also been observed in order to avoid too large values
-   mean_distance * 1.056 * nb_distances.powf(0.2f64)
+   // 0.9 instead of 1.059 as recommended by silverman
+   mean_distance * 0.9 * nb_distances.powf(0.2f64)
 }
 
 /// outputs the variance of the outputs as a best guess of the amplitude
