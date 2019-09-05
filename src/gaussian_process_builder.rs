@@ -6,6 +6,7 @@ use crate::prior::{Prior, Constant};
 use crate::gaussian_process::GaussianProcess;
 
 /// gaussian process
+/// TODO we would like this to not be tied to types until the prior has been chosen
 pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
 {
    /// value to which the process will regress in the absence of informations
@@ -25,10 +26,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - constant prior set to 0
    /// - a gaussian kernel
    /// - a noise of 1e-7
-   fn new(training_inputs: DMatrix<f64>,
-          training_outputs: DMatrix<f64>)
-          -> GaussianProcessBuilder<Gaussian, Constant>
+   pub fn new(training_inputs: DMatrix<f64>,
+              training_outputs: DMatrix<f64>)
+              -> GaussianProcessBuilder<Gaussian, Constant>
    {
+      // TODO are we using default kernels ?
       let output_dimension = training_outputs.ncols();
       let prior = Constant::default(output_dimension);
       let kernel = Gaussian::default();
@@ -41,8 +43,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
    /// sets a new prior
    /// the prior is the value returned in the absence of information
-   fn set_prior<PriorType2: Prior>(self, prior: PriorType2)
-                                   -> GaussianProcessBuilder<KernelType, PriorType2>
+   pub fn set_prior<PriorType2: Prior>(self,
+                                       prior: PriorType2)
+                                       -> GaussianProcessBuilder<KernelType, PriorType2>
    {
       GaussianProcessBuilder { prior,
                                kernel: self.kernel,
@@ -52,15 +55,15 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    }
 
    /// sets the noise parameters which correspond to the magnitude of the noise in the data
-   fn set_noise(self, noise: f64) -> Self
+   pub fn set_noise(self, noise: f64) -> Self
    {
       GaussianProcessBuilder { noise, ..self }
    }
 
    /// changes the kernel of the gaussian process
-   fn set_kernel<KernelType2: Kernel>(self,
-                                      kernel: KernelType2)
-                                      -> GaussianProcessBuilder<KernelType2, PriorType>
+   pub fn set_kernel<KernelType2: Kernel>(self,
+                                          kernel: KernelType2)
+                                          -> GaussianProcessBuilder<KernelType2, PriorType>
    {
       GaussianProcessBuilder { prior: self.prior,
                                kernel,
@@ -73,14 +76,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    // FIT
 
    /// fits the parameters of the kernel on the training data
-   fn fit_parameters(mut self) -> Self
+   pub fn fit_parameters(mut self) -> Self
    {
       self.kernel.fit(&self.training_inputs, &self.training_outputs);
       self
    }
 
    /// fits the prior on the training data
-   fn fit_prior(mut self) -> Self
+   pub fn fit_prior(mut self) -> Self
    {
       self.prior.fit(&self.training_inputs, &self.training_outputs);
       self
@@ -90,7 +93,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    // TRAIN
 
    /// trains the gaussian process
-   fn train(self) -> GaussianProcess<KernelType, PriorType>
+   pub fn train(self) -> GaussianProcess<KernelType, PriorType>
    {
       // TODO
       unimplemented!()
