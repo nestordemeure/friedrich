@@ -1,12 +1,12 @@
 //! Gaussian process builder
 
 use nalgebra::{DMatrix};
-use crate::kernel::{Kernel, Gaussian};
-use crate::prior::{Prior, Constant};
-use crate::gaussian_process::GaussianProcess;
+use crate::parameters::kernel::Kernel;
+use crate::parameters::prior::Prior;
+use super::trained::GaussianProcessTrained;
 
-/// gaussian process
-/// TODO we would like this to not be tied to types until the prior has been chosen
+/// gaussian process builder
+/// used to define the paramters of the gaussian process
 pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
 {
    /// value to which the process will regress in the absence of informations
@@ -15,6 +15,10 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
    kernel: KernelType,
    /// amplitude of the noise of the data
    noise: f64,
+   /// type of fit to be applied
+   should_fit_kernel: bool,
+   should_fit_prior: bool,
+   /// data use for training
    training_inputs: DMatrix<f64>,
    training_outputs: DMatrix<f64>
 }
@@ -26,20 +30,23 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - constant prior set to 0
    /// - a gaussian kernel
    /// - a noise of 1e-7
+   /// - does not fit parameters
+   /// - does fit prior
    pub fn new(training_inputs: DMatrix<f64>,
               training_outputs: DMatrix<f64>)
-              -> GaussianProcessBuilder<Gaussian, Constant>
+              -> GaussianProcessBuilder<KernelType, PriorType>
    {
-      // TODO are we using default kernels ?
       let output_dimension = training_outputs.ncols();
-      let prior = Constant::default(output_dimension);
-      let kernel = Gaussian::default();
+      let prior = PriorType::default(output_dimension);
+      let kernel = KernelType::default();
       let noise = 1e-7f64;
-      GaussianProcessBuilder { prior, kernel, noise, training_inputs, training_outputs }
+      let should_fit_kernel = false;
+      let should_fit_prior = false;
+      GaussianProcessBuilder { prior, kernel, noise, should_fit_kernel, should_fit_prior, training_inputs, training_outputs }
    }
 
    //----------------------------------------------------------------------------------------------
-   // SETTER
+   // SETTERS
 
    /// sets a new prior
    /// the prior is the value returned in the absence of information
@@ -50,6 +57,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       GaussianProcessBuilder { prior,
                                kernel: self.kernel,
                                noise: self.noise,
+                               should_fit_kernel: self.should_fit_kernel,
+                               should_fit_prior: self.should_fit_prior,
                                training_inputs: self.training_inputs,
                                training_outputs: self.training_outputs }
    }
@@ -68,34 +77,43 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       GaussianProcessBuilder { prior: self.prior,
                                kernel,
                                noise: self.noise,
+                                                              should_fit_kernel: self.should_fit_kernel,
+                               should_fit_prior: self.should_fit_prior,
                                training_inputs: self.training_inputs,
                                training_outputs: self.training_outputs }
    }
 
-   //----------------------------------------------------------------------------------------------
-   // FIT
-
    /// fits the parameters of the kernel on the training data
-   pub fn fit_parameters(mut self) -> Self
+   pub fn fit_kernel(mut self) -> Self
    {
-      self.kernel.fit(&self.training_inputs, &self.training_outputs);
-      self
+      GaussianProcessBuilder { should_fit_kernel:true, ..self }
    }
 
    /// fits the prior on the training data
    pub fn fit_prior(mut self) -> Self
    {
-      self.prior.fit(&self.training_inputs, &self.training_outputs);
-      self
+      GaussianProcessBuilder { should_fit_prior:true, ..self }
    }
 
    //----------------------------------------------------------------------------------------------
    // TRAIN
 
    /// trains the gaussian process
-   pub fn train(self) -> GaussianProcess<KernelType, PriorType>
+   pub fn train(mut self) -> GaussianProcessTrained<KernelType, PriorType>
    {
-      // TODO
+      if self.should_fit_prior
+      {
+         self.prior.fit(&self.training_inputs, &self.training_outputs);
+         //TODO update training outputs
+      }
+
+      if self.should_fit_kernel
+      {
+         self.kernel.fit(&self.training_inputs, &self.training_outputs);
+      }
+
+      // TODO train
+
       unimplemented!()
    }
 }
