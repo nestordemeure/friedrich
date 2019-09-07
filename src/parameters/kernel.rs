@@ -24,7 +24,7 @@ pub trait Kernel: Default
    fn kernel(&self, x1: &DVector<f64>, x2: &DVector<f64>) -> f64;
 
    /// Optional, function that performs an automatic fit of the kernel parameters
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>) {}
+   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DMatrix<f64>) {}
 }
 
 //---------------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ impl<T, U> Kernel for KernelSum<T, U>
    }
 }
 
-impl<T:Kernel, U:Kernel> Default for KernelSum<T, U>
+impl<T: Kernel, U: Kernel> Default for KernelSum<T, U>
 {
    fn default() -> Self
    {
@@ -145,7 +145,7 @@ impl<T, U> Kernel for KernelProd<T, U>
    }
 }
 
-impl<T:Kernel, U:Kernel> Default for KernelProd<T, U>
+impl<T: Kernel, U: Kernel> Default for KernelProd<T, U>
 {
    fn default() -> Self
    {

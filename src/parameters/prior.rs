@@ -14,13 +14,13 @@ use nalgebra::{DVector, DMatrix};
 pub trait Prior
 {
    /// Default value for the prior
-   fn default(output_dimenssion: usize) -> Self;
+   fn default(input_dimension: usize, output_dimenssion: usize) -> Self;
 
    /// Takes and input and return an output.
    fn prior(&self, input: &DVector<f64>) -> DVector<f64>;
 
    /// Optional, function that performs an automatic fit of the prior
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>) {}
+   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DMatrix<f64>) {}
 }
 
 //---------------------------------------------------------------------------------------
@@ -45,9 +45,9 @@ impl Constant
 
 impl Prior for Constant
 {
-   fn default(output_dimension: usize) -> Constant
+   fn default(_input_dimension: usize, output_dimension: usize) -> Constant
    {
-      Constant { c: DVector::zeros(output_dimension) }
+      Constant::new(DVector::zeros(output_dimension))
    }
 
    fn prior(&self, _input: &DVector<f64>) -> DVector<f64>
@@ -55,7 +55,7 @@ impl Prior for Constant
       self.c.clone()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, _training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
    {
       self.c = training_outputs.column_mean();
    }
@@ -72,7 +72,7 @@ pub struct Zero
 
 impl Prior for Zero
 {
-   fn default(output_dimension: usize) -> Self
+   fn default(input_dimension: usize, output_dimension: usize) -> Self
    {
       Zero { output_dimension }
    }
@@ -85,8 +85,51 @@ impl Prior for Zero
 
 //-----------------------------------------------
 
-// TODO add linear prior
+/// The Lenear prior
+#[derive(Clone, Debug)]
+pub struct Linear
+{
+   /// weights term.
+   w: DMatrix<f64>,
+   /// bias
+   b: DVector<f64>
+}
 
+impl Linear
+{
+   /// Constructs a new linear prior
+   pub fn new(w: DMatrix<f64>, b: DVector<f64>) -> Self
+   {
+      Linear { w, b }
+   }
+}
+
+impl Prior for Linear
+{
+   fn default(input_dimension: usize, output_dimension: usize) -> Linear
+   {
+      let w = DMatrix::zeros(input_dimension, output_dimension);
+      let b = DVector::zeros(output_dimension);
+      Linear::new(w, b)
+   }
+
+   fn prior(&self, input: &DVector<f64>) -> DVector<f64>
+   {
+      input * &self.w + &self.b
+   }
+
+   /// performs a linear fit to set the value of the prior
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   {
+      let solution = training_inputs.clone()
+                                    .insert_column(0, 1f64) // add constant term
+                                    .lu()
+                                    .solve(training_outputs) // solve linear system using LU decomposition
+                                    .expect("Resolution of linear system failed");
+      self.b = solution.row(0).transpose();
+      self.w = solution.remove_row(0);
+   }
+}
 //-----------------------------------------------
 
 /// The arbitrary prior
@@ -108,7 +151,7 @@ impl Arbitrary
 
 impl Prior for Arbitrary
 {
-   fn default(output_dimension: usize) -> Arbitrary
+   fn default(_input_dimension: usize, output_dimension: usize) -> Arbitrary
    {
       let f = Box::new(move |_input: &DVector<f64>| DVector::zeros(output_dimension));
       Arbitrary { f }

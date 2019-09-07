@@ -37,12 +37,19 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
               -> GaussianProcessBuilder<KernelType, PriorType>
    {
       let output_dimension = training_outputs.ncols();
-      let prior = PriorType::default(output_dimension);
+      let input_dimension = training_inputs.ncols();
+      let prior = PriorType::default(input_dimension, output_dimension);
       let kernel = KernelType::default();
       let noise = 1e-7f64;
       let should_fit_kernel = false;
       let should_fit_prior = false;
-      GaussianProcessBuilder { prior, kernel, noise, should_fit_kernel, should_fit_prior, training_inputs, training_outputs }
+      GaussianProcessBuilder { prior,
+                               kernel,
+                               noise,
+                               should_fit_kernel,
+                               should_fit_prior,
+                               training_inputs,
+                               training_outputs }
    }
 
    //----------------------------------------------------------------------------------------------
@@ -77,43 +84,43 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       GaussianProcessBuilder { prior: self.prior,
                                kernel,
                                noise: self.noise,
-                                                              should_fit_kernel: self.should_fit_kernel,
+                               should_fit_kernel: self.should_fit_kernel,
                                should_fit_prior: self.should_fit_prior,
                                training_inputs: self.training_inputs,
                                training_outputs: self.training_outputs }
    }
 
    /// fits the parameters of the kernel on the training data
-   pub fn fit_kernel(mut self) -> Self
+   pub fn fit_kernel(self) -> Self
    {
-      GaussianProcessBuilder { should_fit_kernel:true, ..self }
+      GaussianProcessBuilder { should_fit_kernel: true, ..self }
    }
 
    /// fits the prior on the training data
-   pub fn fit_prior(mut self) -> Self
+   pub fn fit_prior(self) -> Self
    {
-      GaussianProcessBuilder { should_fit_prior:true, ..self }
+      GaussianProcessBuilder { should_fit_prior: true, ..self }
    }
 
    //----------------------------------------------------------------------------------------------
    // TRAIN
 
    /// trains the gaussian process
-   pub fn train(mut self) -> GaussianProcessTrained<KernelType, PriorType>
+   pub fn train(self) -> GaussianProcessTrained<KernelType, PriorType>
    {
-      if self.should_fit_prior
-      {
-         self.prior.fit(&self.training_inputs, &self.training_outputs);
-         //TODO update training outputs
-      }
-
-      if self.should_fit_kernel
-      {
-         self.kernel.fit(&self.training_inputs, &self.training_outputs);
-      }
-
-      // TODO train
-
-      unimplemented!()
+      // builds a gp with no data
+      let empty_input = DMatrix::zeros(0, self.training_inputs.ncols());
+      let empty_output = DMatrix::zeros(0, self.training_outputs.ncols());
+      let mut gp = GaussianProcessTrained::<KernelType, PriorType>::new(self.prior,
+                                                                        self.kernel,
+                                                                        self.noise,
+                                                                        empty_input,
+                                                                        empty_output);
+      // trains it (and fits it if requested) on the training data
+      gp.add_samples_fit(self.training_inputs,
+                         self.training_outputs,
+                         self.should_fit_prior,
+                         self.should_fit_kernel);
+      gp
    }
 }

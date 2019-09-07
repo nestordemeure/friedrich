@@ -22,6 +22,22 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, PriorType>
 {
+   pub fn new(prior: PriorType,
+              kernel: KernelType,
+              noise: f64,
+              training_inputs: DMatrix<f64>,
+              training_outputs: DMatrix<f64>)
+              -> Self
+   {
+      let covariance_matrix_cholesky = DMatrix::zeros(0, 0); // TODO
+      GaussianProcessTrained::<KernelType, PriorType> { prior,
+                                                        kernel,
+                                                        noise,
+                                                        training_inputs,
+                                                        training_outputs,
+                                                        covariance_matrix_cholesky };
+      unimplemented!()
+   }
    //----------------------------------------------------------------------------------------------
    // TRAINING
 
