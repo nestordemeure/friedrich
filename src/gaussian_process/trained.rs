@@ -3,6 +3,7 @@
 use nalgebra::{DMatrix};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
+use crate::matrix;
 
 /// gaussian process
 pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
@@ -46,6 +47,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// does not refit the parameters
    pub fn add_samples(&mut self, inputs: DMatrix<f64>, outputs: DMatrix<f64>)
    {
+      // growths the training matrix
+      matrix::add_rows(&mut self.training_inputs, &inputs);
+      matrix::add_rows(&mut self.training_outputs, &outputs);
       // TODO
       unimplemented!("update cholesky matrix")
    }
@@ -75,8 +79,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
                           fit_prior: bool,
                           fit_kernel: bool)
    {
-      // TODO add the samples
-
+      // growths the training matrix
+      matrix::add_rows(&mut self.training_inputs, &inputs);
+      matrix::add_rows(&mut self.training_outputs, &outputs);
+      // refit the parameters and retrain the model from scratch
       self.fit_parameters(fit_prior, fit_kernel);
    }
 
