@@ -1,6 +1,6 @@
 //! Trained Gaussian process
 
-use nalgebra::{DMatrix, Cholesky, Dynamic};
+use nalgebra::{DVector, DMatrix, Cholesky, Dynamic};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::matrix;
@@ -141,10 +141,29 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// predicts the variance of the gaussian process at each row of the input
    ///
    /// NOTE:
-   /// - unless the kernel was fitted, the magnitude of the variance is not linked to the magnitude of the outputs
+   /// - unless the kernel was fitted on a one dimensional output, the magnitude of the variance is not linked to the magnitude of the outputs
    /// - this function is useful for bayesian optimization
-   pub fn predict_variance(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
+   pub fn predict_variance(&mut self, inputs: DMatrix<f64>) -> DVector<f64>
    {
-      unimplemented!()
+      // There is a better formula available if one can solve system directly using a triangular matrix
+      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
+      // cov_inputs_inputs - (kl.transpose() * kl).diagonal()
+      // note that here the diagonal is just the sum of the squares of the values in the columns of kl
+
+      // compute the weights
+      let cov_train_inputs = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
+      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
+
+      // (cov_inputs_inputs - cov_train_inputs.transpose() * weights).diagonal()
+      let mut variances = DVector::<f64>::zeros(inputs.nrows());
+      for i in 0..inputs.nrows()
+      {
+         // Note that this might be done with a zipped iterator
+         let input = inputs.row(i);
+         let base_cov = self.kernel.kernel(input, input);
+         let predicted_cov = cov_train_inputs.column(i).dot(&weights.column(i));
+         variances[i] = base_cov - predicted_cov;
+      }
+      variances
    }
 }
