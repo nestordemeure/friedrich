@@ -1,6 +1,6 @@
 //! Trained Gaussian process
 
-use nalgebra::{DMatrix};
+use nalgebra::{DMatrix, Cholesky, Dynamic};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::matrix;
@@ -18,7 +18,7 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
    training_inputs: DMatrix<f64>,
    training_outputs: DMatrix<f64>,
    /// cholesky decomposition of the covariance matrix trained on the current datapoints
-   covariance_matrix_cholesky: DMatrix<f64>
+   covariance_matrix_cholesky: Cholesky<f64, Dynamic>
 }
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, PriorType>
@@ -30,15 +30,17 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
               training_outputs: DMatrix<f64>)
               -> Self
    {
-      let covariance_matrix_cholesky = DMatrix::zeros(0, 0); // TODO
+      let training_outputs = training_outputs - prior.prior(&training_inputs);
+      let covariance_matrix_cholesky = matrix::make_covariance_matrix(&training_inputs, &training_inputs, &kernel)
+                  .cholesky().expect("Cholesky decomposition failed!");
       GaussianProcessTrained::<KernelType, PriorType> { prior,
                                                         kernel,
                                                         noise,
                                                         training_inputs,
                                                         training_outputs,
-                                                        covariance_matrix_cholesky };
-      unimplemented!()
+                                                        covariance_matrix_cholesky }
    }
+
    //----------------------------------------------------------------------------------------------
    // TRAINING
 
@@ -50,8 +52,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       // growths the training matrix
       matrix::add_rows(&mut self.training_inputs, &inputs);
       matrix::add_rows(&mut self.training_outputs, &outputs);
-      // TODO
-      unimplemented!("update cholesky matrix")
+
+      // recompute cholesky matrix
+      self.covariance_matrix_cholesky = matrix::make_covariance_matrix(&self.training_inputs, &self.training_inputs, &self.kernel)
+                                                .cholesky().expect("Cholesky decomposition failed!");
+      // TODO update cholesky matrix instead of recomputing it from scratch
    }
 
    /// fits the parameters and retrain the model from scratch
@@ -59,16 +64,21 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    {
       if fit_prior
       {
-         // TODO this needs to be fit on outputs with prior included and not deduced
-         self.prior.fit(&self.training_inputs, &self.training_outputs);
+         // gets the original data back in order to update the prior
+         let original_training_outputs = &self.training_outputs + self.prior.prior(&self.training_inputs);
+         self.prior.fit(&self.training_inputs, &original_training_outputs);
+         self.training_outputs = original_training_outputs - self.prior.prior(&self.training_inputs);
+         // NOTE: adding and substracting each time we fit a prior might be numerically unstable
       }
 
       if fit_kernel
       {
+         // fit kernel using new data and new prior
          self.kernel.fit(&self.training_inputs, &self.training_outputs);
       }
 
-      unimplemented!("recompute cholesky matrix")
+      self.covariance_matrix_cholesky = matrix::make_covariance_matrix(&self.training_inputs, &self.training_inputs, &self.kernel)
+                                                .cholesky().expect("Cholesky decomposition failed!");
    }
 
    /// adds new samples to the model and fit the parameters
@@ -82,6 +92,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       // growths the training matrix
       matrix::add_rows(&mut self.training_inputs, &inputs);
       matrix::add_rows(&mut self.training_outputs, &outputs);
+
       // refit the parameters and retrain the model from scratch
       self.fit_parameters(fit_prior, fit_kernel);
    }
