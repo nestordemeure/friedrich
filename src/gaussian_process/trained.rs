@@ -100,18 +100,51 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    //----------------------------------------------------------------------------------------------
    // PREDICTION
 
-   /// computes a prediction per row of the input matrix
+   /// predicts the mean of the gaussian process at each row of the input
    pub fn predict_mean(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
    {
       // computes weights to give each training sample
-      let input_cov = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&input_cov);
+      let mut weights = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
+      self.covmat_cholesky.solve_mut(&mut weights);
 
       // computes prior for the given inputs
       let mut prior = self.prior.prior(&inputs);
 
-      //weights.transpose() * &self.training_outputs + prior
+      // weights.transpose() * &self.training_outputs + prior
       prior.gemm_tr(1f64, &weights, &self.training_outputs, 1f64);
       prior
+   }
+
+   /// predicts the covariance of the gaussian process at each row of the input
+   ///
+   /// NOTE:
+   /// - combined with the mean, the function can be used to sample from the system
+   /// TODO output struct with sample function (RNG->output) and mean/cov public members
+   pub fn predict_covariance(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
+   {
+      // There is a better formula available if one can solve system directly using a triangular matrix
+      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
+      // cov_inputs_inputs - (kl.transpose() * kl)
+
+      // compute the weights
+      let cov_train_inputs = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
+      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
+
+      // computes the intra points covariance
+      let mut cov_inputs_inputs = matrix::make_covariance_matrix(&inputs, &inputs, &self.kernel);
+
+      // cov_inputs_inputs - cov_train_inputs.transpose() * weights
+      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
+      cov_inputs_inputs
+   }
+
+   /// predicts the variance of the gaussian process at each row of the input
+   ///
+   /// NOTE:
+   /// - unless the kernel was fitted, the magnitude of the variance is not linked to the magnitude of the outputs
+   /// - this function is useful for bayesian optimization
+   pub fn predict_variance(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
+   {
+      unimplemented!()
    }
 }
