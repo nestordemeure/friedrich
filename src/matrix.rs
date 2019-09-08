@@ -35,12 +35,25 @@ pub fn add_rows(top: &mut DMatrix<f64>, bottom: &DMatrix<f64>)
 
 /// computes a covariance matrix using a given kernel and two matrices
 /// the output has one row per row in m1 and one column per row in m2
+/// diagonal_noise² is added to the diagonal elements
 /// TODO we could use that fact that the matrix is symmetric to reduce computations and do only lower part
-pub fn make_covariance_matrix<K: Kernel>(m1: &DMatrix<f64>, m2: &DMatrix<f64>, kernel: &K) -> DMatrix<f64>
+pub fn make_covariance_matrix<K: Kernel>(m1: &DMatrix<f64>,
+                                         m2: &DMatrix<f64>,
+                                         kernel: &K,
+                                         diagonal_noise: f64)
+                                         -> DMatrix<f64>
 {
    return DMatrix::<f64>::from_fn(m1.nrows(), m2.nrows(), |r, c| {
       let x = m1.row(r);
       let y = m2.row(c);
-      kernel.kernel(x, y)
+      let k = kernel.kernel(x, y);
+      if r == c
+      {
+         k + diagonal_noise * diagonal_noise
+      }
+      else
+      {
+         k
+      }
    });
 }
