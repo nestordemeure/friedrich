@@ -81,7 +81,10 @@ impl Prior for Constant
 
    fn fit(&mut self, _training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
    {
-      self.c = training_outputs.column_mean().transpose();
+      // TODO column mean is not the mean of all column (as the doc says) it is the mean column
+      // https://docs.rs/nalgebra/0.18.1/nalgebra/base/struct.Matrix.html#method.column_mean
+      //self.c = training_outputs.column_mean().transpose();
+      self.c = training_outputs.row_mean();
    }
 }
 
@@ -115,8 +118,7 @@ impl Prior for Linear
    fn prior(&self, input: &DMatrix<f64>) -> DMatrix<f64>
    {
       // TODO is there a faster way to add bias
-      input * self.w.rows(1, self.w.nrows() - 1)
-      + matrix::one(input.nrows(), 1) * self.w.row(0)
+      input * self.w.rows(1, self.w.nrows() - 1) + matrix::one(input.nrows(), 1) * self.w.row(0)
    }
 
    /// performs a linear fit to set the value of the prior

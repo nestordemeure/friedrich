@@ -18,6 +18,8 @@ fn main()
 
    // make a prediction on new data
    let inputs = DMatrix::from_column_slice(4, 1, &[1.0, 2.0, 3.0, 4.2]);
-   let outputs = gp.predict_mean(inputs);
-   println!("output: {}", outputs);
+   let outputs = gp.predict_mean(&inputs);
+   println!("mean: {}", outputs);
+   let variances = gp.predict_variance(&inputs);
+   println!("var: {}", variances);
 }
