@@ -14,12 +14,13 @@ fn main()
    let training_outputs = DMatrix::from_column_slice(4, 1, &[3.0, 4.0, -2.0, -2.0]);
 
    // builds a model
+   //let gp = GaussianProcess::default(training_inputs, training_outputs);
    let gp = GaussianProcess::default(training_inputs, training_outputs);
 
    // make a prediction on new data
    let inputs = DMatrix::from_column_slice(4, 1, &[1.0, 2.0, 3.0, 4.2]);
    let outputs = gp.predict_mean(&inputs);
-   println!("mean: {}", outputs);
-   let variances = gp.predict_variance(&inputs);
-   println!("var: {}", variances);
+   println!("prediction: {}", outputs);
+   let sd = gp.predict_variance(&inputs).map(|x| x.sqrt());
+   println!("standard deviation: {}", sd);
 }

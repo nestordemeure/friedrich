@@ -56,7 +56,15 @@ fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
 /// which might not make a lot of sense if they are not normalized
 fn fit_amplitude(training_outputs: &DMatrix<f64>) -> f64
 {
-   training_outputs.column_variance().mean()
+   let ampl = training_outputs.row_variance().mean();
+   if ampl == 0.
+   {
+      1.
+   }
+   else
+   {
+      ampl
+   }
 }
 
 //---------------------------------------------------------------------------------------

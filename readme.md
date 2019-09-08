@@ -11,6 +11,7 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 ## TODO
 
+- Add standard deviation function
 - Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
 - Make it possible to give sample with other format (vectors and slices).
 - Make the covariance function output a structure that can be used to sample from the model.
