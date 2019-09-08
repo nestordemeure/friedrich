@@ -4,10 +4,8 @@
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 
 use std::ops::{Add, Mul};
-use nalgebra::*;
-
-/// represens a view to a row from a matrix
-pub type RowVectorSlice<'a> = Matrix<f64, U1, Dynamic, SliceStorage<'a, f64, U1, Dynamic, U1, Dynamic>>;
+use nalgebra::DMatrix;
+use crate::matrix::RowVectorSlice;
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -131,7 +129,6 @@ impl<T, U> Kernel for KernelProd<T, U>
          U: Kernel
 {
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
    }
@@ -324,7 +321,6 @@ impl Kernel for SquaredExp
 {
    /// The squared exponential kernel function.
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       let distance_squared = (x1 - x2).norm_squared();
       let x = -distance_squared / (2f64 * self.ls * self.ls);
@@ -381,7 +377,6 @@ impl Kernel for Exponential
 {
    /// The squared exponential kernel function.
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       let distance = (x1 - x2).norm();
       let x = -distance / (2f64 * self.ls * self.ls);
@@ -438,7 +433,6 @@ impl Kernel for Matern1
 {
    /// The matèrn1 kernel function.
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       let distance = (x1 - x2).norm();
       let x = (3f64).sqrt() * distance / self.ls;
@@ -495,7 +489,6 @@ impl Kernel for Matern2
 {
    /// The matèrn2 kernel function.
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       let distance = (x1 - x2).norm();
       let x = (5f64).sqrt() * distance / self.ls;
@@ -591,7 +584,6 @@ impl Default for Multiquadric
 impl Kernel for Multiquadric
 {
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       (x1 - x2).norm_squared().hypot(self.c)
    }
@@ -637,7 +629,6 @@ impl Default for RationalQuadratic
 impl Kernel for RationalQuadratic
 {
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
-   
    {
       let distance_squared = (x1 - x2).norm_squared();
       (1f64 + distance_squared / (2f64 * self.alpha * self.ls * self.ls)).powf(-self.alpha)
