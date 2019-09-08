@@ -1,21 +1,18 @@
 # Gaussian Process
 
-A scalable Rust implementation of gaussian process regression.
+**This is a work in progress!**
+This crate is still in its alpha stage, the interface and internals might still evolve a lot in the following weeks.
+
+My aim is to build a versatile and, hopefully, scalable implementation of [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process) in Rust.
 
 ## Usage
 
-The process goes from a matrix to a matrix (on complex or reals).
-(we lose the ability to use inputs with arbitrary distance)
-
-operations :
-- set parameters (=> redo model)
-- fit parameters (=> redo model)
-- add points + update model (=> update model)
-- add points + fit parameters (=> redo model)
-- make prediction
+The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_reference/)) of inputs / outputs.
 
 ## TODO
 
-**This is a work in progress.**
-
-Everyting needs to be done.
+- Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
+- Make it possible to give sample with other format (vectors and slices).
+- Make the covariance function output a structure that can be used to sample from the model.
+- Clean-up the documentation.
+- Add better algorithms to fit parameters.

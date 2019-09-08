@@ -112,7 +112,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    // PREDICTION
 
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_mean(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
+   pub fn predict_mean(&self, inputs: DMatrix<f64>) -> DMatrix<f64>
    {
       // computes weights to give each training sample
       let mut weights = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel, 0f64);
@@ -131,7 +131,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// NOTE:
    /// - combined with the mean, the function can be used to sample from the system
    /// TODO output struct with sample function (RNG->output) and mean/cov public members
-   pub fn predict_covariance(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
+   pub fn predict_covariance(&self, inputs: DMatrix<f64>) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -155,7 +155,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// NOTE:
    /// - unless the kernel was fitted on a one dimensional output, the magnitude of the variance is not linked to the magnitude of the outputs
    /// - this function is useful for bayesian optimization
-   pub fn predict_variance(&mut self, inputs: DMatrix<f64>) -> DVector<f64>
+   pub fn predict_variance(&self, inputs: DMatrix<f64>) -> DVector<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);

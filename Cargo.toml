@@ -6,7 +6,7 @@ edition = "2018"
 
 # description of the crate
 # see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
-description = "A scalable Rust implementation of gaussian process regression."
+description = "A Rust implementation of gaussian process regression."
 repository = "https://github.com/nestordemeure/gaussian_process"
 readme = "readme.md"
 keywords = ["regression", "gaussian process"]

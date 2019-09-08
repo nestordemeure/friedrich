@@ -1,6 +1,6 @@
 //! Available kernels
 //!
-//! Derived from rusty-machines' [implementation](https://github.com/AtheMathmo/rusty-machine/blob/master/src/learning/toolkit/kernel.rs)
+//! Inspired from rusty-machines' [implementation](https://github.com/AtheMathmo/rusty-machine/blob/master/src/learning/toolkit/kernel.rs).
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 
 use std::ops::{Add, Mul};
