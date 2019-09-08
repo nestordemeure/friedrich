@@ -18,7 +18,7 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
    training_inputs: DMatrix<f64>,
    training_outputs: DMatrix<f64>,
    /// cholesky decomposition of the covariance matrix trained on the current datapoints
-   covariance_matrix_cholesky: Cholesky<f64, Dynamic>
+   covmat_cholesky: Cholesky<f64, Dynamic>
 }
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, PriorType>
@@ -31,14 +31,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
               -> Self
    {
       let training_outputs = training_outputs - prior.prior(&training_inputs);
-      let covariance_matrix_cholesky = matrix::make_covariance_matrix(&training_inputs, &training_inputs, &kernel)
+      let covmat_cholesky = matrix::make_covariance_matrix(&training_inputs, &training_inputs, &kernel)
                   .cholesky().expect("Cholesky decomposition failed!");
       GaussianProcessTrained::<KernelType, PriorType> { prior,
                                                         kernel,
                                                         noise,
                                                         training_inputs,
                                                         training_outputs,
-                                                        covariance_matrix_cholesky }
+                                                        covmat_cholesky }
    }
 
    //----------------------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       matrix::add_rows(&mut self.training_outputs, &outputs);
 
       // recompute cholesky matrix
-      self.covariance_matrix_cholesky = matrix::make_covariance_matrix(&self.training_inputs, &self.training_inputs, &self.kernel)
+      self.covmat_cholesky = matrix::make_covariance_matrix(&self.training_inputs, &self.training_inputs, &self.kernel)
                                                 .cholesky().expect("Cholesky decomposition failed!");
       // TODO update cholesky matrix instead of recomputing it from scratch
    }
@@ -77,7 +77,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
          self.kernel.fit(&self.training_inputs, &self.training_outputs);
       }
 
-      self.covariance_matrix_cholesky = matrix::make_covariance_matrix(&self.training_inputs, &self.training_inputs, &self.kernel)
+      self.covmat_cholesky = matrix::make_covariance_matrix(&self.training_inputs, &self.training_inputs, &self.kernel)
                                                 .cholesky().expect("Cholesky decomposition failed!");
    }
 
@@ -100,9 +100,18 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    //----------------------------------------------------------------------------------------------
    // PREDICTION
 
-   pub fn predict(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
+   /// computes a prediction per row of the input matrix
+   pub fn predict_mean(&mut self, inputs: DMatrix<f64>) -> DMatrix<f64>
    {
-      // TODO
-      unimplemented!()
+      // computes weights to give each training sample
+      let input_cov = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
+      let weights = self.covmat_cholesky.solve(&input_cov);
+
+      // computes prior for the given inputs
+      let mut prior = self.prior.prior(&inputs);
+
+      //weights.transpose() * &self.training_outputs + prior
+      prior.gemm_tr(1f64, &weights, &self.training_outputs, 1f64);
+      prior
    }
 }
