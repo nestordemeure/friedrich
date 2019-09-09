@@ -53,6 +53,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    pub fn add_samples(&mut self, inputs: DMatrix<f64>, outputs: DMatrix<f64>)
    {
       // growths the training matrix
+      let outputs = outputs - self.prior.prior(&inputs);
       matrix::add_rows(&mut self.training_inputs, &inputs);
       matrix::add_rows(&mut self.training_outputs, &outputs);
 
@@ -101,6 +102,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
                           fit_kernel: bool)
    {
       // growths the training matrix
+      let outputs = outputs - self.prior.prior(&inputs);
       matrix::add_rows(&mut self.training_inputs, &inputs);
       matrix::add_rows(&mut self.training_outputs, &outputs);
 
