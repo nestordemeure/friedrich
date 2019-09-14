@@ -167,4 +167,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       }
       variances
    }
+
+   /// predicts the std of the gaussian process at each row of the input
+   ///
+   /// NOTE:
+   /// - unless the kernel was fitted on a one dimensional output, the magnitude of the variance is not linked to the magnitude of the outputs
+   /// - this function is useful for bayesian optimization
+   pub fn predict_standard_deviation(&self, inputs: &DMatrix<f64>) -> DVector<f64>
+   {
+      self.predict_variance(inputs).apply_into(|x| x.sqrt())
+   }
 }

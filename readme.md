@@ -11,10 +11,8 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 ## TODO
 
-- Add standard deviation function
 - Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
 - Make it possible to give sample with other format. I could take `Vec<slice>` by default as inputs (or implement an implicit cast from `Vec<slice>` and `Vec<f64>` to `DMatrix`).
 - Make the covariance function output a structure that can be used to sample from the model.
 - Clean-up the documentation.
 - Add better algorithms to fit parameters.
-- create function that takes data + noise and create cholesky decomposition of cov matrix (in order to speed up computations)
