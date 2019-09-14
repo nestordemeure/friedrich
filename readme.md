@@ -17,3 +17,4 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 - Make the covariance function output a structure that can be used to sample from the model.
 - Clean-up the documentation.
 - Add better algorithms to fit parameters.
+- create function that takes data + noise and create cholesky decomposition of cov matrix (in order to speed up computations)
