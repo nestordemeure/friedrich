@@ -19,8 +19,10 @@ impl MultivariateNormal
               covariance_output_dim: DMatrix<f64>)
               -> Self
    {
+      // covariance between the input points
       let cholesky_cov_inputs =
          covariance_inputs.cholesky().expect("Cholesky decomposition failed!").unpack();
+      // covariance between the output dimenssions
       let cholesky_cov_output_dim =
          covariance_output_dim.cholesky().expect("Cholesky decomposition failed!").unpack().transpose();
       MultivariateNormal { mean, cholesky_cov_inputs, cholesky_cov_output_dim }

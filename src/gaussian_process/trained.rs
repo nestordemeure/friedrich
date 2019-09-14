@@ -4,6 +4,7 @@ use nalgebra::{DVector, DMatrix, Cholesky, Dynamic};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::matrix;
+use crate::multivariate_normal::MultivariateNormal;
 
 /// gaussian process
 pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
@@ -116,29 +117,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       prior
    }
 
-   /// predicts the covariance of the gaussian process at each row of the input
-   ///
-   /// NOTE:
-   /// - combined with the mean, the function can be used to sample from the system
-   /// TODO output struct with sample function (RNG->output) and mean/cov public members
-   pub fn predict_covariance(&self, inputs: &DMatrix<f64>) -> DMatrix<f64>
-   {
-      // There is a better formula available if one can solve system directly using a triangular matrix
-      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
-      // cov_inputs_inputs - (kl.transpose() * kl)
-
-      // compute the weights
-      let cov_train_inputs = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
-
-      // computes the intra points covariance
-      let mut cov_inputs_inputs = matrix::make_covariance_matrix(&inputs, &inputs, &self.kernel);
-
-      // cov_inputs_inputs - cov_train_inputs.transpose() * weights
-      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
-      cov_inputs_inputs
-   }
-
    /// predicts the variance of the gaussian process at each row of the input
    ///
    /// NOTE:
@@ -176,5 +154,38 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    pub fn predict_standard_deviation(&self, inputs: &DMatrix<f64>) -> DVector<f64>
    {
       self.predict_variance(inputs).apply_into(|x| x.sqrt())
+   }
+
+   /// predicts the covariance of the gaussian process at each row of the input
+   ///
+   /// NOTE:
+   /// - combined with the mean, the function can be used to sample from the system
+   /// TODO output struct with sample function (RNG->output) and mean/cov public members
+   pub fn predict_covariance(&self, inputs: &DMatrix<f64>) -> DMatrix<f64>
+   {
+      // There is a better formula available if one can solve system directly using a triangular matrix
+      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
+      // cov_inputs_inputs - (kl.transpose() * kl)
+
+      // compute the weights
+      let cov_train_inputs = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
+      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
+
+      // computes the intra points covariance
+      let mut cov_inputs_inputs = matrix::make_covariance_matrix(&inputs, &inputs, &self.kernel);
+
+      // cov_inputs_inputs - cov_train_inputs.transpose() * weights
+      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
+      cov_inputs_inputs
+   }
+
+   /// produces a structure that can be used to sample the gaussian process at the given points
+   pub fn sample_at(&self, inputs: &DMatrix<f64>) -> MultivariateNormal
+   {
+      // TODO we can factor some code and improve performance by fusing the function needed
+      let mean = self.predict_mean(&inputs);
+      let cov_inputs = self.predict_covariance(&inputs);
+      let cov_output_dim = DMatrix::identity(mean.ncols(), mean.ncols()); // TODO compute cov between ouput dim
+      MultivariateNormal::new(mean, cov_inputs, cov_output_dim)
    }
 }

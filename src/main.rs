@@ -19,9 +19,17 @@ fn main()
    let gp = GaussianProcess::default(training_inputs, training_outputs);
 
    // make a prediction on new data
-   let inputs = DMatrix::from_column_slice(4, 1, &[1.0, 2.0, 3.0, 4.2]);
+   let inputs = DMatrix::from_column_slice(5, 1, &[1.0, 2.0, 3.0, 4.2, 7.]);
    let outputs = gp.predict_mean(&inputs);
    println!("prediction: {}", outputs);
    let sd = gp.predict_standard_deviation(&inputs);
    println!("standard deviation: {}", sd);
+
+   // sample the gaussian process on new data
+   let sampler = gp.sample_at(&inputs);
+   let mut rng = rand::thread_rng();
+   for i in 1..=5
+   {
+      println!("sample {}: {}", i, sampler.sample(&mut rng));
+   }
 }

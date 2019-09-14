@@ -7,6 +7,7 @@ use crate::parameters::kernel::Kernel;
 pub type RowVectorSlice<'a> = Matrix<f64, U1, Dynamic, SliceStorage<'a, f64, U1, Dynamic, U1, Dynamic>>;
 
 /// produces a matrix full of one
+/// TODO One::one() might be an alternativ
 pub fn one(nbrows: usize, nbcols: usize) -> DMatrix<f64>
 {
    DMatrix::from_element(nbrows, nbcols, 1f64)
