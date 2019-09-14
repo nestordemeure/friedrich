@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+mod multivariate_normal;
 mod parameters;
 mod gaussian_process;
 mod matrix;
@@ -21,6 +22,6 @@ fn main()
    let inputs = DMatrix::from_column_slice(4, 1, &[1.0, 2.0, 3.0, 4.2]);
    let outputs = gp.predict_mean(&inputs);
    println!("prediction: {}", outputs);
-   let sd = gp.predict_variance(&inputs).map(|x| x.sqrt());
+   let sd = gp.predict_standard_deviation(&inputs);
    println!("standard deviation: {}", sd);
 }

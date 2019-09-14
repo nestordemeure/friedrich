@@ -67,5 +67,5 @@ pub fn make_cholesky_covariance_matrix<K: Kernel>(inputs: &DMatrix<f64>,
       covmatix[(col_index, col_index)] += diagonal_noise * diagonal_noise;
    }
 
-   return covmatix.cholesky().expect("Cholesky decomposition failed!");;
+   return covmatix.cholesky().expect("Cholesky decomposition failed!");
 }
