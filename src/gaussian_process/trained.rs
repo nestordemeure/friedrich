@@ -51,9 +51,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    {
       // growths the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
-      matrix::add_rows(&mut self.training_inputs, &inputs);
-      matrix::vector_add_rows(&mut self.training_outputs, &outputs);
-
+      self.training_inputs = matrix::concat_matrices(&self.training_inputs, &inputs);
+      self.training_outputs = matrix::concat_vectors(&self.training_outputs, &outputs);
       // recompute cholesky matrix
       self.covmat_cholesky =
          matrix::make_cholesky_covariance_matrix(&self.training_inputs, &self.kernel, self.noise);
@@ -92,8 +91,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    {
       // growths the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
-      matrix::add_rows(&mut self.training_inputs, &inputs);
-      matrix::vector_add_rows(&mut self.training_outputs, &outputs);
+      self.training_inputs = matrix::concat_matrices(&self.training_inputs, &inputs);
+      self.training_outputs = matrix::concat_vectors(&self.training_outputs, &outputs);
 
       // refit the parameters and retrain the model from scratch
       self.fit_parameters(fit_prior, fit_kernel);

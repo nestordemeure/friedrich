@@ -6,44 +6,24 @@ use crate::parameters::kernel::Kernel;
 /// represens a view to a row from a matrix
 pub type RowVectorSlice<'a> = Matrix<f64, U1, Dynamic, SliceStorage<'a, f64, U1, Dynamic, U1, Dynamic>>;
 
-/// add the rows of the bottom matrix below the rows of the top matrix
-/// NOTE: this function is more efficient if top is larger than bottom
-pub fn add_rows(top: &mut DMatrix<f64>, bottom: &DMatrix<f64>)
+/// produces a new vector that is the first on top of the second
+pub fn concat_vectors(top: &DVector<f64>, bottom: &DVector<f64>) -> DVector<f64>
 {
-   assert_eq!(top.ncols(), bottom.ncols());
-   let nrows_top = top.nrows();
-
-   // use empty temporary matrix to take ownership of top matrix in order to grow it
-   let mut result = DMatrix::<f64>::zeros(0, 0);
-   std::mem::swap(top, &mut result);
-
-   // builds new matrix by adding enough rows to result matrix
-   result = result.resize_vertically(bottom.nrows(), 0f64);
-
-   // copy bottom matrix on the bottom of the new matrix
-   result.index_mut((nrows_top.., ..)).copy_from(bottom);
-
-   // put result back in top
-   std::mem::swap(top, &mut result);
+   // TODO it would be faster to start with an an uninitialized matrix but it would require unsafe
+   let mut result = DVector::from_element(top.nrows() + bottom.nrows(), std::f64::NAN);
+   result.index_mut((..top.nrows(), ..)).copy_from(top);
+   result.index_mut((top.nrows().., ..)).copy_from(bottom);
+   result
 }
 
-// TODO put this in a different file or rename file ?
-pub fn vector_add_rows(top: &mut DVector<f64>, bottom: &DVector<f64>)
+/// produces a new matrix that is the first on top of the second
+pub fn concat_matrices(top: &DMatrix<f64>, bottom: &DMatrix<f64>) -> DMatrix<f64>
 {
-   let nrows_top = top.nrows();
-
-   // use empty temporary matrix to take ownership of top matrix in order to grow it
-   let mut result = DVector::<f64>::zeros(0);
-   std::mem::swap(top, &mut result);
-
-   // builds new matrix by adding enough rows to result matrix
-   result = result.resize_vertically(bottom.nrows(), 0f64);
-
-   // copy bottom matrix on the bottom of the new matrix
-   result.index_mut((nrows_top.., ..)).copy_from(bottom);
-
-   // put result back in top
-   std::mem::swap(top, &mut result);
+   // TODO it would be faster to start with an an uninitialized matrix but it would require unsafe
+   let mut result = DMatrix::from_element(top.nrows() + bottom.nrows(), top.ncols(), std::f64::NAN);
+   result.index_mut((..top.nrows(), ..)).copy_from(top);
+   result.index_mut((top.nrows().., ..)).copy_from(bottom);
+   result
 }
 
 /// computes a covariance matrix using a given kernel and two matrices
@@ -66,6 +46,7 @@ pub fn make_cholesky_covariance_matrix<K: Kernel>(inputs: &DMatrix<f64>,
                                                   -> Cholesky<f64, Dynamic>
 {
    // empty covariance matrix
+   // TODO it would be faster to start with an an uninitialized matrix but it would require unsafe
    let mut covmatix = DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), std::f64::NAN);
 
    // computes the covariance for all the lower triangular matrix
