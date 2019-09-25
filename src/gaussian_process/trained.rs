@@ -119,7 +119,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// predicts the variance of the gaussian process at each row of the input
    ///
    /// NOTE:
-   /// - unless the kernel was fitted on a one dimensional output, the magnitude of the variance is not linked to the magnitude of the outputs
    /// - this function is useful for bayesian optimization
    pub fn predict_variance(&self, inputs: &DMatrix<f64>) -> DVector<f64>
    {
@@ -148,7 +147,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// predicts the std of the gaussian process at each row of the input
    ///
    /// NOTE:
-   /// - unless the kernel was fitted on a one dimensional output, the magnitude of the variance is not linked to the magnitude of the outputs
    /// - this function is useful for bayesian optimization
    pub fn predict_standard_deviation(&self, inputs: &DMatrix<f64>) -> DVector<f64>
    {
@@ -156,10 +154,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   ///
-   /// NOTE:
-   /// - combined with the mean, the function can be used to sample from the system
-   /// TODO output struct with sample function (RNG->output) and mean/cov public members
    pub fn predict_covariance(&self, inputs: &DMatrix<f64>) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
@@ -181,7 +175,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// produces a structure that can be used to sample the gaussian process at the given points
    pub fn sample_at(&self, inputs: &DMatrix<f64>) -> MultivariateNormal
    {
-      // TODO we can factor some operations and improve performance by fusing the function needed called
+      // TODO we can factor some operations and improve performance by inlining and fusing the function needed
       let mean = self.predict_mean(&inputs);
       let cov_inputs = self.predict_covariance(&inputs);
       MultivariateNormal::new(mean, cov_inputs)
