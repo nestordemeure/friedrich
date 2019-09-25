@@ -86,17 +86,17 @@ impl Prior for Constant
 #[derive(Clone, Debug)]
 pub struct Linear
 {
-   /// weight matrix : `prior = [1|input] * w`
-   w: DVector<f64>
+   weights: DVector<f64>,
+   intercept: f64
 }
 
 impl Linear
 {
    /// Constructs a new linear prior
    /// te first row of w is the bias such that `prior = [1|input] * w`
-   pub fn new(w: DVector<f64>) -> Self
+   pub fn new(weights: DVector<f64>, intercept:f64) -> Self
    {
-      Linear { w }
+      Linear { weights, intercept }
    }
 }
 
@@ -104,24 +104,27 @@ impl Prior for Linear
 {
    fn default(input_dimension: usize) -> Linear
    {
-      Linear { w: DVector::zeros(input_dimension + 1) }
+      Linear { weights: DVector::zeros(input_dimension), intercept:0f64 }
    }
 
    fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
    {
-      // TODO we should probably store bias and vector separately to avoid splitting them every time
-      let mut result = input * self.w.rows(1, self.w.nrows() - 1);
-      result += self.w.row(0);
+      let mut result = input * &self.weights;
+      result.add_scalar_mut(self.intercept);
       result
    }
 
    /// performs a linear fit to set the value of the prior
    fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
-      self.w = training_inputs.clone()
-                              .insert_column(0, 1f64) // add constant term
+      // solve linear system using LU decomposition
+      let weights = training_inputs.clone()
+                              .insert_column(0, 1f64) // add constant term for non-zero intercept
                               .lu()
-                              .solve(training_outputs) // solve linear system using LU decomposition
+                              .solve(training_outputs)
                               .expect("Resolution of linear system failed");
+      // extracts weights and intercept
+      self.intercept = weights[0];
+      self.weights = weights.remove_row(0);
    }
 }
