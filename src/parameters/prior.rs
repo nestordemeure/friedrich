@@ -73,6 +73,7 @@ impl Prior for Constant
       DVector::from_element(input.nrows(), self.c)
    }
 
+   /// the prior is fitted on the mean of the training outputs
    fn fit(&mut self, _training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.c = training_outputs.mean();
@@ -81,7 +82,7 @@ impl Prior for Constant
 
 //-----------------------------------------------
 
-/// The Lenear prior
+/// The Linear prior
 #[derive(Clone, Debug)]
 pub struct Linear
 {

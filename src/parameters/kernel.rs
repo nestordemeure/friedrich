@@ -25,6 +25,7 @@ pub trait Kernel: Default
 //---------------------------------------------------------------------------------------
 // FIT
 
+/// provides a rough estimate for the badnwith
 /// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) to have a guess at the bandwith
 /// this might be too large if the distribution of the distances is not normal but is fast to compute, o(n²) of the number of samples
 fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
@@ -47,17 +48,13 @@ fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
    // computes silverman's formula for the univariate case
    let mean_distance = sum_distances / nb_distances;
    // 0.9 instead of 1.059 as recommended by silverman
-   mean_distance * 0.9 * nb_distances.powf(0.2f64)
+   mean_distance * 0.9f64 * nb_distances.powf(0.2f64)
 }
 
 /// outputs the variance of the outputs as a best guess of the amplitude
-///
-/// when the output has several dimensions, use the mean of the variances of the columns
-/// which might not make a lot of sense if they are not normalized
-fn fit_amplitude(training_outputs: &DVector<f64>) -> f64
+fn fit_amplitude_var(training_outputs: &DVector<f64>) -> f64
 {
-   // TODO we are working with a vector and not a matrix
-   training_outputs.row_variance().mean()
+   training_outputs.variance()
 }
 
 //---------------------------------------------------------------------------------------
@@ -136,6 +133,7 @@ impl<T, U> Kernel for KernelProd<T, U>
 
    fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
+      // TODO this is not a great way to fit parameters
       self.k1.fit(training_inputs, training_outputs);
       self.k2.fit(training_inputs, training_outputs);
    }
@@ -191,8 +189,6 @@ pub struct Linear
 impl Linear
 {
    /// Constructs a new Linear Kernel.
-   ///
-   /// # Examples
    pub fn new(c: f64) -> Linear
    {
       Linear { c: c }
@@ -202,7 +198,6 @@ impl Linear
 /// Constructs the default Linear Kernel
 ///
 /// The defaults are:
-///
 /// - c = 0
 impl Default for Linear
 {
@@ -248,7 +243,6 @@ impl Polynomial
 /// Construct a new polynomial kernel.
 ///
 /// The defaults are:
-///
 /// - alpha = 1
 /// - c = 0
 /// - d = 1
@@ -307,7 +301,6 @@ impl SquaredExp
 /// Constructs the default Squared Exp kernel.
 ///
 /// The defaults are:
-///
 /// - ls = 1
 /// - ampl = 1
 impl Default for SquaredExp
@@ -331,7 +324,7 @@ impl Kernel for SquaredExp
    fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
-      self.ampl = fit_amplitude(training_outputs);
+      self.ampl = fit_amplitude_var(training_outputs);
    }
 }
 
@@ -363,7 +356,6 @@ impl Exponential
 /// Constructs the default Exponential kernel.
 ///
 /// The defaults are:
-///
 /// - ls = 1
 /// - amplitude = 1
 impl Default for Exponential
@@ -387,7 +379,7 @@ impl Kernel for Exponential
    fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
-      self.ampl = fit_amplitude(training_outputs);
+      self.ampl = fit_amplitude_var(training_outputs);
    }
 }
 
@@ -419,7 +411,6 @@ impl Matern1
 /// Constructs the default Matern1 kernel.
 ///
 /// The defaults are:
-///
 /// - ls = 1
 /// - amplitude = 1
 impl Default for Matern1
@@ -443,7 +434,7 @@ impl Kernel for Matern1
    fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
-      self.ampl = fit_amplitude(training_outputs);
+      self.ampl = fit_amplitude_var(training_outputs);
    }
 }
 
@@ -475,7 +466,6 @@ impl Matern2
 /// Constructs the default Matern2 kernel.
 ///
 /// The defaults are:
-///
 /// - ls = 1
 /// - amplitude = 1
 impl Default for Matern2
@@ -499,7 +489,7 @@ impl Kernel for Matern2
    fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
-      self.ampl = fit_amplitude(training_outputs);
+      self.ampl = fit_amplitude_var(training_outputs);
    }
 }
 
@@ -507,7 +497,7 @@ impl Kernel for Matern2
 
 /// The Hyperbolic Tangent Kernel.
 ///
-/// ker(x,y) = _tanh_(αx^Ty + c)
+/// ker(x,y) = tanh(αx^Ty + c)
 #[derive(Clone, Copy, Debug)]
 pub struct HyperTan
 {
@@ -529,7 +519,6 @@ impl HyperTan
 /// Constructs a default Hyperbolic Tangent Kernel.
 ///
 /// The defaults are:
-///
 /// - alpha = 1
 /// - c = 0
 impl Default for HyperTan
@@ -572,7 +561,6 @@ impl Multiquadric
 /// Constructs a default Multiquadric Kernel.
 ///
 /// The defaults are:
-///
 /// - c = 0
 impl Default for Multiquadric
 {
@@ -613,10 +601,9 @@ impl RationalQuadratic
    }
 }
 
-/// The default Rational Qaudratic Kernel.
+/// The default Rational Quadratic Kernel.
 ///
 /// The defaults are:
-///
 /// - alpha = 1
 /// - ls = 1
 impl Default for RationalQuadratic
