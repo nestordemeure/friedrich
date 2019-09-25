@@ -3,7 +3,7 @@
 //! The value that is returned in the absence of further information.
 //! This can be a constant but also a polynomial or any model.
 
-use nalgebra::{DMatrix, DVector, RowDVector};
+use nalgebra::{DMatrix, DVector};
 use crate::matrix;
 
 //---------------------------------------------------------------------------------------
@@ -109,8 +109,10 @@ impl Prior for Linear
 
    fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
    {
-      // TODO is there a faster way to add bias
-      input * self.w.rows(1, self.w.nrows() - 1) + matrix::one(input.nrows(), 1) * self.w.row(0)
+      // TODO we should probably store bias and vector separately to avoid splitting them every time
+      let mut result = input * self.w.rows(1, self.w.nrows() - 1);
+      result += self.w.row(0);
+      result
    }
 
    /// performs a linear fit to set the value of the prior

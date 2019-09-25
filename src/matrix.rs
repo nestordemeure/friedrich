@@ -6,13 +6,6 @@ use crate::parameters::kernel::Kernel;
 /// represens a view to a row from a matrix
 pub type RowVectorSlice<'a> = Matrix<f64, U1, Dynamic, SliceStorage<'a, f64, U1, Dynamic, U1, Dynamic>>;
 
-/// produces a matrix full of one
-/// TODO One::one() might be an alternativ
-pub fn one(nbrows: usize, nbcols: usize) -> DMatrix<f64>
-{
-   DMatrix::from_element(nbrows, nbcols, 1f64)
-}
-
 /// add the rows of the bottom matrix below the rows of the top matrix
 /// NOTE: this function is more efficient if top is larger than bottom
 pub fn add_rows(top: &mut DMatrix<f64>, bottom: &DMatrix<f64>)
