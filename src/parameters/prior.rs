@@ -4,7 +4,6 @@
 //! This can be a constant but also a polynomial or any model.
 
 use nalgebra::{DMatrix, DVector};
-use crate::matrix;
 
 //---------------------------------------------------------------------------------------
 // TRAIT
