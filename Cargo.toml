@@ -15,5 +15,5 @@ license = "Apache-2.0"
 
 [dependencies]
 nalgebra = "0.18.1"
-rand = "0.7.1"
+rand = "0.7.2"
 rand_distr = "0.2.2"

@@ -17,7 +17,7 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
    noise: f64,
    /// data used for fit
    training_inputs: DMatrix<f64>,
-   training_outputs: DMatrix<f64>,
+   training_outputs: DVector<f64>,
    /// cholesky decomposition of the covariance matrix trained on the current datapoints
    covmat_cholesky: Cholesky<f64, Dynamic>
 }
@@ -28,7 +28,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
               kernel: KernelType,
               noise: f64,
               training_inputs: DMatrix<f64>,
-              training_outputs: DMatrix<f64>)
+              training_outputs: DVector<f64>)
               -> Self
    {
       let training_outputs = training_outputs - prior.prior(&training_inputs);
@@ -47,12 +47,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// adds new samples to the model
    /// update the model (which is faster than a training from scratch)
    /// does not refit the parameters
-   pub fn add_samples(&mut self, inputs: DMatrix<f64>, outputs: DMatrix<f64>)
+   pub fn add_samples(&mut self, inputs: DMatrix<f64>, outputs: DVector<f64>)
    {
       // growths the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       matrix::add_rows(&mut self.training_inputs, &inputs);
-      matrix::add_rows(&mut self.training_outputs, &outputs);
+      matrix::vector_add_rows(&mut self.training_outputs, &outputs);
 
       // recompute cholesky matrix
       self.covmat_cholesky =
@@ -86,14 +86,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// faster than doing add_samples().fit_parameters()
    pub fn add_samples_fit(&mut self,
                           inputs: DMatrix<f64>,
-                          outputs: DMatrix<f64>,
+                          outputs: DVector<f64>,
                           fit_prior: bool,
                           fit_kernel: bool)
    {
       // growths the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       matrix::add_rows(&mut self.training_inputs, &inputs);
-      matrix::add_rows(&mut self.training_outputs, &outputs);
+      matrix::vector_add_rows(&mut self.training_outputs, &outputs);
 
       // refit the parameters and retrain the model from scratch
       self.fit_parameters(fit_prior, fit_kernel);
@@ -103,7 +103,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    // PREDICTION
 
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_mean(&self, inputs: &DMatrix<f64>) -> DMatrix<f64>
+   pub fn predict_mean(&self, inputs: &DMatrix<f64>) -> DVector<f64>
    {
       // computes weights to give each training sample
       let mut weights = matrix::make_covariance_matrix(&self.training_inputs, &inputs, &self.kernel);
@@ -182,10 +182,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// produces a structure that can be used to sample the gaussian process at the given points
    pub fn sample_at(&self, inputs: &DMatrix<f64>) -> MultivariateNormal
    {
-      // TODO we can factor some code and improve performance by fusing the function needed
+      // TODO we can factor some operations and improve performance by fusing the function needed called
       let mean = self.predict_mean(&inputs);
       let cov_inputs = self.predict_covariance(&inputs);
-      let cov_output_dim = DMatrix::identity(mean.ncols(), mean.ncols()); // TODO compute cov between ouput dim
-      MultivariateNormal::new(mean, cov_inputs, cov_output_dim)
+      MultivariateNormal::new(mean, cov_inputs)
    }
 }

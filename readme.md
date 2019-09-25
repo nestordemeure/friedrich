@@ -11,8 +11,8 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 ## TODO
 
-- Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
-- Make it possible to give sample with other format. I could take `Vec<slice>` by default as inputs (or implement an implicit cast from `Vec<slice>` and `Vec<f64>` to `DMatrix`).
-- Clean-up the documentation.
-- Add better algorithms to fit parameters.
 - add computation of covmatrix between output dim (=> remove amplitude fit from kernel and add it to variance computation)
+- Clean-up the documentation.
+- Make it possible to give sample with other format. I could take `Vec<slice>` by default as inputs (or implement an implicit cast from `Vec<slice>` and `Vec<f64>` to `DMatrix`).
+- Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
+- Add better algorithms to fit parameters.

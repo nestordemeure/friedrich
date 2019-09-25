@@ -34,6 +34,25 @@ pub fn add_rows(top: &mut DMatrix<f64>, bottom: &DMatrix<f64>)
    std::mem::swap(top, &mut result);
 }
 
+// TODO put this in a different file or rename file ?
+pub fn vector_add_rows(top: &mut DVector<f64>, bottom: &DVector<f64>)
+{
+   let nrows_top = top.nrows();
+
+   // use empty temporary matrix to take ownership of top matrix in order to grow it
+   let mut result = DVector::<f64>::zeros(0);
+   std::mem::swap(top, &mut result);
+
+   // builds new matrix by adding enough rows to result matrix
+   result = result.resize_vertically(bottom.nrows(), 0f64);
+
+   // copy bottom matrix on the bottom of the new matrix
+   result.index_mut((nrows_top.., ..)).copy_from(bottom);
+
+   // put result back in top
+   std::mem::swap(top, &mut result);
+}
+
 /// computes a covariance matrix using a given kernel and two matrices
 /// the output has one row per row in m1 and one column per row in m2
 pub fn make_covariance_matrix<K: Kernel>(m1: &DMatrix<f64>, m2: &DMatrix<f64>, kernel: &K) -> DMatrix<f64>

@@ -3,7 +3,7 @@
 //! The value that is returned in the absence of further information.
 //! This can be a constant but also a polynomial or any model.
 
-use nalgebra::{DMatrix, RowDVector};
+use nalgebra::{DMatrix, DVector, RowDVector};
 use crate::matrix;
 
 //---------------------------------------------------------------------------------------
@@ -15,13 +15,13 @@ use crate::matrix;
 pub trait Prior
 {
    /// Default value for the prior
-   fn default(input_dimension: usize, output_dimenssion: usize) -> Self;
+   fn default(input_dimension: usize) -> Self;
 
    /// Takes and input and return an output.
-   fn prior(&self, input: &DMatrix<f64>) -> DMatrix<f64>;
+   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>;
 
    /// Optional, function that performs an automatic fit of the prior
-   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DMatrix<f64>) {}
+   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DVector<f64>) {}
 }
 
 //---------------------------------------------------------------------------------------
@@ -29,21 +29,18 @@ pub trait Prior
 
 /// The Zero prior
 #[derive(Clone, Copy, Debug)]
-pub struct Zero
-{
-   output_dimension: usize
-}
+pub struct Zero {}
 
 impl Prior for Zero
 {
-   fn default(_input_dimension: usize, output_dimension: usize) -> Self
+   fn default(_input_dimension: usize) -> Self
    {
-      Zero { output_dimension }
+      Zero {}
    }
 
-   fn prior(&self, input: &DMatrix<f64>) -> DMatrix<f64>
+   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
    {
-      DMatrix::zeros(input.nrows(), self.output_dimension)
+      DVector::zeros(input.nrows())
    }
 }
 
@@ -53,14 +50,13 @@ impl Prior for Zero
 #[derive(Clone, Debug)]
 pub struct Constant
 {
-   /// Constant term.
-   c: RowDVector<f64>
+   c: f64
 }
 
 impl Constant
 {
    /// Constructs a new constant prior
-   pub fn new(c: RowDVector<f64>) -> Constant
+   pub fn new(c: f64) -> Constant
    {
       Constant { c: c }
    }
@@ -68,23 +64,19 @@ impl Constant
 
 impl Prior for Constant
 {
-   fn default(_input_dimension: usize, output_dimension: usize) -> Constant
+   fn default(_input_dimension: usize) -> Constant
    {
-      Constant::new(RowDVector::zeros(output_dimension))
+      Constant::new(0f64)
    }
 
-   fn prior(&self, input: &DMatrix<f64>) -> DMatrix<f64>
+   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
    {
-      // TODO is there a faster way to build matrix from given row ?
-      matrix::one(input.nrows(), 1) * &self.c
+      DVector::from_element(input.nrows(), self.c)
    }
 
-   fn fit(&mut self, _training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, _training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
-      // TODO column mean is not the mean of all column (as the doc says) it is the mean column
-      // https://docs.rs/nalgebra/0.18.1/nalgebra/base/struct.Matrix.html#method.column_mean
-      //self.c = training_outputs.column_mean().transpose();
-      self.c = training_outputs.row_mean();
+      self.c = training_outputs.mean();
    }
 }
 
@@ -95,14 +87,14 @@ impl Prior for Constant
 pub struct Linear
 {
    /// weight matrix : `prior = [1|input] * w`
-   w: DMatrix<f64>
+   w: DVector<f64>
 }
 
 impl Linear
 {
    /// Constructs a new linear prior
    /// te first row of w is the bias such that `prior = [1|input] * w`
-   pub fn new(w: DMatrix<f64>) -> Self
+   pub fn new(w: DVector<f64>) -> Self
    {
       Linear { w }
    }
@@ -110,19 +102,19 @@ impl Linear
 
 impl Prior for Linear
 {
-   fn default(input_dimension: usize, output_dimension: usize) -> Linear
+   fn default(input_dimension: usize) -> Linear
    {
-      Linear { w: DMatrix::zeros(input_dimension + 1, output_dimension) }
+      Linear { w: DVector::zeros(input_dimension + 1) }
    }
 
-   fn prior(&self, input: &DMatrix<f64>) -> DMatrix<f64>
+   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
    {
       // TODO is there a faster way to add bias
       input * self.w.rows(1, self.w.nrows() - 1) + matrix::one(input.nrows(), 1) * self.w.row(0)
    }
 
    /// performs a linear fit to set the value of the prior
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.w = training_inputs.clone()
                               .insert_column(0, 1f64) // add constant term

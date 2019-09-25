@@ -1,6 +1,6 @@
 //! Gaussian process builder
 
-use nalgebra::{DMatrix};
+use nalgebra::{DMatrix, DVector};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use super::trained::GaussianProcessTrained;
@@ -20,7 +20,7 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
    should_fit_prior: bool,
    /// data use for training
    training_inputs: DMatrix<f64>,
-   training_outputs: DMatrix<f64>
+   training_outputs: DVector<f64>
 }
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, PriorType>
@@ -33,12 +33,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - does not fit parameters
    /// - does fit prior
    pub fn new(training_inputs: DMatrix<f64>,
-              training_outputs: DMatrix<f64>)
+              training_outputs: DVector<f64>)
               -> GaussianProcessBuilder<KernelType, PriorType>
    {
-      let output_dimension = training_outputs.ncols();
       let input_dimension = training_inputs.ncols();
-      let prior = PriorType::default(input_dimension, output_dimension);
+      let prior = PriorType::default(input_dimension);
       let kernel = KernelType::default();
       let noise = 1e-7f64;
       let should_fit_kernel = false;
@@ -110,7 +109,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    {
       // builds a gp with no data
       let empty_input = DMatrix::zeros(0, self.training_inputs.ncols());
-      let empty_output = DMatrix::zeros(0, self.training_outputs.ncols());
+      let empty_output = DVector::zeros(0);
       let mut gp = GaussianProcessTrained::<KernelType, PriorType>::new(self.prior,
                                                                         self.kernel,
                                                                         self.noise,

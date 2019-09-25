@@ -4,7 +4,7 @@
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 
 use std::ops::{Add, Mul};
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, DVector};
 use crate::matrix::RowVectorSlice;
 
 //---------------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ pub trait Kernel: Default
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64;
 
    /// Optional, function that performs an automatic fit of the kernel parameters
-   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DMatrix<f64>) {}
+   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DVector<f64>) {}
 }
 
 //---------------------------------------------------------------------------------------
@@ -54,17 +54,10 @@ fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
 ///
 /// when the output has several dimensions, use the mean of the variances of the columns
 /// which might not make a lot of sense if they are not normalized
-fn fit_amplitude(training_outputs: &DMatrix<f64>) -> f64
+fn fit_amplitude(training_outputs: &DVector<f64>) -> f64
 {
-   let ampl = training_outputs.row_variance().mean();
-   if ampl == 0.
-   {
-      1.
-   }
-   else
-   {
-      ampl
-   }
+   // TODO we are working with a vector and not a matrix
+   training_outputs.row_variance().mean()
 }
 
 //---------------------------------------------------------------------------------------
@@ -97,7 +90,7 @@ impl<T, U> Kernel for KernelSum<T, U>
       self.k1.kernel(x1, x2) + self.k2.kernel(x1, x2)
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.k1.fit(training_inputs, training_outputs);
       self.k2.fit(training_inputs, training_outputs);
@@ -141,7 +134,7 @@ impl<T, U> Kernel for KernelProd<T, U>
       self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.k1.fit(training_inputs, training_outputs);
       self.k2.fit(training_inputs, training_outputs);
@@ -335,7 +328,7 @@ impl Kernel for SquaredExp
       self.ampl * x.exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude(training_outputs);
@@ -391,7 +384,7 @@ impl Kernel for Exponential
       self.ampl * x.exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude(training_outputs);
@@ -447,7 +440,7 @@ impl Kernel for Matern1
       self.ampl * (1f64 + x) * (-x).exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude(training_outputs);
@@ -503,7 +496,7 @@ impl Kernel for Matern2
       self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DMatrix<f64>)
+   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude(training_outputs);
