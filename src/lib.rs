@@ -1,6 +1,4 @@
-#![allow(dead_code)]
-
-mod multivariate_normal;
-mod parameters;
-mod gaussian_process;
-mod matrix;
+pub mod gaussian_process;
+pub mod parameters;
+pub mod multivariate_normal;
+mod algebra;

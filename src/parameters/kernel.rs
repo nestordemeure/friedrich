@@ -5,7 +5,7 @@
 
 use std::ops::{Add, Mul};
 use nalgebra::{DMatrix, DVector};
-use crate::matrix::RowVectorSlice;
+use crate::algebra::RowVectorSlice;
 
 //---------------------------------------------------------------------------------------
 // TRAIT
