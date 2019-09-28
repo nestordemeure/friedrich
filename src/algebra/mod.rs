@@ -4,21 +4,8 @@ mod slice;
 
 use nalgebra::*;
 use crate::parameters::kernel::Kernel;
-pub use slice::{MatrixSlice, RowVectorSlice, SliceableMatrix};
-pub use extendable_matrix::EMatrix;
-
-//-----------------------------------------------------------------------------
-// CONCATENATION
-
-/// produces a new vector that is the first on top of the second
-pub fn concat_vectors(top: &DVector<f64>, bottom: &DVector<f64>) -> DVector<f64>
-{
-   // TODO it would be faster to start with an an uninitialized matrix but it would require unsafe
-   let mut result = DVector::from_element(top.nrows() + bottom.nrows(), std::f64::NAN);
-   result.index_mut((..top.nrows(), ..)).copy_from(top);
-   result.index_mut((top.nrows().., ..)).copy_from(bottom);
-   result
-}
+pub use slice::{MatrixSlice, RowVectorSlice, VectorSlice, SliceableMatrix, SliceableVector};
+pub use extendable_matrix::{EMatrix, EVector};
 
 //-----------------------------------------------------------------------------
 // COVARIANCE MATRIX

@@ -30,3 +30,20 @@ impl SliceableMatrix for DMatrix<f64>
       self.index((.., ..))
    }
 }
+
+//-----
+
+/// a vector out of which a slice can be extracted
+pub trait SliceableVector
+{
+   /// returns a slice that points to the content of the vector
+   fn data(&self) -> VectorSlice;
+}
+
+impl SliceableVector for DVector<f64>
+{
+   fn data(&self) -> VectorSlice
+   {
+      self.index((.., ..))
+   }
+}
