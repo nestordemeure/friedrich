@@ -67,11 +67,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       if fit_prior
       {
          // gets the original data back in order to update the prior
-         let original_training_outputs =
-            self.training_outputs.data() + self.prior.prior(self.training_inputs.data());
+         let original_training_outputs = self.training_outputs.data() + self.prior.prior(self.training_inputs.data());
          self.prior.fit(self.training_inputs.data(), &original_training_outputs);
-         self.training_outputs = EVector::new(original_training_outputs - self.prior.prior(self.training_inputs.data()));
-         // TODO rebuilding EVector is ineficient, an assign operation would be better
+         self.training_outputs.assign(&(original_training_outputs - self.prior.prior(self.training_inputs.data())));
          // NOTE: adding and substracting each time we fit a prior might be numerically unstable
       }
 

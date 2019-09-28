@@ -91,6 +91,14 @@ impl EVector
       self.data.index_mut((self.nrows.., ..)).copy_from(rows);
       self.nrows += rows.nrows();
    }
+
+   /// assigns new content to the vector
+   /// the new vector must be of the same size as the old vector
+   pub fn assign(&mut self, rows: &DVector<f64>)
+   {
+      assert_eq!(rows.nrows(), self.nrows);
+      self.data.index_mut((..rows.nrows(), ..)).copy_from(rows);
+   }
 }
 
 /// converts a ref to an extendable vector to a slice that points to the actual data
