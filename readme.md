@@ -13,5 +13,6 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 - Clean-up the documentation.
 - Make it possible to give sample with other format. I could take `Vec<slice>` by default as inputs (or implement an implicit cast from `Vec<slice>` and `Vec<f64>` to `DMatrix`).
+The best way seem to be to add an `Input` and `Output` trait implemented by the types i want to take and that implements the needed conversion.
 - Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
 - Add better algorithms to fit parameters.
