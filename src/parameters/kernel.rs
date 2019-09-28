@@ -4,7 +4,8 @@
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 
 use std::ops::{Add, Mul};
-use nalgebra::{DMatrix, DVector};
+use nalgebra::DVector;
+use crate::algebra::MatrixSlice;
 use crate::algebra::RowVectorSlice;
 
 //---------------------------------------------------------------------------------------
@@ -19,7 +20,7 @@ pub trait Kernel: Default
    fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64;
 
    /// Optional, function that performs an automatic fit of the kernel parameters
-   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DVector<f64>) {}
+   fn fit(&mut self, _training_inputs: MatrixSlice, _training_outputs: &DVector<f64>) {}
 }
 
 //---------------------------------------------------------------------------------------
@@ -28,7 +29,7 @@ pub trait Kernel: Default
 /// provides a rough estimate for the badnwith
 /// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) to have a guess at the bandwith
 /// this might be too large if the distribution of the distances is not normal but is fast to compute, o(n²) of the number of samples
-fn fit_bandwith_silverman(training_inputs: &DMatrix<f64>) -> f64
+fn fit_bandwith_silverman(training_inputs: MatrixSlice) -> f64
 {
    // builds the sum of all distances between different samples
    let mut sum_distances = 0.;
@@ -87,7 +88,7 @@ impl<T, U> Kernel for KernelSum<T, U>
       self.k1.kernel(x1, x2) + self.k2.kernel(x1, x2)
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       self.k1.fit(training_inputs, training_outputs);
       self.k2.fit(training_inputs, training_outputs);
@@ -131,7 +132,7 @@ impl<T, U> Kernel for KernelProd<T, U>
       self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       // TODO this is not a great way to fit parameters
       self.k1.fit(training_inputs, training_outputs);
@@ -321,7 +322,7 @@ impl Kernel for SquaredExp
       self.ampl * x.exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -376,7 +377,7 @@ impl Kernel for Exponential
       self.ampl * x.exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -431,7 +432,7 @@ impl Kernel for Matern1
       self.ampl * (1f64 + x) * (-x).exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -486,7 +487,7 @@ impl Kernel for Matern2
       self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
    }
 
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);

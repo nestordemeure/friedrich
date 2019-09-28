@@ -3,7 +3,8 @@
 //! The value that is returned in the absence of further information.
 //! This can be a constant but also a polynomial or any model.
 
-use nalgebra::{DMatrix, DVector};
+use nalgebra::DVector;
+use crate::algebra::MatrixSlice;
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -17,10 +18,10 @@ pub trait Prior
    fn default(input_dimension: usize) -> Self;
 
    /// Takes and input and return an output.
-   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>;
+   fn prior(&self, input: MatrixSlice) -> DVector<f64>;
 
    /// Optional, function that performs an automatic fit of the prior
-   fn fit(&mut self, _training_inputs: &DMatrix<f64>, _training_outputs: &DVector<f64>) {}
+   fn fit(&mut self, _training_inputs: MatrixSlice, _training_outputs: &DVector<f64>) {}
 }
 
 //---------------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ impl Prior for Zero
       Zero {}
    }
 
-   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
+   fn prior(&self, input: MatrixSlice) -> DVector<f64>
    {
       DVector::zeros(input.nrows())
    }
@@ -68,13 +69,13 @@ impl Prior for Constant
       Constant::new(0f64)
    }
 
-   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
+   fn prior(&self, input: MatrixSlice) -> DVector<f64>
    {
       DVector::from_element(input.nrows(), self.c)
    }
 
    /// the prior is fitted on the mean of the training outputs
-   fn fit(&mut self, _training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, _training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       self.c = training_outputs.mean();
    }
@@ -107,7 +108,7 @@ impl Prior for Linear
       Linear { weights: DVector::zeros(input_dimension), intercept:0f64 }
    }
 
-   fn prior(&self, input: &DMatrix<f64>) -> DVector<f64>
+   fn prior(&self, input: MatrixSlice) -> DVector<f64>
    {
       let mut result = input * &self.weights;
       result.add_scalar_mut(self.intercept);
@@ -115,7 +116,7 @@ impl Prior for Linear
    }
 
    /// performs a linear fit to set the value of the prior
-   fn fit(&mut self, training_inputs: &DMatrix<f64>, training_outputs: &DVector<f64>)
+   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: &DVector<f64>)
    {
       // solve linear system using LU decomposition
       let weights = training_inputs.clone()
