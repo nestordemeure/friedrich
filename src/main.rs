@@ -4,6 +4,7 @@ mod multivariate_normal;
 mod parameters;
 mod gaussian_process;
 mod algebra;
+mod input;
 
 use nalgebra::{DMatrix, DVector};
 use crate::gaussian_process::GaussianProcess;
