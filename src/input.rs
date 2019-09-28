@@ -4,9 +4,14 @@ use nalgebra::{DVector, DMatrix};
 // INPUT
 
 /// converts some data into a valid input matrix
-pub trait Input
+pub trait Input: Sized
 {
-   fn to_input(self) -> DMatrix<f64>;
+   fn to_input(&self) -> DMatrix<f64>;
+
+   fn into_input(self) -> DMatrix<f64>
+   {
+      self.to_input()
+   }
 }
 
 //-----------------------------------------------
@@ -14,9 +19,9 @@ pub trait Input
 // trivial implementation
 impl Input for DMatrix<f64>
 {
-   fn to_input(self) -> DMatrix<f64>
+   fn to_input(&self) -> DMatrix<f64>
    {
-      self
+      self.clone()
    }
 }
 
@@ -30,9 +35,14 @@ impl Input for DMatrix<f64>
 // OUTPUT
 
 /// converts some data into a valid output vector
-pub trait Output
+pub trait Output: Sized
 {
-   fn to_output(self) -> DVector<f64>;
+   fn to_output(&self) -> DVector<f64>;
+
+   fn into_output(self) -> DVector<f64>
+   {
+      self.to_output()
+   }
 }
 
 //-----------------------------------------------
@@ -40,9 +50,9 @@ pub trait Output
 // trivial implementation
 impl Output for DVector<f64>
 {
-   fn to_output(self) -> DVector<f64>
+   fn to_output(&self) -> DVector<f64>
    {
-      self
+      self.clone()
    }
 }
 
