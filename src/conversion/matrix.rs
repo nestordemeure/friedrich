@@ -40,6 +40,7 @@ impl AsMatrix for Vec<Vec<f64>>
 {
    fn as_matrix(&self) -> DMatrix<f64>
    {
+      assert!(!self.is_empty());
       let rows: Vec<RowDVector<f64>> = self.iter().map(|v| RowDVector::from_row_slice(v)).collect();
       DMatrix::from_rows(&rows)
    }

@@ -1,10 +1,12 @@
 //! Operations on matrix
 mod extendable_matrix;
+mod multivariate_normal;
+
+pub use extendable_matrix::{EMatrix, EVector};
+pub use multivariate_normal::MultivariateNormal;
 
 use crate::parameters::kernel::Kernel;
 use nalgebra::{storage::Storage, SliceStorage, Dynamic, U1, Matrix, DMatrix, Cholesky};
-
-pub use extendable_matrix::{EMatrix, EVector};
 
 //-----------------------------------------------------------------------------
 // ARBITRARY STORAGE TYPES

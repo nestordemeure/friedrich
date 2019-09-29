@@ -6,8 +6,7 @@ use crate::conversion::{AsMatrix, AsVector};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
-use crate::algebra::{EMatrix, EVector};
-use crate::multivariate_normal::MultivariateNormal;
+use crate::algebra::{EMatrix, EVector, MultivariateNormal};
 
 /// gaussian process
 pub struct GaussianProcessTrained<KernelType: Kernel,
@@ -44,6 +43,7 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
       // converts inputs into nalgebra format
       let training_inputs = training_inputs.into_matrix();
       let training_outputs = training_outputs.into_vector();
+      assert_eq!(training_inputs.nrows(), training_outputs.nrows());
       // converts training data into extendable matrix
       let training_inputs = EMatrix::new(training_inputs);
       let training_outputs = EVector::new(training_outputs - prior.prior(&training_inputs.as_matrix()));
@@ -71,6 +71,8 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
       let outputs = outputs.as_vector();
+      assert_eq!(inputs.nrows(), outputs.nrows());
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
@@ -122,6 +124,8 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
       let outputs = outputs.as_vector();
+      assert_eq!(inputs.nrows(), outputs.nrows());
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
@@ -148,6 +152,7 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
       // computes weights to give each training sample
       let mut weights =
@@ -177,6 +182,7 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
 
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
       // compute the weights
       let cov_train_inputs =
@@ -206,9 +212,11 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
 
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
       // compute the weights
-      let cov_train_inputs = algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
+      let cov_train_inputs =
+         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
       let weights = self.covmat_cholesky.solve(&cov_train_inputs);
 
       // computes the intra points covariance
@@ -224,9 +232,11 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
       // compute the weights
-      let cov_train_inputs = algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
+      let cov_train_inputs =
+         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
       let weights = self.covmat_cholesky.solve(&cov_train_inputs);
 
       // computes covariance
