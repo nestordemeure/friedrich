@@ -2,12 +2,12 @@
 mod extendable_matrix;
 
 use crate::parameters::kernel::Kernel;
-use nalgebra::{storage::Storage, Dynamic, U1, Matrix, DMatrix, Cholesky};
+use nalgebra::{storage::Storage, SliceStorage, Dynamic, U1, Matrix, DMatrix, Cholesky};
 
 pub use extendable_matrix::{EMatrix, EVector};
 
 //-----------------------------------------------------------------------------
-// TYPES
+// ARBITRARY STORAGE TYPES
 
 /// matrix with arbitrary storage
 /// S: Storage<f64, Dynamic, Dynamic>
@@ -20,6 +20,16 @@ pub type SRowVector<S> = Matrix<f64, U1, Dynamic, S>;
 /// vector with arbitrary storage
 /// S: Storage<f64, Dynamic, U1>
 pub type SVector<S> = Matrix<f64, Dynamic, U1, S>;
+
+//-----------------------------------------------------------------------------
+// SLICE TYPES
+
+/// represents a slice of a matrix
+pub type MatrixSlice<'a> =
+   Matrix<f64, Dynamic, Dynamic, SliceStorage<'a, f64, Dynamic, Dynamic, U1, Dynamic>>;
+
+/// represents a view to a column from a matrix
+pub type VectorSlice<'a> = Matrix<f64, Dynamic, U1, SliceStorage<'a, f64, Dynamic, U1, U1, Dynamic>>;
 
 //-----------------------------------------------------------------------------
 // COVARIANCE MATRIX

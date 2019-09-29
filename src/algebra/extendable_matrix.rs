@@ -1,7 +1,7 @@
 use nalgebra::*;
 use nalgebra::{storage::Storage, U1, Dynamic};
 use crate::algebra::{SVector, SMatrix};
-use crate::conversion::{MatrixSlice, VectorSlice};
+use super::{MatrixSlice, VectorSlice};
 
 //-----------------------------------------------------------------------------
 // MATRIX

@@ -34,8 +34,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - does not fit parameters
    /// - does fit prior
    pub fn new<InMatrix: AsMatrix, OutVector: AsVector>(training_inputs: InMatrix,
-                                                  training_outputs: OutVector)
-                                                  -> GaussianProcessBuilder<KernelType, PriorType>
+                                                       training_outputs: OutVector)
+                                                       -> GaussianProcessBuilder<KernelType, PriorType>
    {
       let training_inputs = training_inputs.as_matrix();
       let training_outputs = training_outputs.as_vector();

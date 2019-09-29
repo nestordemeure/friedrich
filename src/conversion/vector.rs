@@ -15,6 +15,15 @@ impl AsVector for DVector<f64>
    }
 }
 
+// trivial implementation
+impl AsVector for &DVector<f64>
+{
+   fn as_vector(self) -> DVector<f64>
+   {
+      self.clone()
+   }
+}
+
 // implementation on Rust std::Vec
 
 // implementation on slice
