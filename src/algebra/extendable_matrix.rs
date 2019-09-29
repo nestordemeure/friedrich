@@ -1,5 +1,7 @@
 use nalgebra::*;
-use crate::conversion::{MatrixSlice, VectorSlice, InputRef, OutputRef};
+use nalgebra::{storage::Storage, U1, Dynamic};
+use crate::algebra::{SVector, SMatrix};
+use crate::conversion::{MatrixSlice, VectorSlice};
 
 //-----------------------------------------------------------------------------
 // MATRIX
@@ -20,7 +22,7 @@ impl EMatrix
    }
 
    /// add rows to the matrix
-   pub fn add_rows(&mut self, rows: MatrixSlice)
+   pub fn add_rows<S: Storage<f64, Dynamic, Dynamic>>(&mut self, rows: &SMatrix<S>)
    {
       // if we do not have enough rows, we grow the underlying matrix
       let capacity = self.data.nrows();
@@ -40,13 +42,9 @@ impl EMatrix
       self.data.index_mut((self.nrows.., ..)).copy_from(&rows);
       self.nrows += rows.nrows();
    }
-}
 
-/// converts a ref to an extendable matrix to a slice that points to the actual data
-impl InputRef for EMatrix
-{
-   /// converts a ref to an extendable matrix to a slice that points to the actual data
-   fn to_mslice(&self) -> MatrixSlice
+   /// returns a slice to the data inside the extendable matrix
+   pub fn as_matrix(&self) -> MatrixSlice
    {
       self.data.index((..self.nrows, ..))
    }
@@ -71,7 +69,7 @@ impl EVector
    }
 
    /// add rows to the vector
-   pub fn add_rows(&mut self, rows: VectorSlice)
+   pub fn add_rows<S: Storage<f64, Dynamic, U1>>(&mut self, rows: &SVector<S>)
    {
       // if we do not have enough rows, we grow the underlying vector
       let capacity = self.data.nrows();
@@ -92,21 +90,17 @@ impl EVector
       self.nrows += rows.nrows();
    }
 
-   /// assigns new content to the vector
-   /// the new vector must be of the same size as the old vector
-   pub fn assign(&mut self, rows: DVector<f64>)
-   {
-      assert_eq!(rows.nrows(), self.nrows);
-      self.data.index_mut((..rows.nrows(), ..)).copy_from(&rows);
-   }
-}
-
-/// converts a ref to an extendable vector to a slice that points to the actual data
-impl OutputRef for EVector
-{
-   /// converts a ref to an extendable vector to a slice that points to the actual data
-   fn to_vslice(&self) -> VectorSlice
+   /// returns a slice to the data inside the extendable matrix
+   pub fn as_vector(&self) -> VectorSlice
    {
       self.data.index((..self.nrows, ..))
+   }
+
+   /// assigns new content to the vector
+   /// the new vector must be of the same size as the old vector
+   pub fn assign<S: Storage<f64, Dynamic, U1>>(&mut self, rows: &SVector<S>)
+   {
+      assert_eq!(rows.nrows(), self.nrows);
+      self.data.index_mut((..rows.nrows(), ..)).copy_from(rows);
    }
 }

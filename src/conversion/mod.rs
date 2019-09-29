@@ -16,6 +16,12 @@ pub use slice::{MatrixSlice, RowVectorSlice, VectorSlice, InputRef, OutputRef};
 
    conversions should probably be done by the function that receive the type in order to make then generic
    without clutering implementation with conversions
+
+   traits:
+   self -> AsMatrix
+   self -> AsVector
+   &self -> AsMatrixSlice
+   &self -> AsVectorSlice
 */
 
 

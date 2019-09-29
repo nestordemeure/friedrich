@@ -4,7 +4,8 @@
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 
 use std::ops::{Add, Mul};
-use crate::conversion::{MatrixSlice, RowVectorSlice, VectorSlice};
+use nalgebra::{storage::Storage, U1, Dynamic};
+use crate::algebra::{SRowVector, SVector, SMatrix};
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -15,10 +16,17 @@ use crate::conversion::{MatrixSlice, RowVectorSlice, VectorSlice};
 pub trait Kernel: Default
 {
    /// Takes two equal length slices and returns a scalar.
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64;
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64;
 
    /// Optional, function that performs an automatic fit of the kernel parameters
-   fn fit(&mut self, _training_inputs: MatrixSlice, _training_outputs: VectorSlice) {}
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             _training_inputs: &SMatrix<SM>,
+                                                                             _training_outputs: &SVector<SV>)
+   {
+   }
 }
 
 //---------------------------------------------------------------------------------------
@@ -27,7 +35,7 @@ pub trait Kernel: Default
 /// provides a rough estimate for the badnwith
 /// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) to have a guess at the bandwith
 /// this might be too large if the distribution of the distances is not normal but is fast to compute, o(n²) of the number of samples
-fn fit_bandwith_silverman(training_inputs: MatrixSlice) -> f64
+fn fit_bandwith_silverman<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatrix<S>) -> f64
 {
    // builds the sum of all distances between different samples
    let mut sum_distances = 0.;
@@ -51,7 +59,7 @@ fn fit_bandwith_silverman(training_inputs: MatrixSlice) -> f64
 }
 
 /// outputs the variance of the outputs as a best guess of the amplitude
-fn fit_amplitude_var(training_outputs: VectorSlice) -> f64
+fn fit_amplitude_var<S: Storage<f64, Dynamic, U1>>(training_outputs: &SVector<S>) -> f64
 {
    training_outputs.variance()
 }
@@ -81,12 +89,17 @@ impl<T, U> Kernel for KernelSum<T, U>
    where T: Kernel,
          U: Kernel
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       self.k1.kernel(x1, x2) + self.k2.kernel(x1, x2)
    }
 
-   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: VectorSlice)
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             training_inputs: &SMatrix<SM>,
+                                                                             training_outputs: &SVector<SV>)
    {
       self.k1.fit(training_inputs, training_outputs);
       self.k2.fit(training_inputs, training_outputs);
@@ -125,12 +138,17 @@ impl<T, U> Kernel for KernelProd<T, U>
    where T: Kernel,
          U: Kernel
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
    }
 
-   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: VectorSlice)
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             training_inputs: &SMatrix<SM>,
+                                                                             training_outputs: &SVector<SV>)
    {
       // TODO this is not a great way to fit parameters
       self.k1.fit(training_inputs, training_outputs);
@@ -208,7 +226,10 @@ impl Default for Linear
 
 impl Kernel for Linear
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       x1.dot(&x2) + self.c
    }
@@ -255,7 +276,10 @@ impl Default for Polynomial
 
 impl Kernel for Polynomial
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       (self.alpha * x1.dot(&x2) + self.c).powf(self.d)
    }
@@ -313,14 +337,19 @@ impl Default for SquaredExp
 impl Kernel for SquaredExp
 {
    /// The squared exponential kernel function.
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       let distance_squared = (x1 - x2).norm_squared();
       let x = -distance_squared / (2f64 * self.ls * self.ls);
       self.ampl * x.exp()
    }
 
-   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: VectorSlice)
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             training_inputs: &SMatrix<SM>,
+                                                                             training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -368,14 +397,19 @@ impl Default for Exponential
 impl Kernel for Exponential
 {
    /// The squared exponential kernel function.
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       let distance = (x1 - x2).norm();
       let x = -distance / (2f64 * self.ls * self.ls);
       self.ampl * x.exp()
    }
 
-   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: VectorSlice)
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             training_inputs: &SMatrix<SM>,
+                                                                             training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -423,14 +457,19 @@ impl Default for Matern1
 impl Kernel for Matern1
 {
    /// The matèrn1 kernel function.
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       let distance = (x1 - x2).norm();
       let x = (3f64).sqrt() * distance / self.ls;
       self.ampl * (1f64 + x) * (-x).exp()
    }
 
-   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: VectorSlice)
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             training_inputs: &SMatrix<SM>,
+                                                                             training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -478,14 +517,19 @@ impl Default for Matern2
 impl Kernel for Matern2
 {
    /// The matèrn2 kernel function.
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       let distance = (x1 - x2).norm();
       let x = (5f64).sqrt() * distance / self.ls;
       self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
    }
 
-   fn fit(&mut self, training_inputs: MatrixSlice, training_outputs: VectorSlice)
+   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                             training_inputs: &SMatrix<SM>,
+                                                                             training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_silverman(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -530,7 +574,10 @@ impl Default for HyperTan
 
 impl Kernel for HyperTan
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       (self.alpha * x1.dot(&x2) + self.c).tanh()
    }
@@ -571,7 +618,10 @@ impl Default for Multiquadric
 
 impl Kernel for Multiquadric
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       (x1 - x2).norm_squared().hypot(self.c)
    }
@@ -615,7 +665,10 @@ impl Default for RationalQuadratic
 
 impl Kernel for RationalQuadratic
 {
-   fn kernel(&self, x1: RowVectorSlice, x2: RowVectorSlice) -> f64
+   fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                           x1: &SRowVector<S1>,
+                                                                           x2: &SRowVector<S2>)
+                                                                           -> f64
    {
       let distance_squared = (x1 - x2).norm_squared();
       (1f64 + distance_squared / (2f64 * self.alpha * self.ls * self.ls)).powf(-self.alpha)
