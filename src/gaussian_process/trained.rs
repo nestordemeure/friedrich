@@ -122,8 +122,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    // PREDICTION
 
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_mean<'a, InMatrix>(&self, inputs: &'a InMatrix) -> DVector<f64>
-      where &'a InMatrix: AsMatrix
+   pub fn predict_mean<InMatrix:AsMatrix>(&self, inputs: InMatrix) -> DVector<f64>
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
@@ -145,8 +144,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    ///
    /// NOTE:
    /// - this function is useful for bayesian optimization
-   pub fn predict_variance<'a, InMatrix>(&self, inputs: &'a InMatrix) -> DVector<f64>
-      where &'a InMatrix: AsMatrix
+   pub fn predict_variance<InMatrix:AsMatrix>(&self, inputs: InMatrix) -> DVector<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -178,15 +176,13 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    ///
    /// NOTE:
    /// - this function is useful for bayesian optimization
-   pub fn predict_standard_deviation<'a, InMatrix>(&self, inputs: &'a InMatrix) -> DVector<f64>
-      where &'a InMatrix: AsMatrix
+   pub fn predict_standard_deviation<InMatrix:AsMatrix>(&self, inputs: InMatrix) -> DVector<f64>
    {
       self.predict_variance(inputs).apply_into(|x| x.sqrt())
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance<'a, InMatrix>(&self, inputs: &'a InMatrix) -> DMatrix<f64>
-      where &'a InMatrix: AsMatrix
+   pub fn predict_covariance<InMatrix: AsMatrix>(&self, inputs: InMatrix) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -209,11 +205,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at<'a, InMatrix>(&self, inputs: &'a InMatrix) -> MultivariateNormal
-      where &'a InMatrix: AsMatrix
+   pub fn sample_at<InMatrix: AsMatrix + Clone>(&self, inputs: InMatrix) -> MultivariateNormal
    {
       // TODO we can factor some operations and improve performance by inlining and fusing the function needed
-      let mean = self.predict_mean(inputs);
+      let mean = self.predict_mean(inputs.clone());
       let cov_inputs = self.predict_covariance(inputs);
       MultivariateNormal::new(mean, cov_inputs)
    }

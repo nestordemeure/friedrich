@@ -14,3 +14,6 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 - Clean-up the documentation.
 - Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
 - Add better algorithms to fit parameters.
+
+- add function to make prediction on single sample
+- encode expected output type in GP type ?

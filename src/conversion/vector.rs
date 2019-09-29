@@ -6,7 +6,7 @@ pub trait AsVector: Sized
    fn as_vector(self) -> DVector<f64>;
 }
 
-// trivial implementation
+// trivial implementation for DVector
 impl AsVector for DVector<f64>
 {
    fn as_vector(self) -> DVector<f64>
@@ -15,7 +15,7 @@ impl AsVector for DVector<f64>
    }
 }
 
-// trivial implementation
+// implementation for &DVector
 impl AsVector for &DVector<f64>
 {
    fn as_vector(self) -> DVector<f64>
@@ -24,8 +24,20 @@ impl AsVector for &DVector<f64>
    }
 }
 
-// implementation on Rust std::Vec
+/// implementation for Vec
+impl AsVector for &Vec<f64>
+{
+   fn as_vector(self) -> DVector<f64>
+   {
+      DVector::from_column_slice(self)
+   }
+}
 
-// implementation on slice
-
-// implementation on single number
+/// implementation for slice
+impl AsVector for &[f64]
+{
+   fn as_vector(self) -> DVector<f64>
+   {
+      DVector::from_column_slice(self)
+   }
+}
