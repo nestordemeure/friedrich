@@ -17,3 +17,4 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 - add function to make prediction on single sample
 - encode expected output type in GP type ? or default to vector ?
+- add asserts to insure that inputs are correct

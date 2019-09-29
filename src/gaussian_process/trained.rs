@@ -1,5 +1,6 @@
 //! Trained Gaussian process
 
+use std::marker::PhantomData;
 use nalgebra::{DVector, DMatrix, Cholesky, Dynamic};
 use crate::conversion::{AsMatrix, AsVector};
 use crate::parameters::kernel::Kernel;
@@ -9,7 +10,10 @@ use crate::algebra::{EMatrix, EVector};
 use crate::multivariate_normal::MultivariateNormal;
 
 /// gaussian process
-pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
+pub struct GaussianProcessTrained<KernelType: Kernel,
+ PriorType: Prior,
+ InMatrix: AsMatrix,
+ OutVector: AsVector>
 {
    /// value to which the process will regress in the absence of informations
    prior: PriorType,
@@ -20,18 +24,22 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
    /// data used for fit
    training_inputs: EMatrix,
    training_outputs: EVector,
+   /// types of the inputs and outputs
+   input_type: PhantomData<InMatrix>,
+   output_type: PhantomData<OutVector>,
    /// cholesky decomposition of the covariance matrix trained on the current datapoints
    covmat_cholesky: Cholesky<f64, Dynamic>
 }
 
-impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVector>
+   GaussianProcessTrained<KernelType, PriorType, InMatrix, OutVector>
 {
-   pub fn new<InMatrix: AsMatrix, OutVector: AsVector>(prior: PriorType,
-                                                       kernel: KernelType,
-                                                       noise: f64,
-                                                       training_inputs: InMatrix,
-                                                       training_outputs: OutVector)
-                                                       -> Self
+   pub fn new(prior: PriorType,
+              kernel: KernelType,
+              noise: f64,
+              training_inputs: InMatrix,
+              training_outputs: OutVector)
+              -> Self
    {
       // converts inputs into nalgebra format
       let training_inputs = training_inputs.into_matrix();
@@ -42,12 +50,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       // computes cholesky decomposition
       let covmat_cholesky =
          algebra::make_cholesky_covariance_matrix(&training_inputs.as_matrix(), &kernel, noise);
-      GaussianProcessTrained::<KernelType, PriorType> { prior,
-                                                        kernel,
-                                                        noise,
-                                                        training_inputs,
-                                                        training_outputs,
-                                                        covmat_cholesky }
+      GaussianProcessTrained { prior,
+                               kernel,
+                               noise,
+                               training_inputs,
+                               training_outputs,
+                               covmat_cholesky,
+                               input_type: PhantomData,
+                               output_type: PhantomData }
    }
 
    //----------------------------------------------------------------------------------------------
@@ -56,13 +66,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    /// adds new samples to the model
    /// update the model (which is faster than a training from scratch)
    /// does not refit the parameters
-   pub fn add_samples<InMatrix: AsMatrix, OutVector: AsVector>(&mut self,
-                                                               inputs: InMatrix,
-                                                               outputs: OutVector)
+   pub fn add_samples(&mut self, inputs: &InMatrix, outputs: &OutVector)
    {
       // converts inputs into nalgebra format
-      let inputs = inputs.into_matrix();
-      let outputs = outputs.into_vector();
+      let inputs = inputs.as_matrix();
+      let outputs = outputs.as_vector();
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
@@ -74,7 +82,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       // TODO update cholesky matrix instead of recomputing it from scratch
    }
 
-   /// fits the parameters and retrain the model from scratch
+   /// fits the parameters if requested and retrain the model from scratch if needed
    pub fn fit_parameters(&mut self, fit_prior: bool, fit_kernel: bool)
    {
       if fit_prior
@@ -94,35 +102,49 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
          self.kernel.fit(&self.training_inputs.as_matrix(), &self.training_outputs.as_vector());
       }
 
-      self.covmat_cholesky = algebra::make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(),
-                                                                      &self.kernel,
-                                                                      self.noise);
+      if fit_prior || fit_kernel
+      {
+         // retranis model if a fit happened
+         self.covmat_cholesky = algebra::make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(),
+                                                                         &self.kernel,
+                                                                         self.noise);
+      }
    }
 
    /// adds new samples to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
-   pub fn add_samples_fit<InMatrix: AsMatrix, OutVector: AsVector>(&mut self,
-                                                                   inputs: InMatrix,
-                                                                   outputs: OutVector,
-                                                                   fit_prior: bool,
-                                                                   fit_kernel: bool)
+   pub fn add_samples_fit(&mut self,
+                          inputs: &InMatrix,
+                          outputs: &OutVector,
+                          fit_prior: bool,
+                          fit_kernel: bool)
    {
       // converts inputs into nalgebra format
-      let inputs = inputs.into_matrix();
-      let outputs = outputs.into_vector();
+      let inputs = inputs.as_matrix();
+      let outputs = outputs.as_vector();
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
       self.training_outputs.add_rows(&outputs);
       // refit the parameters and retrain the model from scratch
-      self.fit_parameters(fit_prior, fit_kernel);
+      if fit_kernel || fit_prior
+      {
+         self.fit_parameters(fit_prior, fit_kernel);
+      }
+      else
+      {
+         // retrains the model anyway if no fit happened
+         self.covmat_cholesky = algebra::make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(),
+                                                                         &self.kernel,
+                                                                         self.noise);
+      }
    }
 
    //----------------------------------------------------------------------------------------------
    // PREDICTION
 
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_mean<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DVector<f64>
+   pub fn predict_mean(&self, inputs: &InMatrix) -> OutVector
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
@@ -137,14 +159,16 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
 
       // weights.transpose() * &self.training_outputs + prior
       prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
-      prior
+
+      // converts to expected output type
+      OutVector::from_vector(prior)
    }
 
    /// predicts the variance of the gaussian process at each row of the input
    ///
    /// NOTE:
    /// - this function is useful for bayesian optimization
-   pub fn predict_variance<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DVector<f64>
+   pub fn predict_variance(&self, inputs: &InMatrix) -> OutVector
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -169,20 +193,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
          let predicted_cov = cov_train_inputs.column(i).dot(&weights.column(i));
          variances[i] = base_cov - predicted_cov;
       }
-      variances
-   }
 
-   /// predicts the std of the gaussian process at each row of the input
-   ///
-   /// NOTE:
-   /// - this function is useful for bayesian optimization
-   pub fn predict_standard_deviation<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DVector<f64>
-   {
-      self.predict_variance(inputs).apply_into(|x| x.sqrt())
+      OutVector::from_vector(variances)
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DMatrix<f64>
+   pub fn predict_covariance(&self, inputs: &InMatrix) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -192,8 +208,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
       let inputs = inputs.as_matrix();
 
       // compute the weights
-      let cov_train_inputs =
-         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
+      let cov_train_inputs = algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
       let weights = self.covmat_cholesky.solve(&cov_train_inputs);
 
       // computes the intra points covariance
@@ -205,11 +220,25 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at<InMatrix: AsMatrix + Clone>(&self, inputs: &InMatrix) -> MultivariateNormal
+   pub fn sample_at(&self, inputs: &InMatrix) -> MultivariateNormal<OutVector>
    {
-      // TODO we can factor some operations and improve performance by inlining and fusing the function needed
-      let mean = self.predict_mean(inputs);
-      let cov_inputs = self.predict_covariance(inputs);
-      MultivariateNormal::new(mean, cov_inputs)
+      // converts inputs into nalgebra format
+      let inputs = inputs.as_matrix();
+
+      // compute the weights
+      let cov_train_inputs = algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
+      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
+
+      // computes covariance
+      let mut cov_inputs_inputs = algebra::make_covariance_matrix(&inputs, &inputs, &self.kernel);
+      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
+      let cov = cov_inputs_inputs;
+
+      // computes the mean
+      let mut prior = self.prior.prior(&inputs);
+      prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
+      let mean = prior;
+
+      MultivariateNormal::new(mean, cov)
    }
 }

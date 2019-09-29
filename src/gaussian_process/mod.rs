@@ -15,18 +15,18 @@ impl GaussianProcess
    pub fn new<InMatrix: AsMatrix, OutVector: AsVector>(
       training_inputs: InMatrix,
       training_outputs: OutVector)
-      -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant>
+      -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant, InMatrix, OutVector>
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
    }
 
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
    pub fn default<InMatrix: AsMatrix, OutVector: AsVector>(
       training_inputs: InMatrix,
       training_outputs: OutVector)
-      -> GaussianProcessTrained<kernel::Gaussian, prior::Constant>
+      -> GaussianProcessTrained<kernel::Gaussian, prior::Constant, InMatrix, OutVector>
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
       .fit_kernel()
       .fit_prior()
       .train()

@@ -1,6 +1,5 @@
 //! Gaussian process builder
 
-use nalgebra::{DMatrix, DVector};
 use crate::conversion::{AsMatrix, AsVector};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
@@ -8,7 +7,10 @@ use super::trained::GaussianProcessTrained;
 
 /// gaussian process builder
 /// used to define the paramters of the gaussian process
-pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
+pub struct GaussianProcessBuilder<KernelType: Kernel,
+ PriorType: Prior,
+ InMatrix: AsMatrix,
+ OutVector: AsVector>
 {
    /// value to which the process will regress in the absence of informations
    prior: PriorType,
@@ -20,11 +22,12 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
    should_fit_kernel: bool,
    should_fit_prior: bool,
    /// data use for training
-   training_inputs: DMatrix<f64>,
-   training_outputs: DVector<f64>
+   training_inputs: InMatrix,
+   training_outputs: OutVector
 }
 
-impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVector>
+   GaussianProcessBuilder<KernelType, PriorType, InMatrix, OutVector>
 {
    /// builds a new gaussian process with default parameters
    /// the defaults are :
@@ -33,14 +36,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - a noise of 1e-7
    /// - does not fit parameters
    /// - does fit prior
-   pub fn new<InMatrix: AsMatrix, OutVector: AsVector>(training_inputs: InMatrix,
-                                                       training_outputs: OutVector)
-                                                       -> GaussianProcessBuilder<KernelType, PriorType>
+   pub fn new(training_inputs: InMatrix, training_outputs: OutVector) -> Self
    {
-      let training_inputs = training_inputs.into_matrix();
-      let training_outputs = training_outputs.into_vector();
-      let input_dimension = training_inputs.ncols();
-      let prior = PriorType::default(input_dimension);
+      let prior = PriorType::default(training_inputs.dimension());
       let kernel = KernelType::default();
       let noise = 1e-7f64;
       let should_fit_kernel = false;
@@ -59,9 +57,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
    /// sets a new prior
    /// the prior is the value returned in the absence of information
-   pub fn set_prior<PriorType2: Prior>(self,
-                                       prior: PriorType2)
-                                       -> GaussianProcessBuilder<KernelType, PriorType2>
+   pub fn set_prior<PriorType2: Prior>(
+      self,
+      prior: PriorType2)
+      -> GaussianProcessBuilder<KernelType, PriorType2, InMatrix, OutVector>
    {
       GaussianProcessBuilder { prior,
                                kernel: self.kernel,
@@ -79,9 +78,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    }
 
    /// changes the kernel of the gaussian process
-   pub fn set_kernel<KernelType2: Kernel>(self,
-                                          kernel: KernelType2)
-                                          -> GaussianProcessBuilder<KernelType2, PriorType>
+   pub fn set_kernel<KernelType2: Kernel>(
+      self,
+      kernel: KernelType2)
+      -> GaussianProcessBuilder<KernelType2, PriorType, InMatrix, OutVector>
    {
       GaussianProcessBuilder { prior: self.prior,
                                kernel,
@@ -108,21 +108,20 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    // TRAIN
 
    /// trains the gaussian process
-   pub fn train(self) -> GaussianProcessTrained<KernelType, PriorType>
+   pub fn train(self) -> GaussianProcessTrained<KernelType, PriorType, InMatrix, OutVector>
    {
-      // builds a gp with no data
-      let empty_input = DMatrix::zeros(0, self.training_inputs.ncols());
-      let empty_output = DVector::zeros(0);
-      let mut gp = GaussianProcessTrained::<KernelType, PriorType>::new(self.prior,
-                                                                        self.kernel,
-                                                                        self.noise,
-                                                                        empty_input,
-                                                                        empty_output);
-      // trains it (and fits it if requested) on the training data
-      gp.add_samples_fit(self.training_inputs,
-                         self.training_outputs,
-                         self.should_fit_prior,
-                         self.should_fit_kernel);
+      // builds a gp
+      // TODO here we waste a training if we will fit anyway
+      // TODO a new_fitted funtion might solve it
+      // TODO or a raw construction that does not perform a fit
+      let mut gp =
+         GaussianProcessTrained::<KernelType, PriorType, InMatrix, OutVector>::new(self.prior,
+                                                                                   self.kernel,
+                                                                                   self.noise,
+                                                                                   self.training_inputs,
+                                                                                   self.training_outputs);
+      // fit the model, if reqiested, on the training data
+      gp.fit_parameters(self.should_fit_prior, self.should_fit_kernel);
       gp
    }
 }
