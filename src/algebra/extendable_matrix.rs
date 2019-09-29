@@ -1,5 +1,5 @@
 use nalgebra::*;
-use super::{MatrixSlice, VectorSlice, SliceableMatrix, SliceableVector};
+use crate::conversion::{MatrixSlice, VectorSlice, InputRef, OutputRef};
 
 //-----------------------------------------------------------------------------
 // MATRIX
@@ -20,7 +20,7 @@ impl EMatrix
    }
 
    /// add rows to the matrix
-   pub fn add_rows(&mut self, rows: &DMatrix<f64>)
+   pub fn add_rows(&mut self, rows: MatrixSlice)
    {
       // if we do not have enough rows, we grow the underlying matrix
       let capacity = self.data.nrows();
@@ -37,16 +37,16 @@ impl EMatrix
       }
 
       // add rows below data
-      self.data.index_mut((self.nrows.., ..)).copy_from(rows);
+      self.data.index_mut((self.nrows.., ..)).copy_from(&rows);
       self.nrows += rows.nrows();
    }
 }
 
 /// converts a ref to an extendable matrix to a slice that points to the actual data
-impl SliceableMatrix for EMatrix
+impl InputRef for EMatrix
 {
    /// converts a ref to an extendable matrix to a slice that points to the actual data
-   fn data(&self) -> MatrixSlice
+   fn to_mslice(&self) -> MatrixSlice
    {
       self.data.index((..self.nrows, ..))
    }
@@ -71,7 +71,7 @@ impl EVector
    }
 
    /// add rows to the vector
-   pub fn add_rows(&mut self, rows: &DVector<f64>)
+   pub fn add_rows(&mut self, rows: VectorSlice)
    {
       // if we do not have enough rows, we grow the underlying vector
       let capacity = self.data.nrows();
@@ -88,24 +88,24 @@ impl EVector
       }
 
       // add rows below data
-      self.data.index_mut((self.nrows.., ..)).copy_from(rows);
+      self.data.index_mut((self.nrows.., ..)).copy_from(&rows);
       self.nrows += rows.nrows();
    }
 
    /// assigns new content to the vector
    /// the new vector must be of the same size as the old vector
-   pub fn assign(&mut self, rows: &DVector<f64>)
+   pub fn assign(&mut self, rows: DVector<f64>)
    {
       assert_eq!(rows.nrows(), self.nrows);
-      self.data.index_mut((..rows.nrows(), ..)).copy_from(rows);
+      self.data.index_mut((..rows.nrows(), ..)).copy_from(&rows);
    }
 }
 
 /// converts a ref to an extendable vector to a slice that points to the actual data
-impl SliceableVector for EVector
+impl OutputRef for EVector
 {
    /// converts a ref to an extendable vector to a slice that points to the actual data
-   fn data(&self) -> VectorSlice
+   fn to_vslice(&self) -> VectorSlice
    {
       self.data.index((..self.nrows, ..))
    }

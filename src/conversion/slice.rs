@@ -14,35 +14,36 @@ pub type VectorSlice<'a> = Matrix<f64, Dynamic, U1, SliceStorage<'a, f64, Dynami
 pub type MatrixSlice<'a> = Matrix<f64, Dynamic, Dynamic, SliceStorage<'a, f64, Dynamic, Dynamic, U1, Dynamic>>;
 
 //-----------------------------------------------------------------------------
-// CONVERSION
+// MATRIX REF
 
 /// a matrix out of which a slice can be extracted
-pub trait SliceableMatrix 
+pub trait InputRef 
 {
    /// returns a slice that points to the content of the matrix
-   fn data(&self) -> MatrixSlice;
+   fn to_mslice(&self) -> MatrixSlice;
 }
 
-impl SliceableMatrix for DMatrix<f64>
+impl InputRef for DMatrix<f64>
 {
-   fn data(&self) -> MatrixSlice
+   fn to_mslice(&self) -> MatrixSlice
    {
       self.index((.., ..))
    }
 }
 
-//-----
+//-----------------------------------------------------------------------------
+// VECTOR REF
 
 /// a vector out of which a slice can be extracted
-pub trait SliceableVector
+pub trait OutputRef
 {
    /// returns a slice that points to the content of the vector
-   fn data(&self) -> VectorSlice;
+   fn to_vslice(&self) -> VectorSlice;
 }
 
-impl SliceableVector for DVector<f64>
+impl OutputRef for DVector<f64>
 {
-   fn data(&self) -> VectorSlice
+   fn to_vslice(&self) -> VectorSlice
    {
       self.index((.., ..))
    }

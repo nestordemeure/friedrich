@@ -1,7 +1,7 @@
 pub mod builder;
 pub mod trained;
 
-use crate::input::{Input, Output};
+use crate::conversion::{Input, Output};
 use crate::parameters::*;
 use builder::GaussianProcessBuilder;
 use trained::GaussianProcessTrained;

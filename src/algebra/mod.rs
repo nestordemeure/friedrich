@@ -1,10 +1,9 @@
 //! Operations on matrix
 mod extendable_matrix;
-mod slice;
 
 use nalgebra::*;
 use crate::parameters::kernel::Kernel;
-pub use slice::{MatrixSlice, RowVectorSlice, VectorSlice, SliceableMatrix, SliceableVector};
+use crate::conversion::MatrixSlice;
 pub use extendable_matrix::{EMatrix, EVector};
 
 //-----------------------------------------------------------------------------

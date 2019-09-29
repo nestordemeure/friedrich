@@ -1,7 +1,7 @@
 //! Gaussian process builder
 
 use nalgebra::{DMatrix, DVector};
-use crate::input::{Input, Output};
+use crate::conversion::{Input, Output};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use super::trained::GaussianProcessTrained;
@@ -37,8 +37,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                                   training_outputs: OutVector)
                                                   -> GaussianProcessBuilder<KernelType, PriorType>
    {
-      let training_inputs = training_inputs.into_input();
-      let training_outputs = training_outputs.into_output();
+      let training_inputs = training_inputs.to_input();
+      let training_outputs = training_outputs.to_output();
       let input_dimension = training_inputs.ncols();
       let prior = PriorType::default(input_dimension);
       let kernel = KernelType::default();

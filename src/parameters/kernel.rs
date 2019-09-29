@@ -4,7 +4,7 @@
 //! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
 
 use std::ops::{Add, Mul};
-use crate::algebra::{MatrixSlice, RowVectorSlice, VectorSlice};
+use crate::conversion::{MatrixSlice, RowVectorSlice, VectorSlice};
 
 //---------------------------------------------------------------------------------------
 // TRAIT
