@@ -16,4 +16,4 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 - Add better algorithms to fit parameters.
 
 - add function to make prediction on single sample
-- encode expected output type in GP type ?
+- encode expected output type in GP type ? or default to vector ?

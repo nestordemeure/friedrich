@@ -37,8 +37,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                                        training_outputs: OutVector)
                                                        -> GaussianProcessBuilder<KernelType, PriorType>
    {
-      let training_inputs = training_inputs.as_matrix();
-      let training_outputs = training_outputs.as_vector();
+      let training_inputs = training_inputs.into_matrix();
+      let training_outputs = training_outputs.into_vector();
       let input_dimension = training_inputs.ncols();
       let prior = PriorType::default(input_dimension);
       let kernel = KernelType::default();

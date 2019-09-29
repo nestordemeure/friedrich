@@ -34,8 +34,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
                                                        -> Self
    {
       // converts inputs into nalgebra format
-      let training_inputs = training_inputs.as_matrix();
-      let training_outputs = training_outputs.as_vector();
+      let training_inputs = training_inputs.into_matrix();
+      let training_outputs = training_outputs.into_vector();
       // converts training data into extendable matrix
       let training_inputs = EMatrix::new(training_inputs);
       let training_outputs = EVector::new(training_outputs - prior.prior(&training_inputs.as_matrix()));
@@ -61,8 +61,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
                                                                outputs: OutVector)
    {
       // converts inputs into nalgebra format
-      let inputs = inputs.as_matrix();
-      let outputs = outputs.as_vector();
+      let inputs = inputs.into_matrix();
+      let outputs = outputs.into_vector();
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
@@ -108,8 +108,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
                                                                    fit_kernel: bool)
    {
       // converts inputs into nalgebra format
-      let inputs = inputs.as_matrix();
-      let outputs = outputs.as_vector();
+      let inputs = inputs.into_matrix();
+      let outputs = outputs.into_vector();
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
@@ -122,7 +122,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    // PREDICTION
 
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_mean<InMatrix:AsMatrix>(&self, inputs: InMatrix) -> DVector<f64>
+   pub fn predict_mean<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DVector<f64>
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
@@ -144,7 +144,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    ///
    /// NOTE:
    /// - this function is useful for bayesian optimization
-   pub fn predict_variance<InMatrix:AsMatrix>(&self, inputs: InMatrix) -> DVector<f64>
+   pub fn predict_variance<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DVector<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -176,13 +176,13 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    ///
    /// NOTE:
    /// - this function is useful for bayesian optimization
-   pub fn predict_standard_deviation<InMatrix:AsMatrix>(&self, inputs: InMatrix) -> DVector<f64>
+   pub fn predict_standard_deviation<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DVector<f64>
    {
       self.predict_variance(inputs).apply_into(|x| x.sqrt())
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance<InMatrix: AsMatrix>(&self, inputs: InMatrix) -> DMatrix<f64>
+   pub fn predict_covariance<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -205,10 +205,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at<InMatrix: AsMatrix + Clone>(&self, inputs: InMatrix) -> MultivariateNormal
+   pub fn sample_at<InMatrix: AsMatrix + Clone>(&self, inputs: &InMatrix) -> MultivariateNormal
    {
       // TODO we can factor some operations and improve performance by inlining and fusing the function needed
-      let mean = self.predict_mean(inputs.clone());
+      let mean = self.predict_mean(inputs);
       let cov_inputs = self.predict_covariance(inputs);
       MultivariateNormal::new(mean, cov_inputs)
    }

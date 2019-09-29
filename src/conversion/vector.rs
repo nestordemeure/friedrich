@@ -3,41 +3,46 @@ use nalgebra::DVector;
 /// converts some data into a valid output vector
 pub trait AsVector: Sized
 {
-   fn as_vector(self) -> DVector<f64>;
+   fn as_vector(&self) -> DVector<f64>;
+
+   fn into_vector(self) -> DVector<f64>
+   {
+      self.as_vector()
+   }
+
+   fn from_vector(v: DVector<f64>) -> Self;
 }
 
-// trivial implementation for DVector
+/// trivial implementation for DVector
+/// WARNING: this does a clone
 impl AsVector for DVector<f64>
 {
-   fn as_vector(self) -> DVector<f64>
+   fn as_vector(&self) -> DVector<f64>
+   {
+      self.clone()
+   }
+
+   fn into_vector(self) -> DVector<f64>
    {
       self
    }
-}
 
-// implementation for &DVector
-impl AsVector for &DVector<f64>
-{
-   fn as_vector(self) -> DVector<f64>
+   fn from_vector(v: DVector<f64>) -> Self
    {
-      self.clone()
+      v
    }
 }
 
 /// implementation for Vec
-impl AsVector for &Vec<f64>
+impl AsVector for Vec<f64>
 {
-   fn as_vector(self) -> DVector<f64>
+   fn as_vector(&self) -> DVector<f64>
    {
       DVector::from_column_slice(self)
    }
-}
 
-/// implementation for slice
-impl AsVector for &[f64]
-{
-   fn as_vector(self) -> DVector<f64>
+   fn from_vector(v: DVector<f64>) -> Self
    {
-      DVector::from_column_slice(self)
+      v.iter().cloned().collect()
    }
 }
