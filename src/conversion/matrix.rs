@@ -1,15 +1,15 @@
 use nalgebra::DMatrix;
 
 /// converts some data into a valid input matrix
-pub trait Input: Sized
+pub trait AsMatrix: Sized
 {
-   fn to_input(self) -> DMatrix<f64>;
+   fn as_matrix(self) -> DMatrix<f64>;
 }
 
 // trivial implementation
-impl Input for DMatrix<f64>
+impl AsMatrix for DMatrix<f64>
 {
-   fn to_input(self) -> DMatrix<f64>
+   fn as_matrix(self) -> DMatrix<f64>
    {
       self
    }

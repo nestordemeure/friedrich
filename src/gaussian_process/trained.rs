@@ -1,7 +1,7 @@
 //! Trained Gaussian process
 
 use nalgebra::{DVector, DMatrix, Cholesky, Dynamic};
-use crate::conversion::{Input, Output, InputRef, OutputRef};
+use crate::conversion::{AsMatrix, AsVector, InputRef, OutputRef};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
@@ -26,7 +26,7 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior>
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, PriorType>
 {
-   pub fn new<InMatrix: Input, OutVector: Output>(prior: PriorType,
+   pub fn new<InMatrix: AsMatrix, OutVector: AsVector>(prior: PriorType,
                                                   kernel: KernelType,
                                                   noise: f64,
                                                   training_inputs: InMatrix,
@@ -34,8 +34,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessTrained<KernelType, Pr
                                                   -> Self
    {
       // converts inputs into nalgebra format
-      let training_inputs = training_inputs.to_input();
-      let training_outputs = training_outputs.to_output();
+      let training_inputs = training_inputs.as_matrix();
+      let training_outputs = training_outputs.as_vector();
       // converts training data into extendable matrix
       let training_inputs = EMatrix::new(training_inputs);
       let training_outputs = EVector::new(training_outputs - prior.prior(&training_inputs.as_matrix()));
