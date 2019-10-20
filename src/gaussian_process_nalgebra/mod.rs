@@ -4,7 +4,6 @@
 
 use crate::parameters::{kernel::Kernel, prior::Prior};
 use crate::algebra::{EMatrix, EVector};
-use std::marker::PhantomData;
 use nalgebra::{Cholesky, Dynamic};
 
 mod builder;
@@ -13,12 +12,12 @@ mod fit;
 mod predict;
 
 // added with public visibility here for documentation purposed
-pub use builder::GaussianProcessBuilder;
+pub use builder::GaussianProcessBuilder_nalgebra;
 pub use crate::algebra::MultivariateNormal;
-pub use crate::conversion::{AsVector, AsMatrix};
 
 /// A Gaussian process that can be used to make predictions based on its training data
-pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
+#[warn(non_camel_case_types)] 
+pub struct GaussianProcess_nalgebra<KernelType: Kernel, PriorType: Prior>
 {
    /// value to which the process will regress in the absence of informations
    pub prior: PriorType,
@@ -29,8 +28,6 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior, OutVector: AsVe
    /// data used for fit
    training_inputs: EMatrix,
    training_outputs: EVector,
-   /// types of the inputs and outputs
-   output_type: PhantomData<OutVector>,
    /// cholesky decomposition of the covariance matrix trained on the current datapoints
    covmat_cholesky: Cholesky<f64, Dynamic>
 }
