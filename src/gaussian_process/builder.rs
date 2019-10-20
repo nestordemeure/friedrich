@@ -1,12 +1,11 @@
-//! Gaussian process builder
+//! Fine Grained selection of the gaussian process parameters.
 
 use crate::conversion::{AsMatrix, AsVector};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use super::trained::GaussianProcessTrained;
 
-/// gaussian process builder
-/// used to define the paramters of the gaussian process
+/// Fine Grained selection of the gaussian process parameters.
 pub struct GaussianProcessBuilder<KernelType: Kernel,
  PriorType: Prior,
  InMatrix: AsMatrix,
@@ -114,8 +113,7 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
       // TODO here we waste a training if we will fit anyway
       // TODO a new_fitted funtion might solve it
       // TODO or a raw construction that does not perform a fit
-      let mut gp =
-         GaussianProcessTrained::<KernelType, PriorType, OutVector>::new(self.prior,
+      let mut gp = GaussianProcessTrained::<KernelType, PriorType, OutVector>::new(self.prior,
                                                                                    self.kernel,
                                                                                    self.noise,
                                                                                    self.training_inputs,

@@ -1,4 +1,4 @@
-//! Trained Gaussian process
+//! Trained Gaussian process that can be used to make predictions
 
 use std::marker::PhantomData;
 use nalgebra::{DVector, DMatrix, Cholesky, Dynamic};
@@ -8,7 +8,10 @@ use crate::parameters::prior::Prior;
 use crate::algebra;
 use crate::algebra::{EMatrix, EVector, MultivariateNormal};
 
-/// gaussian process
+use super::GaussianProcessBuilder;
+use crate::parameters::*;
+
+/// Trained Gaussian process that can be used to make predictions
 pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
 {
    /// value to which the process will regress in the absence of informations
@@ -24,6 +27,21 @@ pub struct GaussianProcessTrained<KernelType: Kernel, PriorType: Prior, OutVecto
    output_type: PhantomData<OutVector>,
    /// cholesky decomposition of the covariance matrix trained on the current datapoints
    covmat_cholesky: Cholesky<f64, Dynamic>
+}
+
+impl<OutVector: AsVector> GaussianProcessTrained<kernel::Gaussian, prior::Constant, OutVector>
+{
+   /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
+   pub fn default<InMatrix: AsMatrix>(
+      training_inputs: InMatrix,
+      training_outputs: OutVector)
+      -> GaussianProcessTrained<kernel::Gaussian, prior::Constant, OutVector>
+   {
+      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
+      .fit_kernel()
+      .fit_prior()
+      .train()
+   }
 }
 
 impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>

@@ -1,4 +1,9 @@
-pub mod gaussian_process;
-pub mod parameters;
-pub mod conversion;
+//! Gaussian process
+//!
+//! TODO here illustrate use of a gaussian process
+
 mod algebra;
+mod conversion;
+mod parameters;
+pub mod gaussian_process;
+pub use parameters::*;

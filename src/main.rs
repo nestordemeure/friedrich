@@ -15,10 +15,11 @@ fn main()
 
    // builds a model
    //let mut gp = GaussianProcess::default(training_inputs, training_outputs);
-   let mut gp = GaussianProcess::new(training_inputs, training_outputs).set_noise(0.1f64)
+   /*let mut gp = GaussianProcess::new(training_inputs, training_outputs).set_noise(0.1f64)
                                                                        .fit_kernel()
                                                                        .fit_prior()
-                                                                       .train();
+                                                                       .train();*/
+   let mut gp = gaussian_process::GaussianProcessTrained::default(training_inputs, training_outputs);
 
    // make a prediction on new data
    let inputs = vec![1.0, 2.0, 3.0, 4.2, 7.];

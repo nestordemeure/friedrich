@@ -1,12 +1,17 @@
-pub mod builder;
-pub mod trained;
+//! Builds a gaussian process
+//!
+//! TODO here illustrate both ways of using a gaussian process
 
-use crate::conversion::{AsMatrix, AsVector};
+mod builder;
+mod trained;
+
 use crate::parameters::*;
-use builder::GaussianProcessBuilder;
-use trained::GaussianProcessTrained;
+pub use builder::GaussianProcessBuilder;
+pub use trained::*;
+pub use crate::algebra::MultivariateNormal;
+pub use crate::conversion::{AsVector, AsMatrix};
 
-/// struct used to define a gaussian process
+/// Quick constructors for gaussian processes
 pub struct GaussianProcess {}
 
 impl GaussianProcess
@@ -17,9 +22,11 @@ impl GaussianProcess
       training_outputs: OutVector)
       -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant, InMatrix, OutVector>
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs,
+                                                                                            training_outputs)
    }
 
+   /*
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
    pub fn default<InMatrix: AsMatrix, OutVector: AsVector>(
       training_inputs: InMatrix,
@@ -30,5 +37,5 @@ impl GaussianProcess
       .fit_kernel()
       .fit_prior()
       .train()
-   }
+   }*/
 }
