@@ -1,41 +1,37 @@
-//! Builds a gaussian process
+//! Gaussian process
 //!
 //! TODO here illustrate both ways of using a gaussian process
 
+use crate::conversion::AsVector;
+use crate::parameters::{kernel::Kernel, prior::Prior};
+use crate::algebra::{EMatrix, EVector};
+use std::marker::PhantomData;
+use nalgebra::{Cholesky, Dynamic};
+
 mod builder;
-mod trained;
+mod constructors;
+mod fit;
+mod predict;
 
-use crate::parameters::*;
+// added with public visibility here for documentation purposed
 pub use builder::GaussianProcessBuilder;
-pub use trained::*;
 pub use crate::algebra::MultivariateNormal;
-pub use crate::conversion::{AsVector, AsMatrix};
+pub use crate::conversion::*;
 
-/// Quick constructors for gaussian processes
-pub struct GaussianProcess {}
-
-impl GaussianProcess
+/// A Gaussian process that can be used to make predictions based on its training data
+pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
 {
-   /// returns a builder to design a gaussian process adapted to the problem
-   pub fn new<InMatrix: AsMatrix, OutVector: AsVector>(
-      training_inputs: InMatrix,
-      training_outputs: OutVector)
-      -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant, InMatrix, OutVector>
-   {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs,
-                                                                                            training_outputs)
-   }
-
-   /*
-   /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
-   pub fn default<InMatrix: AsMatrix, OutVector: AsVector>(
-      training_inputs: InMatrix,
-      training_outputs: OutVector)
-      -> GaussianProcessTrained<kernel::Gaussian, prior::Constant, OutVector>
-   {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
-      .fit_kernel()
-      .fit_prior()
-      .train()
-   }*/
+   /// value to which the process will regress in the absence of informations
+   pub prior: PriorType,
+   /// kernel used to fit the process on the data
+   pub kernel: KernelType,
+   /// amplitude of the noise of the data
+   pub noise: f64,
+   /// data used for fit
+   training_inputs: EMatrix,
+   training_outputs: EVector,
+   /// types of the inputs and outputs
+   output_type: PhantomData<OutVector>,
+   /// cholesky decomposition of the covariance matrix trained on the current datapoints
+   covmat_cholesky: Cholesky<f64, Dynamic>
 }
