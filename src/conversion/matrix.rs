@@ -1,4 +1,5 @@
 use nalgebra::{DMatrix, RowDVector};
+use super::AsVector;
 
 /// trait that handles convertion from arbitrary data to valid matrix
 pub trait AsMatrix: Sized

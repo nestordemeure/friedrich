@@ -22,9 +22,9 @@ fn main()
 
    // make a prediction on new data
    let inputs = vec![1.0, 2.0, 3.0, 4.2, 7.];
-   let outputs = gp.predict_mean(&inputs);
+   let outputs = gp.predict_several(&inputs);
    println!("prediction: {:?}", outputs);
-   let var = gp.predict_variance(&inputs);
+   let var = gp.predict_variance_several(&inputs);
    println!("standard deviation: {:?}", var);
 
    // updates the model
@@ -32,16 +32,16 @@ fn main()
    let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
    let fit_prior = true;
    let fit_kernel = true;
-   gp.add_several_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
+   gp.add_samples_fit_several(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
 
    // renew prediction
-   let outputs = gp.predict_mean(&inputs);
+   let outputs = gp.predict_several(&inputs);
    println!("prediction 2: {:?}", outputs);
-   let var = gp.predict_variance(&inputs);
+   let var = gp.predict_variance_several(&inputs);
    println!("standard deviation 2: {:?}", var);
 
    // sample the gaussian process on new data
-   let sampler = gp.sample_at(&inputs);
+   let sampler = gp.sample_at_several(&inputs);
    let mut rng = rand::thread_rng();
    for i in 1..=5
    {

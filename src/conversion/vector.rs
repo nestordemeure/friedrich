@@ -14,9 +14,9 @@ pub trait AsVector: Sized
 }
 
 /// trivial implementation for DVector
-/// WARNING: this does a clone
 impl AsVector for DVector<f64>
 {
+   /// WARNING: this does a clone
    fn as_vector(&self) -> DVector<f64>
    {
       self.clone()
@@ -44,5 +44,20 @@ impl AsVector for Vec<f64>
    fn from_vector(v: DVector<f64>) -> Self
    {
       v.iter().cloned().collect()
+   }
+}
+
+/// implementation for f64
+/// useful to model single sample
+impl AsVector for f64
+{
+   fn as_vector(&self) -> DVector<f64>
+   {
+      DVector::from_element(1, *self)
+   }
+
+   fn from_vector(v: DVector<f64>) -> Self
+   {
+      v[0]
    }
 }

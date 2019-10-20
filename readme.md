@@ -13,6 +13,6 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 ## TODO
 
 - Clean-up the documentation.
-- Make the implementation usable wit other number types such as `f32` ans `complex<f64>`.
 - Add better algorithms to fit kernel parameters.
-- Add function to make prediction on single sample
+- Decide on a single input format to avoid template parameters ?
+- Make the implementation usable wit other number types such as `f32` and `complex<f64>`.

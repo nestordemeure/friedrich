@@ -61,7 +61,7 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
    /// adds new samples to the model
    /// update the model (which is faster than a training from scratch)
    /// does not refit the parameters
-   pub fn add_several_samples<InMatrix: AsMatrix, OutVector2: AsVector>(&mut self,
+   pub fn add_samples_several<InMatrix: AsMatrix, OutVector2: AsVector>(&mut self,
                                                                         inputs: &InMatrix,
                                                                         outputs: &OutVector2)
    {
@@ -89,7 +89,7 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
       let input = input.as_vector();
       let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
       let output = DVector::from_element(1, output);
-      self.add_several_samples(&input, &output)
+      self.add_samples_several(&input, &output)
    }
 
    /// fits the parameters if requested and retrain the model from scratch if needed
@@ -123,7 +123,7 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
 
    /// adds new samples to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
-   pub fn add_several_samples_fit<InMatrix: AsMatrix, OutVector2: AsVector>(&mut self,
+   pub fn add_samples_fit_several<InMatrix: AsMatrix, OutVector2: AsVector>(&mut self,
                                                                             inputs: &InMatrix,
                                                                             outputs: &OutVector2,
                                                                             fit_prior: bool,
@@ -163,14 +163,23 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
       let input = input.as_vector();
       let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
       let output = DVector::from_element(1, output);
-      self.add_several_samples_fit(&input, &output, fit_prior, fit_kernel)
+      self.add_samples_fit_several(&input, &output, fit_prior, fit_kernel)
    }
 
    //----------------------------------------------------------------------------------------------
    // PREDICTION
 
+   /// predicts the mean of the gaussian process for an input
+   pub fn predict<InVector: AsVector>(&self, input: &InVector) -> f64
+   {
+      let input = input.as_vector();
+      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
+      let result = self.predict_several(&input);
+      result.as_vector()[0]
+   }
+
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_mean<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> OutVector
+   pub fn predict_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> OutVector
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
@@ -191,8 +200,17 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
       OutVector::from_vector(prior)
    }
 
+   /// predicts the variance of the gaussian process for an input
+   pub fn predict_variance<InVector: AsVector>(&self, input: &InVector) -> f64
+   {
+      let input = input.as_vector();
+      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
+      let result = self.predict_variance_several(&input);
+      result.as_vector()[0]
+   }
+
    /// predicts the variance of the gaussian process at each row of the input
-   pub fn predict_variance<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> OutVector
+   pub fn predict_variance_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> OutVector
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -223,7 +241,7 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DMatrix<f64>
+   pub fn predict_covariance_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -247,7 +265,7 @@ impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> MultivariateNormal<OutVector>
+   pub fn sample_at_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> MultivariateNormal<OutVector>
    {
       // converts inputs into nalgebra format
       let inputs = inputs.as_matrix();
