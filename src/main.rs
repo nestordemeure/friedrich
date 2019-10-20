@@ -14,7 +14,11 @@ fn main()
    let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 
    // builds a model
-   let mut gp = GaussianProcess::default(training_inputs, training_outputs);
+   //let mut gp = GaussianProcess::default(training_inputs, training_outputs);
+   let mut gp = GaussianProcess::new(training_inputs, training_outputs).set_noise(0.1f64)
+                                                                       .fit_kernel()
+                                                                       .fit_prior()
+                                                                       .train();
 
    // make a prediction on new data
    let inputs = vec![1.0, 2.0, 3.0, 4.2, 7.];
@@ -28,7 +32,7 @@ fn main()
    let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
    let fit_prior = true;
    let fit_kernel = true;
-   gp.add_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
+   gp.add_several_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
 
    // renew prediction
    let outputs = gp.predict_mean(&inputs);

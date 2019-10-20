@@ -108,14 +108,14 @@ impl<KernelType: Kernel, PriorType: Prior, InMatrix: AsMatrix, OutVector: AsVect
    // TRAIN
 
    /// trains the gaussian process
-   pub fn train(self) -> GaussianProcessTrained<KernelType, PriorType, InMatrix, OutVector>
+   pub fn train(self) -> GaussianProcessTrained<KernelType, PriorType, OutVector>
    {
       // builds a gp
       // TODO here we waste a training if we will fit anyway
       // TODO a new_fitted funtion might solve it
       // TODO or a raw construction that does not perform a fit
       let mut gp =
-         GaussianProcessTrained::<KernelType, PriorType, InMatrix, OutVector>::new(self.prior,
+         GaussianProcessTrained::<KernelType, PriorType, OutVector>::new(self.prior,
                                                                                    self.kernel,
                                                                                    self.noise,
                                                                                    self.training_inputs,

@@ -24,7 +24,7 @@ impl GaussianProcess
    pub fn default<InMatrix: AsMatrix, OutVector: AsVector>(
       training_inputs: InMatrix,
       training_outputs: OutVector)
-      -> GaussianProcessTrained<kernel::Gaussian, prior::Constant, InMatrix, OutVector>
+      -> GaussianProcessTrained<kernel::Gaussian, prior::Constant, OutVector>
    {
       GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
       .fit_kernel()
