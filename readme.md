@@ -14,10 +14,3 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 - Clean-up the documentation.
 - Add better algorithms to fit kernel parameters.
-- Decide on a single input format to avoid template parameters ?
-- Make the implementation usable wit other number types such as `f32` and `complex<f64>`.
-- fuse gaussian process and gaussian process trained
-
-- have two implem : gaussian_process_nalgebra and gaussian_process_base
-(depedign on wether you want to use base rust types or nalgebra types)
-(we can add gaussian_process_ndarray behind a feature flag)
