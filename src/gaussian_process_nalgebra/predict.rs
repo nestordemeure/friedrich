@@ -1,19 +1,18 @@
 //! Methods to make predictions with a gaussian process.
 
-use nalgebra::{DVector, DMatrix};
+use nalgebra::{DVector, DMatrix, RowDVector};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
 use crate::algebra::MultivariateNormal;
 use super::GaussianProcess_nalgebra;
 
-impl<KernelType: Kernel, PriorType: Prior>
-   GaussianProcess_nalgebra<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, PriorType>
 {
    /// predicts the mean of the gaussian process for an input
-   pub fn predict(&self, input: &DVector<f64>) -> f64
+   pub fn predict(&self, input: &RowDVector<f64>) -> f64
    {
-      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
+      let input = DMatrix::from_row_slice(1, input.ncols(), input.as_slice());
       let result = self.predict_several(&input);
       result[0]
    }
@@ -38,9 +37,9 @@ impl<KernelType: Kernel, PriorType: Prior>
    }
 
    /// predicts the variance of the gaussian process for an input
-   pub fn predict_variance(&self, input: &DVector<f64>) -> f64
+   pub fn predict_variance(&self, input: &RowDVector<f64>) -> f64
    {
-      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
+      let input = DMatrix::from_row_slice(1, input.ncols(), input.as_slice());
       let result = self.predict_variance_several(&input);
       result[0]
    }

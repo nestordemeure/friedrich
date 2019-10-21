@@ -1,13 +1,12 @@
 //! Methods to fit a gaussian process on new data.
 
-use nalgebra::{DVector, DMatrix};
+use nalgebra::{DVector, DMatrix, RowDVector};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
 use super::GaussianProcess_nalgebra;
 
-impl<KernelType: Kernel, PriorType: Prior>
-   GaussianProcess_nalgebra<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, PriorType>
 {
    //----------------------------------------------------------------------------------------------
    // TRAINING
@@ -15,9 +14,7 @@ impl<KernelType: Kernel, PriorType: Prior>
    /// adds new samples to the model
    /// update the model (which is faster than a training from scratch)
    /// does not refit the parameters
-   pub fn add_samples_several(&mut self,
-                                                                        inputs: &DMatrix<f64>,
-                                                                        outputs: &DVector<f64>)
+   pub fn add_samples_several(&mut self, inputs: &DMatrix<f64>, outputs: &DVector<f64>)
    {
       assert_eq!(inputs.nrows(), outputs.nrows());
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
@@ -35,9 +32,9 @@ impl<KernelType: Kernel, PriorType: Prior>
    /// adds new sample to the model
    /// update the model (which is faster than a training from scratch)
    /// does not refit the parameters
-   pub fn add_sample(&mut self, input: &DVector<f64>, output: f64)
+   pub fn add_sample(&mut self, input: &RowDVector<f64>, output: f64)
    {
-      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
+      let input = DMatrix::from_row_slice(1, input.ncols(), input.as_slice());
       let output = DVector::from_element(1, output);
       self.add_samples_several(&input, &output)
    }
@@ -74,10 +71,10 @@ impl<KernelType: Kernel, PriorType: Prior>
    /// adds new samples to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
    pub fn add_samples_fit_several(&mut self,
-                                                                            inputs: &DMatrix<f64>,
-                                                                            outputs: &DVector<f64>,
-                                                                            fit_prior: bool,
-                                                                            fit_kernel: bool)
+                                  inputs: &DMatrix<f64>,
+                                  outputs: &DVector<f64>,
+                                  fit_prior: bool,
+                                  fit_kernel: bool)
    {
       assert_eq!(inputs.nrows(), outputs.nrows());
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
@@ -101,13 +98,9 @@ impl<KernelType: Kernel, PriorType: Prior>
 
    /// adds new sample to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
-   pub fn add_sample_fit(&mut self,
-                                             input: &DVector<f64>,
-                                             output: f64,
-                                             fit_prior: bool,
-                                             fit_kernel: bool)
+   pub fn add_sample_fit(&mut self, input: &RowDVector<f64>, output: f64, fit_prior: bool, fit_kernel: bool)
    {
-      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
+      let input = DMatrix::from_row_slice(1, input.ncols(), input.as_slice());
       let output = DVector::from_element(1, output);
       self.add_samples_fit_several(&input, &output, fit_prior, fit_kernel)
    }
