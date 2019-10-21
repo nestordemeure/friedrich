@@ -4,13 +4,10 @@ use nalgebra::{DVector, DMatrix};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
-use super::GaussianProcess_nalgebra;
+use super::NAlgebraGaussianProcess;
 
-impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior> NAlgebraGaussianProcess<KernelType, PriorType>
 {
-   //----------------------------------------------------------------------------------------------
-   // TRAINING
-
    /// adds new samples to the model
    /// update the model (which is faster than a training from scratch)
    /// does not refit the parameters
@@ -61,10 +58,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, 
    /// adds new samples to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
    pub fn add_samples_fit(&mut self,
-                                  inputs: &DMatrix<f64>,
-                                  outputs: &DVector<f64>,
-                                  fit_prior: bool,
-                                  fit_kernel: bool)
+                          inputs: &DMatrix<f64>,
+                          outputs: &DVector<f64>,
+                          fit_prior: bool,
+                          fit_kernel: bool)
    {
       assert_eq!(inputs.nrows(), outputs.nrows());
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());

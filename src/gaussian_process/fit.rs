@@ -19,7 +19,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       let nb_rows = inputs.len();
       assert_ne!(nb_rows, 0);
       let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r,c| inputs[r][c] );
+      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
       let outputs = DVector::from_column_slice(outputs);
       // add samples
       self.gp.add_samples(&inputs, &outputs)
@@ -45,15 +45,17 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// adds new samples to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
-   pub fn add_samples_fit_several(&mut self, inputs: &[Vec<f64>], outputs: &[f64],
-                                                                            fit_prior: bool,
-                                                                            fit_kernel: bool)
+   pub fn add_samples_fit_several(&mut self,
+                                  inputs: &[Vec<f64>],
+                                  outputs: &[f64],
+                                  fit_prior: bool,
+                                  fit_kernel: bool)
    {
       // converts input to correct format
       let nb_rows = inputs.len();
       assert_ne!(nb_rows, 0);
       let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r,c| inputs[r][c] );
+      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
       let outputs = DVector::from_column_slice(outputs);
       // add samples
       self.gp.add_samples_fit(&inputs, &outputs, fit_prior, fit_kernel);
@@ -61,11 +63,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// adds new sample to the model and fit the parameters
    /// faster than doing add_samples().fit_parameters()
-   pub fn add_sample_fit(&mut self,
-                                             input: &[f64],
-                                             output: f64,
-                                             fit_prior: bool,
-                                             fit_kernel: bool)
+   pub fn add_sample_fit(&mut self, input: &[f64], output: f64, fit_prior: bool, fit_kernel: bool)
    {
       // converts input to correct format
       let input = DMatrix::from_row_slice(1, input.len(), input);

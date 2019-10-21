@@ -3,7 +3,7 @@
 //! TODO here illustrate both ways of using a gaussian process
 
 use crate::parameters::{kernel::Kernel, prior::Prior};
-use crate::gaussian_process_nalgebra::GaussianProcess_nalgebra;
+use crate::gaussian_process_nalgebra::NAlgebraGaussianProcess;
 
 mod builder;
 mod constructors;
@@ -18,5 +18,5 @@ pub use crate::algebra::MultivariateNormal;
 pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
 {
    /// gaussian process storing the information
-   gp: GaussianProcess_nalgebra<KernelType, PriorType>
+   gp: NAlgebraGaussianProcess<KernelType, PriorType>
 }

@@ -4,11 +4,10 @@ use nalgebra::{DVector, DMatrix};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use super::GaussianProcess;
-use crate::gaussian_process_nalgebra::GaussianProcess_nalgebra;
+use crate::gaussian_process_nalgebra::NAlgebraGaussianProcess;
 
 /// Fine Grained selection of the gaussian process parameters.
-pub struct GaussianProcessBuilder<KernelType: Kernel,
- PriorType: Prior>
+pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
 {
    /// value to which the process will regress in the absence of informations
    prior: PriorType,
@@ -24,8 +23,7 @@ pub struct GaussianProcessBuilder<KernelType: Kernel,
    training_outputs: DVector<f64>
 }
 
-impl<KernelType: Kernel, PriorType: Prior>
-   GaussianProcessBuilder<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, PriorType>
 {
    /// builds a new gaussian process with default parameters
    /// the defaults are :
@@ -40,7 +38,7 @@ impl<KernelType: Kernel, PriorType: Prior>
       let nb_rows = training_inputs.len();
       assert_ne!(nb_rows, 0);
       let nb_cols = training_inputs[0].len();
-      let training_inputs = DMatrix::from_fn(nb_rows, nb_cols, |r,c| training_inputs[r][c] );
+      let training_inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| training_inputs[r][c]);
       let training_outputs = DVector::from_column_slice(training_outputs);
       // makes builder
       let prior = PriorType::default(nb_cols);
@@ -62,10 +60,9 @@ impl<KernelType: Kernel, PriorType: Prior>
 
    /// sets a new prior
    /// the prior is the value returned in the absence of information
-   pub fn set_prior<PriorType2: Prior>(
-      self,
-      prior: PriorType2)
-      -> GaussianProcessBuilder<KernelType, PriorType2>
+   pub fn set_prior<PriorType2: Prior>(self,
+                                       prior: PriorType2)
+                                       -> GaussianProcessBuilder<KernelType, PriorType2>
    {
       GaussianProcessBuilder { prior,
                                kernel: self.kernel,
@@ -83,10 +80,9 @@ impl<KernelType: Kernel, PriorType: Prior>
    }
 
    /// changes the kernel of the gaussian process
-   pub fn set_kernel<KernelType2: Kernel>(
-      self,
-      kernel: KernelType2)
-      -> GaussianProcessBuilder<KernelType2, PriorType>
+   pub fn set_kernel<KernelType2: Kernel>(self,
+                                          kernel: KernelType2)
+                                          -> GaussianProcessBuilder<KernelType2, PriorType>
    {
       GaussianProcessBuilder { prior: self.prior,
                                kernel,
@@ -119,13 +115,13 @@ impl<KernelType: Kernel, PriorType: Prior>
       // TODO here we waste a training if we will fit anyway
       // TODO a new_fitted funtion might solve it
       // TODO or a raw construction that does not perform a fit
-      let mut gp = GaussianProcess_nalgebra::<KernelType, PriorType>::new(self.prior,
-                                                                                   self.kernel,
-                                                                                   self.noise,
-                                                                                   self.training_inputs,
-                                                                                   self.training_outputs);
+      let mut gp = NAlgebraGaussianProcess::<KernelType, PriorType>::new(self.prior,
+                                                                         self.kernel,
+                                                                         self.noise,
+                                                                         self.training_inputs,
+                                                                         self.training_outputs);
       // fit the model, if reqiested, on the training data
       gp.fit_parameters(self.should_fit_prior, self.should_fit_kernel);
-      GaussianProcess{gp}
+      GaussianProcess { gp }
    }
 }

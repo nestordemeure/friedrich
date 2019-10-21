@@ -5,9 +5,9 @@ use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
 use crate::algebra::MultivariateNormal;
-use super::GaussianProcess_nalgebra;
+use super::NAlgebraGaussianProcess;
 
-impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, PriorType>
+impl<KernelType: Kernel, PriorType: Prior> NAlgebraGaussianProcess<KernelType, PriorType>
 {
    /// predicts the mean of the gaussian process at each row of the input
    pub fn predict(&self, inputs: &DMatrix<f64>) -> DVector<f64>
