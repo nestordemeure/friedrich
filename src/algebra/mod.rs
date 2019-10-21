@@ -80,3 +80,15 @@ pub fn make_cholesky_covariance_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Ker
 
    return covmatix.cholesky().expect("Cholesky decomposition failed!");
 }
+
+//-----------------------------------------------------------------------------
+// CONVERSION
+
+/// takes a references to the row of a matrix and builds the matrix
+pub fn make_matrix_from_row_slices(rows: &[Vec<f64>]) -> DMatrix<f64>
+{
+   let nb_rows = rows.len();
+   assert_ne!(nb_rows, 0);
+   let nb_cols = rows[0].len();
+   DMatrix::from_fn(nb_rows, nb_cols, |r, c| rows[r][c])
+}

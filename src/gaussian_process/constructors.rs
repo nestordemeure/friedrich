@@ -5,7 +5,8 @@ use super::builder::GaussianProcessBuilder;
 use crate::parameters::{kernel::Kernel, prior::Prior};
 use crate::parameters::*;
 use crate::gaussian_process_nalgebra::NAlgebraGaussianProcess;
-use nalgebra::{DVector, DMatrix};
+use nalgebra::DVector;
+use crate::algebra;
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
@@ -16,10 +17,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
               training_outputs: &[f64])
               -> Self
    {
-      let nb_rows = training_inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = training_inputs[0].len();
-      let training_inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| training_inputs[r][c]);
+      let training_inputs = algebra::make_matrix_from_row_slices(training_inputs);
       let training_outputs = DVector::from_column_slice(training_outputs);
       let gp = NAlgebraGaussianProcess::new(prior, kernel, noise, training_inputs, training_outputs);
       GaussianProcess { gp }

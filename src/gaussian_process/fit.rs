@@ -4,6 +4,7 @@ use nalgebra::{DVector, DMatrix};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use super::GaussianProcess;
+use crate::algebra;
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
@@ -16,10 +17,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    pub fn add_samples_several(&mut self, inputs: &[Vec<f64>], outputs: &[f64])
    {
       // converts input to correct format
-      let nb_rows = inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
+      let inputs = algebra::make_matrix_from_row_slices(inputs);
       let outputs = DVector::from_column_slice(outputs);
       // add samples
       self.gp.add_samples(&inputs, &outputs)
@@ -52,10 +50,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                                   fit_kernel: bool)
    {
       // converts input to correct format
-      let nb_rows = inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
+      let inputs = algebra::make_matrix_from_row_slices(inputs);
       let outputs = DVector::from_column_slice(outputs);
       // add samples
       self.gp.add_samples_fit(&inputs, &outputs, fit_prior, fit_kernel);

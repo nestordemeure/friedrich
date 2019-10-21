@@ -3,7 +3,7 @@
 use nalgebra::DMatrix;
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
-use crate::algebra::MultivariateNormal;
+use crate::algebra;
 use super::GaussianProcess;
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
@@ -19,12 +19,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// predicts the mean of the gaussian process at each row of the input
    pub fn predict_several(&self, inputs: &[Vec<f64>]) -> Vec<f64>
    {
-      // converts input to correct format
-      let nb_rows = inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
-      // predicts
+      let inputs = algebra::make_matrix_from_row_slices(inputs);
       let result = self.gp.predict(&inputs);
       result.iter().cloned().collect()
    }
@@ -40,12 +35,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// predicts the variance of the gaussian process at each row of the input
    pub fn predict_variance_several(&self, inputs: &[Vec<f64>]) -> Vec<f64>
    {
-      // converts input to correct format
-      let nb_rows = inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
-      // predicts
+      let inputs = algebra::make_matrix_from_row_slices(inputs);
       let result = self.gp.predict_variance(&inputs);
       result.iter().cloned().collect()
    }
@@ -53,24 +43,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// predicts the covariance of the gaussian process at each row of the input
    pub fn predict_covariance_several(&self, inputs: &[Vec<f64>]) -> DMatrix<f64>
    {
-      // converts input to correct format
-      let nb_rows = inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
-      // predicts
+      let inputs = algebra::make_matrix_from_row_slices(inputs);
       self.gp.predict_covariance(&inputs)
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at_several(&self, inputs: &[Vec<f64>]) -> MultivariateNormal
+   pub fn sample_at_several(&self, inputs: &[Vec<f64>]) -> algebra::MultivariateNormal
    {
-      // converts input to correct format
-      let nb_rows = inputs.len();
-      assert_ne!(nb_rows, 0);
-      let nb_cols = inputs[0].len();
-      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
-      // predicts
+      let inputs = algebra::make_matrix_from_row_slices(inputs);
       self.gp.sample_at(&inputs)
    }
 }

@@ -14,3 +14,4 @@ The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_r
 
 - Clean-up the documentation.
 - Add better algorithms to fit kernel parameters.
+- Add ndarray support behind a feature flag
