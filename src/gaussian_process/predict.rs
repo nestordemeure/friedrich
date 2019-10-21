@@ -1,133 +1,76 @@
 //! Methods to make predictions with a gaussian process.
 
-use nalgebra::{DVector, DMatrix};
-use crate::conversion::{AsMatrix, AsVector};
+use nalgebra::DMatrix;
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
-use crate::algebra;
 use crate::algebra::MultivariateNormal;
 use super::GaussianProcess;
 
-impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
-   GaussianProcess<KernelType, PriorType, OutVector>
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
    /// predicts the mean of the gaussian process for an input
-   pub fn predict<InVector: AsVector>(&self, input: &InVector) -> f64
+   pub fn predict(&self, input: &[f64]) -> f64
    {
-      let input = input.as_vector();
-      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
-      let result = self.predict_several(&input);
-      result.as_vector()[0]
+      let input = DMatrix::from_row_slice(1, input.len(), input);
+      let result = self.gp.predict(&input);
+      result[0]
    }
 
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> OutVector
+   pub fn predict_several(&self, inputs: &[Vec<f64>]) -> Vec<f64>
    {
-      // converts inputs into nalgebra format
-      let inputs = inputs.as_matrix();
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-
-      // computes weights to give each training sample
-      let mut weights =
-         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
-      self.covmat_cholesky.solve_mut(&mut weights);
-
-      // computes prior for the given inputs
-      let mut prior = self.prior.prior(&inputs);
-
-      // weights.transpose() * &self.training_outputs + prior
-      prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
-
-      // converts to expected output type
-      OutVector::from_vector(prior)
+      // converts input to correct format
+      let nb_rows = inputs.len();
+      assert_ne!(nb_rows, 0);
+      let nb_cols = inputs[0].len();
+      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
+      // predicts
+      let result = self.gp.predict(&inputs);
+      result.iter().cloned().collect()
    }
 
    /// predicts the variance of the gaussian process for an input
-   pub fn predict_variance<InVector: AsVector>(&self, input: &InVector) -> f64
+   pub fn predict_variance(&self, input: &[f64]) -> f64
    {
-      let input = input.as_vector();
-      let input = DMatrix::from_row_slice(1, input.nrows(), input.as_slice());
-      let result = self.predict_variance_several(&input);
-      result.as_vector()[0]
+      let input = DMatrix::from_row_slice(1, input.len(), input);
+      let result = self.gp.predict_variance(&input);
+      result[0]
    }
 
    /// predicts the variance of the gaussian process at each row of the input
-   pub fn predict_variance_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> OutVector
+   pub fn predict_variance_several(&self, inputs: &[Vec<f64>]) -> Vec<f64>
    {
-      // There is a better formula available if one can solve system directly using a triangular matrix
-      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
-      // cov_inputs_inputs - (kl.transpose() * kl).diagonal()
-      // note that here the diagonal is just the sum of the squares of the values in the columns of kl
-
-      // converts inputs into nalgebra format
-      let inputs = inputs.as_matrix();
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-
-      // compute the weights
-      let cov_train_inputs =
-         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
-
-      // (cov_inputs_inputs - cov_train_inputs.transpose() * weights).diagonal()
-      let mut variances = DVector::<f64>::zeros(inputs.nrows());
-      for i in 0..inputs.nrows()
-      {
-         // Note that this might be done with a zipped iterator
-         let input = inputs.row(i);
-         let base_cov = self.kernel.kernel(&input, &input);
-         let predicted_cov = cov_train_inputs.column(i).dot(&weights.column(i));
-         variances[i] = base_cov - predicted_cov;
-      }
-
-      OutVector::from_vector(variances)
+      // converts input to correct format
+      let nb_rows = inputs.len();
+      assert_ne!(nb_rows, 0);
+      let nb_cols = inputs[0].len();
+      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
+      // predicts
+      let result = self.gp.predict_variance(&inputs);
+      result.iter().cloned().collect()
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> DMatrix<f64>
+   pub fn predict_covariance_several(&self, inputs: &[Vec<f64>]) -> DMatrix<f64>
    {
-      // There is a better formula available if one can solve system directly using a triangular matrix
-      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
-      // cov_inputs_inputs - (kl.transpose() * kl)
-
-      // converts inputs into nalgebra format
-      let inputs = inputs.as_matrix();
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-
-      // compute the weights
-      let cov_train_inputs =
-         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
-
-      // computes the intra points covariance
-      let mut cov_inputs_inputs = algebra::make_covariance_matrix(&inputs, &inputs, &self.kernel);
-
-      // cov_inputs_inputs - cov_train_inputs.transpose() * weights
-      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
-      cov_inputs_inputs
+      // converts input to correct format
+      let nb_rows = inputs.len();
+      assert_ne!(nb_rows, 0);
+      let nb_cols = inputs[0].len();
+      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
+      // predicts
+      self.gp.predict_covariance(&inputs)
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at_several<InMatrix: AsMatrix>(&self, inputs: &InMatrix) -> MultivariateNormal<OutVector>
+   pub fn sample_at_several(&self, inputs: &[Vec<f64>]) -> MultivariateNormal
    {
-      // converts inputs into nalgebra format
-      let inputs = inputs.as_matrix();
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-
-      // compute the weights
-      let cov_train_inputs =
-         algebra::make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
-
-      // computes covariance
-      let mut cov_inputs_inputs = algebra::make_covariance_matrix(&inputs, &inputs, &self.kernel);
-      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
-      let cov = cov_inputs_inputs;
-
-      // computes the mean
-      let mut prior = self.prior.prior(&inputs);
-      prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
-      let mean = prior;
-
-      MultivariateNormal::new(mean, cov)
+      // converts input to correct format
+      let nb_rows = inputs.len();
+      assert_ne!(nb_rows, 0);
+      let nb_cols = inputs[0].len();
+      let inputs = DMatrix::from_fn(nb_rows, nb_cols, |r, c| inputs[r][c]);
+      // predicts
+      self.gp.sample_at(&inputs)
    }
 }

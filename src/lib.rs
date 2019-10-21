@@ -6,6 +6,5 @@ mod algebra;
 mod conversion;
 mod parameters;
 pub mod gaussian_process;
+pub mod gaussian_process_nalgebra;
 pub use parameters::*;
-
-mod gaussian_process_nalgebra;

@@ -3,9 +3,7 @@
 //! TODO here illustrate both ways of using a gaussian process
 
 use crate::parameters::{kernel::Kernel, prior::Prior};
-use crate::algebra::{EMatrix, EVector};
-use std::marker::PhantomData;
-use nalgebra::{Cholesky, Dynamic};
+use crate::gaussian_process_nalgebra::GaussianProcess_nalgebra;
 
 mod builder;
 mod constructors;
@@ -18,19 +16,8 @@ pub use crate::algebra::MultivariateNormal;
 pub use crate::conversion::{AsVector, AsMatrix};
 
 /// A Gaussian process that can be used to make predictions based on its training data
-pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
+pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
 {
-   /// value to which the process will regress in the absence of informations
-   pub prior: PriorType,
-   /// kernel used to fit the process on the data
-   pub kernel: KernelType,
-   /// amplitude of the noise of the data
-   pub noise: f64,
-   /// data used for fit
-   training_inputs: EMatrix,
-   training_outputs: EVector,
-   /// types of the inputs and outputs
-   output_type: PhantomData<OutVector>,
-   /// cholesky decomposition of the covariance matrix trained on the current datapoints
-   covmat_cholesky: Cholesky<f64, Dynamic>
+   /// gaussian process storing the information
+   gp: GaussianProcess_nalgebra<KernelType, PriorType>
 }

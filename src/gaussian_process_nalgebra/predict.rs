@@ -1,6 +1,6 @@
 //! Methods to make predictions with a gaussian process.
 
-use nalgebra::{DVector, DMatrix, RowDVector};
+use nalgebra::{DVector, DMatrix};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
@@ -9,16 +9,8 @@ use super::GaussianProcess_nalgebra;
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, PriorType>
 {
-   /// predicts the mean of the gaussian process for an input
-   pub fn predict(&self, input: &RowDVector<f64>) -> f64
-   {
-      let input = DMatrix::from_row_slice(1, input.ncols(), input.as_slice());
-      let result = self.predict_several(&input);
-      result[0]
-   }
-
    /// predicts the mean of the gaussian process at each row of the input
-   pub fn predict_several(&self, inputs: &DMatrix<f64>) -> DVector<f64>
+   pub fn predict(&self, inputs: &DMatrix<f64>) -> DVector<f64>
    {
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
@@ -36,16 +28,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, 
       prior
    }
 
-   /// predicts the variance of the gaussian process for an input
-   pub fn predict_variance(&self, input: &RowDVector<f64>) -> f64
-   {
-      let input = DMatrix::from_row_slice(1, input.ncols(), input.as_slice());
-      let result = self.predict_variance_several(&input);
-      result[0]
-   }
-
    /// predicts the variance of the gaussian process at each row of the input
-   pub fn predict_variance_several(&self, inputs: &DMatrix<f64>) -> DVector<f64>
+   pub fn predict_variance(&self, inputs: &DMatrix<f64>) -> DVector<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -74,7 +58,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, 
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance_several(&self, inputs: &DMatrix<f64>) -> DMatrix<f64>
+   pub fn predict_covariance(&self, inputs: &DMatrix<f64>) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
       // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
@@ -96,7 +80,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess_nalgebra<KernelType, 
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at_several(&self, inputs: &DMatrix<f64>) -> MultivariateNormal<DVector<f64>>
+   pub fn sample_at(&self, inputs: &DMatrix<f64>) -> MultivariateNormal
    {
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 

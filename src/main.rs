@@ -2,6 +2,7 @@
 
 mod parameters;
 mod gaussian_process;
+mod gaussian_process_nalgebra;
 mod algebra;
 mod conversion;
 
@@ -10,25 +11,25 @@ use crate::gaussian_process::GaussianProcess;
 fn main()
 {
    // training data
-   let training_inputs = vec![0.8, 1.2, 3.8, 4.2];
+   let training_inputs : Vec<_> = [0.8, 1.2, 3.8, 4.2].iter().map(|&x| vec![x]).collect();
    let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 
    // builds a model
-   let mut gp = GaussianProcess::default(training_inputs, training_outputs);
-   /*let mut gp = GaussianProcess::new(training_inputs, training_outputs).set_noise(0.1f64)
+   let mut gp = GaussianProcess::default(&training_inputs, &training_outputs);
+   /*let mut gp = GaussianProcess::new(&training_inputs, &training_outputs).set_noise(0.1f64)
    .fit_kernel()
    .fit_prior()
    .train();*/
 
    // make a prediction on new data
-   let inputs = vec![1.0, 2.0, 3.0, 4.2, 7.];
+   let inputs : Vec<_> = vec![1.0, 2.0, 3.0, 4.2, 7.].iter().map(|&x| vec![x]).collect();
    let outputs = gp.predict_several(&inputs);
    println!("prediction: {:?}", outputs);
    let var = gp.predict_variance_several(&inputs);
    println!("standard deviation: {:?}", var);
 
    // updates the model
-   let additional_inputs = vec![0., 1., 2., 5.];
+   let additional_inputs : Vec<_> = vec![0., 1., 2., 5.].iter().map(|&x| vec![x]).collect();
    let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
    let fit_prior = true;
    let fit_kernel = true;

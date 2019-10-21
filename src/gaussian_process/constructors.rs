@@ -2,61 +2,42 @@
 
 use super::GaussianProcess;
 use super::builder::GaussianProcessBuilder;
-use crate::conversion::{AsMatrix, AsVector};
 use crate::parameters::{kernel::Kernel, prior::Prior};
 use crate::parameters::*;
-use crate::algebra::{EMatrix, EVector};
-use std::marker::PhantomData;
-use crate::algebra;
+use crate::gaussian_process_nalgebra::GaussianProcess_nalgebra;
+use nalgebra::{DVector, DMatrix};
 
-impl<KernelType: Kernel, PriorType: Prior, OutVector: AsVector>
-   GaussianProcess<KernelType, PriorType, OutVector>
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
-   pub fn new<InMatrix: AsMatrix>(prior: PriorType,
-                                  kernel: KernelType,
-                                  noise: f64,
-                                  training_inputs: InMatrix,
-                                  training_outputs: OutVector)
-                                  -> Self
+   pub fn new(prior: PriorType, kernel: KernelType, noise: f64, training_inputs: &[Vec<f64>], training_outputs: &[f64]) -> Self
    {
-      // converts inputs into nalgebra format
-      let training_inputs = training_inputs.into_matrix();
-      let training_outputs = training_outputs.into_vector();
-      assert_eq!(training_inputs.nrows(), training_outputs.nrows());
-      // converts training data into extendable matrix
-      let training_inputs = EMatrix::new(training_inputs);
-      let training_outputs = EVector::new(training_outputs - prior.prior(&training_inputs.as_matrix()));
-      // computes cholesky decomposition
-      let covmat_cholesky =
-         algebra::make_cholesky_covariance_matrix(&training_inputs.as_matrix(), &kernel, noise);
-      GaussianProcess { prior,
-                        kernel,
-                        noise,
-                        training_inputs,
-                        training_outputs,
-                        covmat_cholesky,
-                        output_type: PhantomData }
+      let nb_rows = training_inputs.len();
+      assert_ne!(nb_rows, 0);
+      let nb_cols = training_inputs[0].len();
+      let training_inputs = DMatrix::from_fn(nb_rows, nb_cols, |r,c| training_inputs[r][c] );
+      let training_outputs = DVector::from_column_slice(training_outputs);
+      let gp = GaussianProcess_nalgebra::new(prior, kernel, noise, training_inputs, training_outputs);
+      GaussianProcess { gp }
    }
 }
 
-impl<OutVector: AsVector> GaussianProcess<kernel::Gaussian, prior::Constant, OutVector>
+impl GaussianProcess<kernel::Gaussian, prior::Constant>
 {
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
-   pub fn default<InMatrix: AsMatrix>(training_inputs: InMatrix, training_outputs: OutVector) -> Self
+   pub fn default(training_inputs: &[Vec<f64>], training_outputs: &[f64]) -> Self
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs, training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
       .fit_kernel()
       .fit_prior()
       .train()
    }
 
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
-   pub fn builder<InMatrix: AsMatrix>(
-      training_inputs: InMatrix,
-      training_outputs: OutVector)
-      -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant, InMatrix, OutVector>
+   pub fn builder(
+      training_inputs: &[Vec<f64>],
+      training_outputs: &[f64])
+      -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant>
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant, InMatrix, OutVector>::new(training_inputs,
-                                                                                            training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
    }
 }
