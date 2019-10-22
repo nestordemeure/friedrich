@@ -9,6 +9,7 @@ use crate::gaussian_process::GaussianProcess;
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 
+// testing deref
 fn print_noise<K: Kernel, P: Prior>(gp: &GaussianProcess<K, P>)
 {
    println!("noise: {}", gp.noise)
@@ -27,6 +28,7 @@ fn main()
    .fit_kernel()
    .fit_prior()
    .train();*/
+   gp.fit_parameters(true, true);
 
    // make a prediction on new data
    let inputs: Vec<_> = vec![1.0, 2.0, 3.0, 4.2, 7.].iter().map(|&x| vec![x]).collect();
@@ -49,7 +51,7 @@ fn main()
    println!("standard deviation 2: {:?}", var);
 
    // sample the gaussian process on new data
-   let sampler = gp.sample_at_several(&inputs);
+   let sampler = gp.sample_at(&inputs);
    let mut rng = rand::thread_rng();
    for i in 1..=5
    {

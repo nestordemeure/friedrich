@@ -1,4 +1,3 @@
-
 use rand::Rng;
 use rand_distr::StandardNormal;
 use nalgebra::{DMatrix, DVector};
@@ -20,16 +19,28 @@ impl MultivariateNormal
    }
 
    /// outputs the mean of the distribution
-   pub fn mean(&self) -> &DVector<f64>
+   pub fn mean_vector(&self) -> &DVector<f64>
    {
       &self.mean
    }
 
+   /// outputs the mean of the distribution
+   pub fn mean(&self) -> &[f64]
+   {
+      self.mean.as_slice()
+   }
+
    /// takes a random number generator and uses it to sample from the distribution
-   pub fn sample<RNG: Rng>(&self, rng: &mut RNG) -> DVector<f64>
+   pub fn sample_vector<RNG: Rng>(&self, rng: &mut RNG) -> DVector<f64>
    {
       let normal = DVector::from_fn(self.mean.nrows(), |_, _| rng.sample(StandardNormal));
-      let sample = &self.mean + &self.cholesky_covariance * normal;
-      sample
+      &self.mean + &self.cholesky_covariance * normal
+   }
+
+   /// takes a random number generator and uses it to sample from the distribution
+   pub fn sample<RNG: Rng>(&self, rng: &mut RNG) -> Vec<f64>
+   {
+      let sample = self.sample_vector(rng);
+      sample.iter().cloned().collect()
    }
 }

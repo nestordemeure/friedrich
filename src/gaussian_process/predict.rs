@@ -42,14 +42,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    /// predicts the covariance of the gaussian process at each row of the input
-   pub fn predict_covariance_several(&self, inputs: &[Vec<f64>]) -> DMatrix<f64>
+   pub fn predict_covariance(&self, inputs: &[Vec<f64>]) -> DMatrix<f64>
    {
       let inputs = algebra::make_matrix_from_row_slices(inputs);
       self.gp.predict_covariance(&inputs)
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at_several(&self, inputs: &[Vec<f64>]) -> MultivariateNormal
+   pub fn sample_at(&self, inputs: &[Vec<f64>]) -> MultivariateNormal
    {
       let inputs = algebra::make_matrix_from_row_slices(inputs);
       self.gp.sample_at(&inputs)
