@@ -4,7 +4,7 @@
 
 use crate::parameters::{kernel::Kernel, prior::Prior};
 use crate::gaussian_process_nalgebra::NAlgebraGaussianProcess;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 mod builder;
 mod constructors;
@@ -28,5 +28,14 @@ impl<KernelType: Kernel, PriorType: Prior> Deref for GaussianProcess<KernelType,
    fn deref(&self) -> &Self::Target
    {
       &self.gp
+   }
+}
+
+/// automatic mutable dereference from GaussianProcess to NAlgebraGaussianProcess
+impl<KernelType: Kernel, PriorType: Prior> DerefMut for GaussianProcess<KernelType, PriorType>
+{
+   fn deref_mut(&mut self) -> &mut Self::Target
+   {
+      &mut self.gp
    }
 }
