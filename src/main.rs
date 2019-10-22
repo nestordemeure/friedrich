@@ -6,6 +6,13 @@ mod gaussian_process_nalgebra;
 mod algebra;
 
 use crate::gaussian_process::GaussianProcess;
+use crate::parameters::kernel::Kernel;
+use crate::parameters::prior::Prior;
+
+fn print_noise<K: Kernel, P: Prior>(gp: &GaussianProcess<K, P>)
+{
+   println!("noise: {}", gp.noise)
+}
 
 fn main()
 {
@@ -15,6 +22,7 @@ fn main()
 
    // builds a model
    let mut gp = GaussianProcess::default(&training_inputs, &training_outputs);
+   print_noise(&gp);
    /*let mut gp = GaussianProcess::new(&training_inputs, &training_outputs).set_noise(0.1f64)
    .fit_kernel()
    .fit_prior()
