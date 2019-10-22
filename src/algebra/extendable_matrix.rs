@@ -1,3 +1,7 @@
+//! Resizable matrices
+//!
+//! Matrix and vectors that can be extended with additional rows.
+
 use nalgebra::*;
 use nalgebra::{storage::Storage, U1, Dynamic};
 use crate::algebra::{SVector, SMatrix};

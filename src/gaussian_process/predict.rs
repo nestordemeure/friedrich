@@ -5,6 +5,7 @@ use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use crate::algebra;
 use super::GaussianProcess;
+use crate::gaussian_process_nalgebra::MultivariateNormal;
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
@@ -48,7 +49,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
-   pub fn sample_at_several(&self, inputs: &[Vec<f64>]) -> algebra::MultivariateNormal
+   pub fn sample_at_several(&self, inputs: &[Vec<f64>]) -> MultivariateNormal
    {
       let inputs = algebra::make_matrix_from_row_slices(inputs);
       self.gp.sample_at(&inputs)

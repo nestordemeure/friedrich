@@ -1,9 +1,9 @@
 //! Operations on matrix
-mod extendable_matrix;
-mod multivariate_normal;
+//!
+//! Various internal operations
 
+mod extendable_matrix;
 pub use extendable_matrix::{EMatrix, EVector};
-pub use multivariate_normal::MultivariateNormal;
 
 use crate::parameters::kernel::Kernel;
 use nalgebra::{storage::Storage, SliceStorage, Dynamic, U1, Matrix, DMatrix, Cholesky};

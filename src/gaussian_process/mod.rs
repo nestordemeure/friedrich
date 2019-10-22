@@ -12,7 +12,6 @@ mod predict;
 
 // added with public visibility here for documentation purposed
 pub use builder::GaussianProcessBuilder;
-pub use crate::algebra::MultivariateNormal;
 
 /// A Gaussian process that can be used to make predictions based on its training data
 pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>

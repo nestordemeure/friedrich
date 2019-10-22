@@ -20,9 +20,9 @@ impl MultivariateNormal
    }
 
    /// outputs the mean of the distribution
-   pub fn mean(&self) -> &[f64]
+   pub fn mean(&self) -> &DVector<f64>
    {
-      self.mean.as_slice()
+      &self.mean
    }
 
    /// takes a random number generator and uses it to sample from the distribution
