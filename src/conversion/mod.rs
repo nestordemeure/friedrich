@@ -19,7 +19,7 @@ pub trait InputMatrix
    fn to_dvector(v: &Self::InVector) -> DVector<f64>;
 
    /// converts a DVector to an output vector
-   fn from_dvector(v: DVector<f64>) -> Self::OutVector;
+   fn from_dvector(v: &DVector<f64>) -> Self::OutVector;
 }
 
 //-----------------------------------------------------------------------------
@@ -44,9 +44,9 @@ impl InputMatrix for DMatrix<f64>
    }
 
    /// converts a DVector to an output vector
-   fn from_dvector(v: DVector<f64>) -> Self::OutVector
+   fn from_dvector(v: &DVector<f64>) -> Self::OutVector
    {
-      v
+      v.clone()
    }
 }
 
@@ -69,7 +69,7 @@ impl InputMatrix for &[f64]
    }
 
    /// converts a DVector to an output vector
-   fn from_dvector(v: DVector<f64>) -> Self::OutVector
+   fn from_dvector(v: &DVector<f64>) -> Self::OutVector
    {
       assert_eq!(v.nrows(), 1);
       v[0]
@@ -95,7 +95,7 @@ impl<'a> InputMatrix for &'a [Vec<f64>]
    }
 
    /// converts a DVector to an output vector
-   fn from_dvector(v: DVector<f64>) -> Self::OutVector
+   fn from_dvector(v: &DVector<f64>) -> Self::OutVector
    {
       v.iter().cloned().collect()
    }

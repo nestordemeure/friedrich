@@ -2,7 +2,6 @@
 
 mod parameters;
 mod gaussian_process;
-mod gaussian_process_nalgebra;
 mod algebra;
 mod conversion;
 
