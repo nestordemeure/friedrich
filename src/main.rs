@@ -22,7 +22,7 @@ fn main()
    let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 
    // builds a model
-   let mut gp = GaussianProcess::default(&training_inputs, &training_outputs);
+   let mut gp = GaussianProcess::default(training_inputs, training_outputs);
    print_noise(&gp);
    /*let mut gp = GaussianProcess::new(&training_inputs, &training_outputs).set_noise(0.1f64)
    .fit_kernel()

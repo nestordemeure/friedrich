@@ -5,18 +5,28 @@ use crate::algebra;
 // TRAITS
 
 /// handles conversion to DMatrix type and stores information on associated output type
-pub trait InputMatrix
+pub trait InputMatrix: Sized
 {
-   type InVector: ?Sized;
+   type InVector: Sized;
    type OutVector;
-
-   // TODO add into_dmatrix and into_dvector with default implem
 
    /// converts an input matrix to a DMatrix
    fn to_dmatrix(m: &Self) -> DMatrix<f64>;
 
    /// converts an input vector to a DVector
    fn to_dvector(v: &Self::InVector) -> DVector<f64>;
+
+   /// converts an input matrix to a DMatrix
+   fn into_dmatrix(m: Self) -> DMatrix<f64>
+   {
+      Self::to_dmatrix(&m)
+   }
+
+   /// converts an input vector to a DVector
+   fn into_dvector(v: Self::InVector) -> DVector<f64>
+   {
+      Self::to_dvector(&v)
+   }
 
    /// converts a DVector to an output vector
    fn from_dvector(v: &DVector<f64>) -> Self::OutVector;
@@ -41,6 +51,18 @@ impl InputMatrix for DMatrix<f64>
    fn to_dvector(v: &Self::InVector) -> DVector<f64>
    {
       v.clone()
+   }
+
+   /// converts an input matrix to a DMatrix
+   fn into_dmatrix(m: Self) -> DMatrix<f64>
+   {
+      m
+   }
+
+   /// converts an input vector to a DVector
+   fn into_dvector(v: Self::InVector) -> DVector<f64>
+   {
+      v
    }
 
    /// converts a DVector to an output vector
@@ -79,7 +101,7 @@ impl InputMatrix for Vec<f64>
 // multiple rows, base rust type
 impl InputMatrix for Vec<Vec<f64>>
 {
-   type InVector = [f64];
+   type InVector = Vec<f64>;
    type OutVector = Vec<f64>;
 
    /// converts an input matrix to a DMatrix

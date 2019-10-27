@@ -35,7 +35,7 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
 impl GaussianProcess<kernel::Gaussian, prior::Constant>
 {
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
-   pub fn default<Input: InputMatrix>(training_inputs: &Input, training_outputs: &Input::InVector) -> Self
+   pub fn default<Input: InputMatrix>(training_inputs: Input, training_outputs: Input::InVector) -> Self
    {
       GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
       .fit_kernel()
@@ -44,8 +44,8 @@ impl GaussianProcess<kernel::Gaussian, prior::Constant>
    }
 
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
-   pub fn builder<Input: InputMatrix>(training_inputs: &Input,
-                                      training_outputs: &Input::InVector)
+   pub fn builder<Input: InputMatrix>(training_inputs: Input,
+                                      training_outputs: Input::InVector)
                                       -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant>
    {
       GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
@@ -58,12 +58,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    pub fn new<Input: InputMatrix>(prior: PriorType,
                                   kernel: KernelType,
                                   noise: f64,
-                                  training_inputs: &Input,
-                                  training_outputs: &Input::InVector)
+                                  training_inputs: Input,
+                                  training_outputs: Input::InVector)
                                   -> Self
    {
-      let training_inputs = Input::to_dmatrix(training_inputs);
-      let training_outputs = Input::to_dvector(training_outputs);
+      let training_inputs = Input::into_dmatrix(training_inputs);
+      let training_outputs = Input::into_dvector(training_outputs);
       assert_eq!(training_inputs.nrows(), training_outputs.nrows());
       // converts training data into extendable matrix
       let training_inputs = EMatrix::new(training_inputs);
