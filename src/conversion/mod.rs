@@ -51,7 +51,7 @@ impl InputMatrix for DMatrix<f64>
 }
 
 // single row
-impl InputMatrix for &[f64]
+impl InputMatrix for Vec<f64>
 {
    type InVector = f64;
    type OutVector = f64;
@@ -77,9 +77,9 @@ impl InputMatrix for &[f64]
 }
 
 // multiple rows, base rust type
-impl<'a> InputMatrix for &'a [Vec<f64>]
+impl InputMatrix for Vec<Vec<f64>>
 {
-   type InVector = &'a [f64];
+   type InVector = Vec<f64>;
    type OutVector = Vec<f64>;
 
    /// converts an input matrix to a DMatrix
