@@ -32,7 +32,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - a noise of 1e-7
    /// - does not fit parameters
    /// - does fit prior
-   pub fn new<Input:InputMatrix>(training_inputs: &Input, training_outputs: &Input::InVector) -> Self
+   pub fn new<Input: InputMatrix>(training_inputs: &Input, training_outputs: &Input::InVector) -> Self
    {
       let training_inputs = Input::to_dmatrix(training_inputs);
       let training_outputs = Input::to_dvector(training_outputs);
@@ -112,10 +112,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       // TODO a new_fitted funtion might solve it
       // TODO or a raw construction that does not perform a fit
       let mut gp = GaussianProcess::<KernelType, PriorType>::new(self.prior,
-                                                                         self.kernel,
-                                                                         self.noise,
-                                                                         &self.training_inputs,
-                                                                         &self.training_outputs);
+                                                                 self.kernel,
+                                                                 self.noise,
+                                                                 &self.training_inputs,
+                                                                 &self.training_outputs);
       // fit the model, if reqiested, on the training data
       gp.fit_parameters(self.should_fit_prior, self.should_fit_kernel);
       gp
