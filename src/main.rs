@@ -4,6 +4,7 @@ mod parameters;
 mod gaussian_process;
 mod gaussian_process_nalgebra;
 mod algebra;
+mod conversion;
 
 use crate::gaussian_process::GaussianProcess;
 use crate::parameters::kernel::Kernel;
