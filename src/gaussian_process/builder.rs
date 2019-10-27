@@ -4,7 +4,7 @@ use nalgebra::{DVector, DMatrix};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use super::GaussianProcess;
-use crate::conversion::InputMatrix;
+use crate::conversion::Input;
 
 /// Fine Grained selection of the gaussian process parameters.
 pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
@@ -32,10 +32,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// - a noise of 1e-7
    /// - does not fit parameters
    /// - does fit prior
-   pub fn new<Input: InputMatrix>(training_inputs: Input, training_outputs: Input::InVector) -> Self
+   pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
    {
-      let training_inputs = Input::into_dmatrix(training_inputs);
-      let training_outputs = Input::into_dvector(training_outputs);
+      let training_inputs = T::into_dmatrix(training_inputs);
+      let training_outputs = T::into_dvector(training_outputs);
       // makes builder
       let prior = PriorType::default(training_inputs.ncols());
       let kernel = KernelType::default();

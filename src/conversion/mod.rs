@@ -5,7 +5,7 @@ use crate::algebra;
 // TRAITS
 
 /// handles conversion to DMatrix type and stores information on associated output type
-pub trait InputMatrix: Sized
+pub trait Input: Sized
 {
    type InVector: Sized;
    type OutVector;
@@ -36,7 +36,7 @@ pub trait InputMatrix: Sized
 // IMPLEMENTATIONS
 
 // default implementation
-impl InputMatrix for DMatrix<f64>
+impl Input for DMatrix<f64>
 {
    type InVector = DVector<f64>;
    type OutVector = DVector<f64>;
@@ -73,7 +73,7 @@ impl InputMatrix for DMatrix<f64>
 }
 
 // single row
-impl InputMatrix for Vec<f64>
+impl Input for Vec<f64>
 {
    type InVector = f64;
    type OutVector = f64;
@@ -99,7 +99,7 @@ impl InputMatrix for Vec<f64>
 }
 
 // multiple rows, base rust type
-impl InputMatrix for Vec<Vec<f64>>
+impl Input for Vec<Vec<f64>>
 {
    type InVector = Vec<f64>;
    type OutVector = Vec<f64>;

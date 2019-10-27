@@ -32,9 +32,9 @@ fn main()
 
    // make a prediction on new data
    let inputs: Vec<_> = vec![1.0, 2.0, 3.0, 4.2, 7.].iter().map(|&x| vec![x]).collect();
-   let outputs: Vec<f64> = gp.predict(&inputs);
+   let outputs = gp.predict(&inputs);
    println!("prediction: {:?}", outputs);
-   let var: Vec<f64> = gp.predict_variance(&inputs);
+   let var = gp.predict_variance(&inputs);
    println!("standard deviation: {:?}", var);
 
    // updates the model
@@ -47,7 +47,7 @@ fn main()
    // renew prediction
    let outputs = gp.predict(&inputs);
    println!("prediction 2: {:?}", outputs);
-   let var: Vec<f64> = gp.predict_variance(&inputs);
+   let var = gp.predict_variance(&inputs);
    println!("standard deviation 2: {:?}", var);
 
    // sample the gaussian process on new data
