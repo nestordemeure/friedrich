@@ -1,19 +1,19 @@
 # Gaussian Process
 
-**This is a work in progress!**
+My aim is to provide an implementation of [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process) in Rust, to be used as a building block for other algorithms (such as [Bayesian Optimization](https://en.wikipedia.org/wiki/Bayesian_optimization)).
 
-This crate is still in its alpha stage, the interface and internals might still evolve a lot.
-
-My aim is to implement [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process) in Rust.
+**This crate is still in its alpha stage, the interface and internals might still evolve significantly.**
 
 ## Usage
 
-The algorithm works on matrices (see [nalgebra](https://www.nalgebra.org/quick_reference/)) of inputs / outputs.
+
 
 ## TODO
+
+The one important feature still lacking is a way to properly optimize the kernel parameters.
 
 - Clean-up the documentation.
 - Add better algorithms to fit kernel parameters.
 - Add ndarray support behind a feature flag
 
-- make trait to take type that deref to slice as input
+*Do not hesitate to send pull request or ask for features.*
