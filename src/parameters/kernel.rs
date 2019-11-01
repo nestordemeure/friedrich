@@ -4,7 +4,7 @@
 //!
 //! To learn more about the properties of the provided kernels, we recommand the [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) Wikipedia page and the [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions) article.
 //!
-//! If you want to provide a user-defined kernel, it should implement the Kernel trait.
+//! User-defined kernels should implement the Kernel trait.
 //! To learn more about the implementation of kernels adapted to a particular problem, we recommend the chapter two (*Expressing Structure with Kernels*) and three (*Automatic Model Construction*) of the very good [Automatic Model Construction with Gaussian Processes](http://www.cs.toronto.edu/~duvenaud/thesis.pdf).
 //!
 //! This implementation is inspired by [rusty-machines'](https://github.com/AtheMathmo/rusty-machine/blob/master/src/learning/toolkit/kernel.rs).

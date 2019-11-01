@@ -10,6 +10,17 @@
 //!
 //! However, the `o(n^3)` complexity of the algorithm makes the classical implementation unsuitable for large training datasets.
 //!
+//! ## Functionalities
+//!
+//! This implementation lets you :
+//!
+//! - define a gaussian process with default parameters or using the builder pattern
+//! - train it on multidimensional data
+//! - fit the parameters (kernel and prior) on the training data
+//! - add additional samples and refit the process
+//! - predict the mean and variance and covariance matrix for given inputs
+//! - sample the distribution at a given position
+//!
 //! ## Code sample
 //!
 //! ```rust
@@ -49,17 +60,6 @@
 //! # }
 //! ```
 //!
-//! ## Functionalities
-//!
-//! This implementation lets you :
-//!
-//! - define a gaussian process with default parameters or using the builder pattern
-//! - train it on multidimensional data
-//! - fit the parameters (kernel and prior) on the training data
-//! - add additional samples and refit the process
-//! - predict the mean and variance and covariance matrix for given inputs
-//! - sample the distribution at a given position
-//!
 //! ## Inputs
 //!
 //! Most methods of this library can currently work with the following input / ouput pairs :
@@ -72,6 +72,7 @@
 //!
 mod algebra;
 mod parameters;
-pub mod conversion;
+mod conversion;
 pub mod gaussian_process;
 pub use parameters::*;
+pub use conversion::Input;

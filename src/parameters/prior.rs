@@ -4,7 +4,7 @@
 //! Furthermore the process will be fitted on the residual of the prior meaning that a good prior can significantly improve the precision of the model.
 //!
 //! This can be a constant but also a polynomial or any model of the data.
-//! If you want to provide a user-defined prior, it should implement the Prior trait.
+//! User-defined priors should implement the Prior trait.
 
 use nalgebra::DVector;
 use nalgebra::{storage::Storage, U1, Dynamic};
@@ -15,7 +15,7 @@ use crate::algebra::{SVector, SMatrix};
 
 /// The Prior trait
 ///
-/// If you want to provide a user-defined kernel, you should implement this trait.
+/// User-defined kernels should implement this trait.
 pub trait Prior
 {
    /// Default value for the prior

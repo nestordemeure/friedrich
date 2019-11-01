@@ -10,6 +10,17 @@ All of those properties make them an algorithm of choice to perform regression w
 
 However, the `o(n^3)` complexity of the algorithm makes the classical implementation unsuitable for large datasets.
 
+## Functionalities
+
+This implementation lets you :
+
+- define a gaussian process with default parameters or using the builder pattern
+- train it on multidimensional data
+- fit the parameters (kernel and prior) on the training data
+- add additional samples and refit the process
+- predict the mean and variance and covariance matrix for given inputs
+- sample the distribution at a given position
+
 ## Code sample
 
 ```rust
@@ -38,20 +49,9 @@ let mut rng = rand::thread_rng();
 println!("samples: {:?}", sampler.sample(&mut rng));
 ```
 
-## Functionalities
-
-This implementation lets you :
-
-- define a gaussian process with default parameters or using the builder pattern
-- train it on multidimensional data
-- fit the parameters (kernel and prior) on the training data
-- add additional samples and refit the process
-- predict the mean and variance and covariance matrix for given inputs
-- sample the distribution at a given position
-
 ## Inputs
 
-Most methods of this library can currently work with the following input / ouput pairs :
+Most methods of this library can currently work with the following `input -> ouput` pairs :
 
 - `Vec<Vec<f64>> -> Vec<f64>` each inner vector is a multidimentional training sample
 - `Vec<f64> -> f64` a single multidimensional sample

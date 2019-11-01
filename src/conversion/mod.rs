@@ -4,38 +4,45 @@ use crate::algebra;
 //-----------------------------------------------------------------------------
 // TRAITS
 
-/// handles conversion to DMatrix type and stores information on associated output type
+/// Add Input type -> Output type pairs
+///
+/// Handles conversion to DMatrix type and stores information on associated output type.
+///
+/// User-defined input type should implement this trait.
 pub trait Input: Sized
 {
+   /// type of the vectors storing training output data and given to methods
    type InVector: Sized;
+   /// type of the vectors outputed when a method is called
    type OutVector;
 
-   /// converts an input matrix to a DMatrix
+   /// Converts an input matrix to a DMatrix.
    fn to_dmatrix(m: &Self) -> DMatrix<f64>;
 
-   /// converts an input vector to a DVector
-   fn to_dvector(v: &Self::InVector) -> DVector<f64>;
-
-   /// converts an input matrix to a DMatrix
+   /// Optional: converts an owned input matrix to a DMatrix.
+   /// This function is used for to reduce copies when the input type is compatible with DMatrix.
    fn into_dmatrix(m: Self) -> DMatrix<f64>
    {
       Self::to_dmatrix(&m)
    }
 
-   /// converts an input vector to a DVector
+   /// Converts an input vector to a DVector.
+   fn to_dvector(v: &Self::InVector) -> DVector<f64>;
+
+   /// converts an input vector to a DVector.
    fn into_dvector(v: Self::InVector) -> DVector<f64>
    {
       Self::to_dvector(&v)
    }
 
-   /// converts a DVector to an output vector
+   /// converts a DVector to an output vector.
    fn from_dvector(v: &DVector<f64>) -> Self::OutVector;
 }
 
 //-----------------------------------------------------------------------------
 // IMPLEMENTATIONS
 
-// default implementation
+/// direct implementation
 impl Input for DMatrix<f64>
 {
    type InVector = DVector<f64>;
@@ -72,7 +79,7 @@ impl Input for DMatrix<f64>
    }
 }
 
-// single row
+/// single row
 impl Input for Vec<f64>
 {
    type InVector = f64;
@@ -98,7 +105,7 @@ impl Input for Vec<f64>
    }
 }
 
-// multiple rows, base rust type
+/// multiple rows, base rust type
 impl Input for Vec<Vec<f64>>
 {
    type InVector = Vec<f64>;
