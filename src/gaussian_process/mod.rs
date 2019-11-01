@@ -41,6 +41,31 @@ impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
    }
 
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
+   ///
+   /// ```rust
+   /// # use friedrich::gaussian_process::GaussianProcess;
+   /// # use friedrich::prior::*;
+   /// # use friedrich::kernel::*;
+   /// # fn main() {
+   /// // training data
+   /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+   /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+   ///
+   /// // model parameters
+   /// let input_dimension = 1;
+   /// let output_noise = 0.1;
+   /// let exponential_kernel = Exponential::default();
+   /// let linear_prior = LinearPrior::default(input_dimension);
+   ///
+   /// // defining and training a model
+   /// let gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(output_noise)
+   ///                                                                     .set_kernel(exponential_kernel)
+   ///                                                                     .fit_kernel()
+   ///                                                                     .set_prior(linear_prior)
+   ///                                                                     .fit_prior()
+   ///                                                                     .train();
+   /// # }
+   /// ```
    pub fn builder<T: Input>(training_inputs: T,
                             training_outputs: T::InVector)
                             -> GaussianProcessBuilder<kernel::Gaussian, prior::ConstantPrior>
@@ -221,6 +246,24 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    /// produces a structure that can be used to sample the gaussian process at the given points
+   ///
+   /// ```rust
+   /// # use friedrich::gaussian_process::GaussianProcess;
+   /// # fn main() {
+   /// // trains a model
+   /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+   /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+   /// let gp = GaussianProcess::default(training_inputs, training_outputs);
+   ///
+   /// // produces the distribution at some new inputs
+   /// let new_inputs = vec![vec![1.], vec![2.]];
+   /// let sampler = gp.sample_at(&new_inputs);
+   ///
+   /// // samples from the distribution
+   /// let mut rng = rand::thread_rng();
+   /// println!("samples a vector : {:?}", sampler.sample(&mut rng));
+   /// # }
+   /// ```
    pub fn sample_at<T: Input>(&self, inputs: &T) -> MultivariateNormal<T>
    {
       let inputs = T::to_dmatrix(inputs);

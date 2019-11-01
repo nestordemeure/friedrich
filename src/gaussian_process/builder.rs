@@ -82,9 +82,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
    /// Sets a new prior.
    /// See the documentation on priors for more informations.
-   pub fn set_prior<PriorType2: Prior>(self,
-                                       prior: PriorType2)
-                                       -> GaussianProcessBuilder<KernelType, PriorType2>
+   pub fn set_prior<NewPriorType: Prior>(self,
+                                       prior: NewPriorType)
+                                       -> GaussianProcessBuilder<KernelType, NewPriorType>
    {
       GaussianProcessBuilder { prior,
                                kernel: self.kernel,
@@ -104,9 +104,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
    /// Changes the kernel of the gaussian process.
    /// See the documentations on Kernels for more informations.
-   pub fn set_kernel<KernelType2: Kernel>(self,
-                                          kernel: KernelType2)
-                                          -> GaussianProcessBuilder<KernelType2, PriorType>
+   pub fn set_kernel<NewKernelType: Kernel>(self,
+                                          kernel: NewKernelType)
+                                          -> GaussianProcessBuilder<NewKernelType, PriorType>
    {
       GaussianProcessBuilder { prior: self.prior,
                                kernel,

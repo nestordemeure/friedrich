@@ -28,8 +28,8 @@ let example = ...;
 
 The list of things that could be done to improve on the current implementation includes :
 
-- Clean-up the documentation.
 - Add better algorithms to fit kernel parameters (cross validation or gradient descent on likelyhood).
+- Improve efficiency of the linear algebra operatins used.
 - Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
 - Add simple kernel regression (not as clever but much faster).
 
