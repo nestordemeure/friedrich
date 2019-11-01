@@ -20,6 +20,10 @@ sampling
 
 adding points
 
+```rust
+let example = ...;
+```
+
 ## Potential future developements
 
 The list of things that could be done to improve on the current implementation includes :
