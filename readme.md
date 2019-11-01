@@ -10,6 +10,8 @@ All of those properties make them an algorithm of choice to perform regression w
 
 However, the `o(n^3)` complexity of the algorithm makes the classical implementation unsuitable for large datasets.
 
+**WARNING: This crate is still in an alpha state, its interface might evolve.**
+
 ## Functionalities
 
 This implementation lets you :
@@ -64,8 +66,8 @@ A trait is provided to add your own pairs.
 The list of things that could be done to improve on the current implementation includes :
 
 - Add better algorithms to fit kernel parameters (cross validation or gradient descent on likelyhood).
-- Improve efficiency of the linear algebra operatins used.
-- Add function to predict both mean and variance.
+- Improve efficiency of the linear algebra operations used.
+- Add function to predict both mean and variance (factoring some code for improved performances).
 - Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
 - Add simple kernel regression (not as clever but much faster).
 

@@ -10,7 +10,7 @@ description = "Gaussian Process Regression."
 repository = "https://github.com/nestordemeure/friedrich"
 documentation = "https://docs.rs/friedrich"
 readme = "readme.md"
-keywords = ["regression", "gaussian process"]
+keywords = ["regression", "gaussian process", "kernel"]
 categories = ["algorithms", "science"] # crates.io/category_slugs
 license = "Apache-2.0"
 
