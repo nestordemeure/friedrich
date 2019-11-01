@@ -1,6 +1,41 @@
 //! Gaussian process
 //!
-//! TODO illustrate usage
+//! ```rust
+//! # use friedrich::gaussian_process::GaussianProcess;
+//! # fn main() {
+//! // trains a gaussian process on a dataset of one dimension vectors
+//! let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+//! let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+//! let mut gp = GaussianProcess::default(training_inputs, training_outputs);
+//!
+//! // predicts the mean and variance of a single point
+//! let input = vec![1.];
+//! let mean = gp.predict(&input);
+//! let var = gp.predict_variance(&input);
+//! println!("prediction: {} ± {}", mean, var.sqrt());
+//!
+//! // makes several prediction
+//! let inputs = vec![vec![1.0], vec![2.0], vec![3.0]];
+//! let outputs = gp.predict(&inputs);
+//! println!("predictions: {:?}", outputs);
+//!
+//! // updates the model
+//! let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
+//! let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
+//! let fit_prior = true;
+//! let fit_kernel = true;
+//! gp.add_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
+//!
+//! // samples from the distribution
+//! let new_inputs = vec![vec![1.0], vec![2.0]];
+//! let sampler = gp.sample_at(&new_inputs);
+//! let mut rng = rand::thread_rng();
+//! for i in 1..=5
+//! {
+//!   println!("sample {} : {:?}", i, sampler.sample(&mut rng));
+//! }
+//! # }
+//! ```
 
 use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
 use nalgebra::{Cholesky, Dynamic, DMatrix, DVector};
@@ -31,7 +66,19 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
 
 impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
 {
-   /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
+   /// Returns a gaussian process with a Gaussian kernel and a constant prior, both fitted to the data.
+   ///
+   /// ```rust
+   /// # use friedrich::gaussian_process::GaussianProcess;
+   /// # fn main() {
+   /// // training data
+   /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+   /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+   ///
+   /// // defining and training a model
+   /// let gp = GaussianProcess::default(training_inputs, training_outputs);
+   /// # }
+   /// ```
    pub fn default<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
    {
       GaussianProcessBuilder::<kernel::Gaussian, prior::ConstantPrior>::new(training_inputs, training_outputs)
@@ -40,17 +87,16 @@ impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
       .train()
    }
 
-   /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
+   /// Returns a builder to define specific parameters of the gaussian process.
    ///
    /// ```rust
    /// # use friedrich::gaussian_process::GaussianProcess;
    /// # use friedrich::prior::*;
    /// # use friedrich::kernel::*;
    /// # fn main() {
-   /// // training data
-   /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
-   /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
-   ///
+   /// # // training data
+   /// # let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+   /// # let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
    /// // model parameters
    /// let input_dimension = 1;
    /// let output_noise = 0.1;
@@ -76,7 +122,8 @@ impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
-   /// builds a new gaussian process with the given inputs
+   /// Raw method to create a new gaussian process with the given parameters / data.
+   /// We recommend that you use either the default parameters or the builder to simplify the definition process.
    pub fn new<T: Input>(prior: PriorType,
                         kernel: KernelType,
                         noise: f64,
@@ -98,9 +145,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    //----------------------------------------------------------------------------------------------
    // FIT
 
-   /// adds new samples to the model
-   /// update the model (which is faster than a training from scratch)
-   /// does not refit the parameters
+   /// Adds new samples to the model.
+   ///
+   /// Updates the model (which is faster than a retraining from scratch)
+   /// but does not refit the parameters.
    pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::InVector)
    {
       let inputs = T::to_dmatrix(inputs);
@@ -117,7 +165,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       // TODO update cholesky matrix instead of recomputing it from scratch
    }
 
-   /// fits the parameters if requested and retrain the model from scratch if needed
+   /// Fits the parameters, if requested, and retrain the model from scratch.
    pub fn fit_parameters(&mut self, fit_prior: bool, fit_kernel: bool)
    {
       if fit_prior
@@ -145,8 +193,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       }
    }
 
-   /// adds new samples to the model and fit the parameters
-   /// faster than doing add_samples().fit_parameters()
+   /// Adds new samples to the model and fit the parameters.
+   ///
+   /// Faster than doing `add_samples().fit_parameters()`.
    pub fn add_samples_fit<T: Input>(&mut self,
                                     inputs: &T,
                                     outputs: &T::InVector,
@@ -177,7 +226,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    //----------------------------------------------------------------------------------------------
    // PREDICT
 
-   /// predicts the mean of the gaussian process at each row of the input
+   /// Predicts the mean of the gaussian process for each row of the input.
    pub fn predict<T: Input>(&self, inputs: &T) -> T::OutVector
    {
       let inputs = T::to_dmatrix(inputs);
@@ -196,7 +245,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       T::from_dvector(&prior)
    }
 
-   /// predicts the variance of the gaussian process at each row of the input
+   /// Predicts the variance of the gaussian process for each row of the input.
    pub fn predict_variance<T: Input>(&self, inputs: &T) -> T::OutVector
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
@@ -224,7 +273,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       T::from_dvector(&variances)
    }
 
-   /// predicts the covariance of the gaussian process at each row of the input
+   /// Returns the covariancematrix for the rows of the input.
    pub fn predict_covariance<T: Input>(&self, inputs: &T) -> DMatrix<f64>
    {
       // There is a better formula available if one can solve system directly using a triangular matrix
@@ -245,7 +294,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       cov_inputs_inputs
    }
 
-   /// produces a structure that can be used to sample the gaussian process at the given points
+   /// Produces a multivariate gaussian that can be used to sample at the input points.
+   ///
+   /// The sampling is requires a random number generator compatible with the [rand](https://crates.io/crates/rand) crate :
    ///
    /// ```rust
    /// # use friedrich::gaussian_process::GaussianProcess;

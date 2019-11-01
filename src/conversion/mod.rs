@@ -4,9 +4,14 @@ use crate::algebra;
 //-----------------------------------------------------------------------------
 // TRAITS
 
-/// Add Input type -> Output type pairs
+/// Implemented by `Input -> Output` type pairs
 ///
 /// Handles conversion to DMatrix type and stores information on associated output type.
+/// Most methods of this library can currently work with the following `input -> ouput` pairs :
+///
+/// - `Vec<Vec<f64>> -> Vec<f64>` each inner vector is a multidimentional training sample
+/// - `Vec<f64> -> f64` a single multidimensional sample
+/// - `DMatrix<f64> -> DVector<f64>` using a [nalgebra](https://www.nalgebra.org/) matrix with one row per sample
 ///
 /// User-defined input type should implement this trait.
 pub trait Input: Sized
@@ -29,7 +34,8 @@ pub trait Input: Sized
    /// Converts an input vector to a DVector.
    fn to_dvector(v: &Self::InVector) -> DVector<f64>;
 
-   /// converts an input vector to a DVector.
+   /// Optional: converts an owned input vector to a DVector.
+   /// This function is used for to reduce copies when the input type is compatible with DVector.
    fn into_dvector(v: Self::InVector) -> DVector<f64>
    {
       Self::to_dvector(&v)
