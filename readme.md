@@ -1,4 +1,4 @@
-# Gaussian Process
+# Friedrich : Gaussian Process Regression
 
 This libarie implements [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process) in Rust.
 Our goal is to provide a building block for other algorithms (such as [Bayesian Optimization](https://en.wikipedia.org/wiki/Bayesian_optimization)).
@@ -20,11 +20,13 @@ sampling
 
 adding points
 
-## TODO
+## Potential future developements
+
+The list of things that could be done to improve on the current implementation includes :
 
 - Clean-up the documentation.
-- Add better algorithms to fit kernel parameters.
-- Add ndarray support behind a feature flag.
-- Add simple kernel regression.
+- Add better algorithms to fit kernel parameters (cross validation or gradient descent on likelyhood).
+- Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
+- Add simple kernel regression (not as clever but much faster).
 
 *Do not hesitate to send pull request or ask for features.*

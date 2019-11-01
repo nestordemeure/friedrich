@@ -1,12 +1,12 @@
 [package]
-name = "gaussian_process"
+name = "Friedrich"
 version = "0.1.0"
 authors = ["Nestor Demeure"]
 edition = "2018"
 
 # description of the crate
 # see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
-description = "A Rust implementation of gaussian process regression."
+description = "Gaussian Process Regression."
 repository = "https://github.com/nestordemeure/gaussian_process"
 readme = "readme.md"
 keywords = ["regression", "gaussian process"]
