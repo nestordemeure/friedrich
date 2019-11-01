@@ -10,6 +10,7 @@ use crate::conversion::Input;
 /// and can be used to sample the process at a given point / set of points :
 ///
 /// ```rust
+/// # use friedrich::gaussian_process::GaussianProcess;
 /// # fn main() {
 /// // trains a model
 /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
@@ -26,16 +27,17 @@ use crate::conversion::Input;
 /// # }
 /// ```
 ///
-/// Note that the output type is a function of the input of `sample_at`, the method can be used on a vector of vectors as well as a single value :
+/// Note that the output type is a function of the input of `sample_at`, the method can be used on a vector of vectors as well as a single row :
 ///
 /// ```rust
+/// # use friedrich::gaussian_process::GaussianProcess;
 /// # fn main() {
 /// # // trains a model
 /// # let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
 /// # let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 /// # let gp = GaussianProcess::default(training_inputs, training_outputs);
 /// // produces the distribution at a new input
-/// let new_input = 1.;
+/// let new_input = vec![1.];
 /// let sampler = gp.sample_at(&new_input);
 ///
 /// // samples from the distribution

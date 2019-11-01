@@ -137,12 +137,21 @@ impl Prior for LinearPrior
                                                                                      training_inputs: &SMatrix<SM>,
                                                                                      training_outputs: &SVector<SV>)
    {
-      // solve linear system using LU decomposition
+      // TODO fails due to https://github.com/rustsim/nalgebra/issues/667
+      /*// solve linear system using QR decomposition
       let weights = training_inputs.clone()
-                                   .insert_column(0, 1f64) // add constant term for non-zero intercept
-                                   .lu()
+                                   .insert_column(0, 1.) // add constant term for non-zero intercept
+                                   .qr()
                                    .solve(training_outputs)
+                                   .expect("Resolution of linear system failed");*/
+
+      // solve linear system using SVD decomposition
+      let weights = training_inputs.clone()
+                                   .insert_column(0, 1.) // add constant term for non-zero intercept
+                                   .svd(true, true)
+                                   .solve(training_outputs, 0.)
                                    .expect("Resolution of linear system failed");
+
       // extracts weights and intercept
       self.intercept = weights[0];
       self.weights = weights.remove_row(0);

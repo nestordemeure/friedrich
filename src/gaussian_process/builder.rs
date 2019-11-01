@@ -9,6 +9,9 @@ use crate::conversion::Input;
 /// This class is meant to be produced by the `builder` method of the gaussian process and can be used to select the various parameters of the gaussian process :
 ///
 /// ```rust
+/// # use friedrich::gaussian_process::GaussianProcess;
+/// # use friedrich::prior::*;
+/// # use friedrich::kernel::*;
 /// # fn main() {
 /// // training data
 /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
