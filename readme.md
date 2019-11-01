@@ -1,6 +1,6 @@
 # Friedrich : Gaussian Process Regression
 
-This libarie implements [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process) in Rust.
+This libarie implements [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process), also known as [Kriging](https://en.wikipedia.org/wiki/Kriging), in Rust.
 Our goal is to provide a building block for other algorithms (such as [Bayesian Optimization](https://en.wikipedia.org/wiki/Bayesian_optimization)).
 
 Gaussian process have both the ability to extract a lot of information from their training data and to return a prediction and an uncertainty on their prediction.
