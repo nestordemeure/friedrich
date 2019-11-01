@@ -10,8 +10,6 @@ My aim is to provide an implementation of [Gaussian Process Regression](https://
 
 ## TODO
 
-The one important feature still lacking is a way to properly optimize the kernel parameters.
-
 - Clean-up the documentation.
 - Add better algorithms to fit kernel parameters.
 - Add ndarray support behind a feature flag
