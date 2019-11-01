@@ -250,12 +250,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// ```rust
    /// # use friedrich::gaussian_process::GaussianProcess;
    /// # fn main() {
-   /// // trains a model
-   /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
-   /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
-   /// let gp = GaussianProcess::default(training_inputs, training_outputs);
-   ///
-   /// // produces the distribution at some new inputs
+   /// # let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+   /// # let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+   /// # let gp = GaussianProcess::default(training_inputs, training_outputs);
+   /// // computes the distribution at some new coordinates
    /// let new_inputs = vec![vec![1.], vec![2.]];
    /// let sampler = gp.sample_at(&new_inputs);
    ///

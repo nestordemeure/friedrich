@@ -6,55 +6,38 @@ mod algebra;
 mod conversion;
 
 use crate::gaussian_process::GaussianProcess;
-use crate::parameters::prior::*;
-use crate::parameters::kernel::*;
 
 fn main()
 {
-   // training data
-   let training_inputs: Vec<_> = [0.8, 1.2, 3.8, 4.2].iter().map(|&x| vec![x]).collect();
+   // trains a gaussian process on a dataset
+   let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
    let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+   let mut gp = GaussianProcess::default(training_inputs, training_outputs);
 
-   let input_dimension = 1;
-   let output_noise = 0.1;
-   let exponential_kernel = Exponential::default();
-   let linear_prior = LinearPrior::default(input_dimension);
-
-   // builds a model
-   //let mut gp = GaussianProcess::default(training_inputs, training_outputs);
-   let mut gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(output_noise)
-                                                                           .set_kernel(exponential_kernel)
-                                                                           .fit_kernel()
-                                                                           .set_prior(linear_prior)
-                                                                           .fit_prior()
-                                                                           .train();
-   gp.fit_parameters(true, true);
-
-   // make a prediction on new data
-   let inputs: Vec<_> = vec![1.0, 2.0, 3.0, 4.2, 7.].iter().map(|&x| vec![x]).collect();
-   let outputs = gp.predict(&inputs);
-   println!("prediction: {:?}", outputs);
-   let var = gp.predict_variance(&inputs);
-   println!("standard deviation: {:?}", var);
+   // predicts the mean and variance of a point
+   let input = vec![1.];
+   let mean = gp.predict(&input);
+   let var = gp.predict_variance(&input);
+   println!("prediction: {} ± {}", mean, var.sqrt());
 
    // updates the model
-   let additional_inputs: Vec<_> = vec![0., 1., 2., 5.].iter().map(|&x| vec![x]).collect();
+   let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
    let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
    let fit_prior = true;
    let fit_kernel = true;
    gp.add_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
 
-   // renew prediction
+   // makes several prediction
+   let inputs = vec![vec![1.0], vec![2.0], vec![3.0]];
    let outputs = gp.predict(&inputs);
-   println!("prediction 2: {:?}", outputs);
-   let var = gp.predict_variance(&inputs);
-   println!("standard deviation 2: {:?}", var);
+   println!("predictions: {:?}", outputs);
 
-   // sample the gaussian process on new data
-   let sampler = gp.sample_at(&inputs);
+   // samples from the distribution
+   let new_inputs = vec![vec![1.0], vec![2.0]];
+   let sampler = gp.sample_at(&new_inputs);
    let mut rng = rand::thread_rng();
    for i in 1..=5
    {
-      println!("sample {}: {:?}", i, sampler.sample(&mut rng));
+      println!("sample {} : {:?}", i, sampler.sample(&mut rng));
    }
 }

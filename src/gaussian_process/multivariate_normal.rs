@@ -17,7 +17,7 @@ use crate::conversion::Input;
 /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 /// let gp = GaussianProcess::default(training_inputs, training_outputs);
 ///
-/// // produces the distribution at some new inputs
+/// // computes the distribution at some new coordinates
 /// let new_inputs = vec![vec![1.], vec![2.]];
 /// let sampler = gp.sample_at(&new_inputs);
 ///
@@ -36,7 +36,7 @@ use crate::conversion::Input;
 /// # let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
 /// # let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 /// # let gp = GaussianProcess::default(training_inputs, training_outputs);
-/// // produces the distribution at a new input
+/// // computes the distribution at some new coordinate
 /// let new_input = vec![1.];
 /// let sampler = gp.sample_at(&new_input);
 ///
