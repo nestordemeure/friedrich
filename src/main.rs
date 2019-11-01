@@ -22,12 +22,12 @@ fn main()
    let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 
    // builds a model
-   let mut gp = GaussianProcess::default(training_inputs, training_outputs);
-   print_noise(&gp);
-   /*let mut gp = GaussianProcess::new(&training_inputs, &training_outputs).set_noise(0.1f64)
-   .fit_kernel()
-   .fit_prior()
-   .train();*/
+   //let mut gp = GaussianProcess::default(training_inputs, training_outputs);
+   //print_noise(&gp);
+   let mut gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(0.1f64)
+                                                                           .fit_kernel()
+                                                                           .fit_prior()
+                                                                           .train();
    gp.fit_parameters(true, true);
 
    // make a prediction on new data

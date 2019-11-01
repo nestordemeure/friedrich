@@ -1,7 +1,4 @@
-//! Nalgebra based Gaussian process
-//!
-//! Used for raw acess to the underlying implementation.
-//! Mostly usefull to reduce copies and provide binding for other input/output types.
+//! Gaussian process
 //!
 //! TODO illustrate usage
 

@@ -4,7 +4,39 @@ use nalgebra::{DMatrix, DVector};
 use std::marker::PhantomData;
 use crate::conversion::Input;
 
-/// modelize a multivariate normal distribution
+/// Multivariate Normal Distribution
+///
+/// This class is meant to be produced by the `sample_at` method of the gaussian process
+/// and can be used to sample the process at a given point / set of points :
+///
+/// ```rust
+/// # fn main() {
+/// // trains a model
+/// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+/// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+/// let gp = GaussianProcess::default(training_inputs, training_outputs);
+///
+/// // produces the distribution at some new inputs
+/// let new_inputs = vec![vec![1.], vec![2.]];
+/// let sampler = gp.sample_at(&new_inputs);
+///
+/// // samples from the distribution
+/// let mut rng = rand::thread_rng();
+/// println!("samples a vector : {:?}", sampler.sample(&mut rng));
+/// # }
+/// ```
+///
+/// Note that the output type is a function of the input of `sample_at`, the method can be used on a vector of vectors as well as a single value :
+///
+/// ```rust
+/// // produces the distribution at a new input
+/// let new_input = 1.;
+/// let sampler = gp.sample_at(&new_input);
+///
+/// // samples from the distribution
+/// let mut rng = rand::thread_rng();
+/// println!("samples a value : {}", sampler.sample(&mut rng));
+/// ```
 pub struct MultivariateNormal<T: Input>
 {
    mean: DVector<f64>,
@@ -14,20 +46,21 @@ pub struct MultivariateNormal<T: Input>
 
 impl<T: Input> MultivariateNormal<T>
 {
-   /// outputs a new multivariate guassian with the given parameters
+   /// Produces a new multivariate guassian with the given parameters
    pub fn new(mean: DVector<f64>, covariance: DMatrix<f64>) -> Self
    {
-      let cholesky_covariance = covariance.cholesky().expect("Cholesky decomposition failed!").unpack();
+      let cholesky_covariance =
+         covariance.cholesky().expect("MultivariateNormal: Cholesky decomposition failed!").unpack();
       MultivariateNormal { mean, cholesky_covariance, input_type: PhantomData }
    }
 
-   /// outputs the mean of the distribution
+   /// Outputs the mean of the distribution
    pub fn mean(&self) -> T::OutVector
    {
       T::from_dvector(&self.mean)
    }
 
-   /// takes a random number generator and uses it to sample from the distribution
+   /// Takes a random number generator and uses it to sample from the distribution
    pub fn sample<RNG: Rng>(&self, rng: &mut RNG) -> T::OutVector
    {
       let normal = DVector::from_fn(self.mean.nrows(), |_, _| rng.sample(StandardNormal));
