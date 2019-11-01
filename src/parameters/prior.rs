@@ -1,7 +1,10 @@
 //! Prior
 //!
-//! The value that is returned in the absence of further information.
-//! This can be a constant but also a polynomial or any model.
+//! When asked to predict a value for an input that is too dissimilar to known inputs, the model will return the prior.
+//! Furthermore the process will be fitted on the residual of the prior meaning that a good prior can significantly improve the precision of the model.
+//!
+//! This can be a constant but also a polynomial or any model of the data.
+//! If you want to provide a user-defined prior, it should implement the Prior trait.
 
 use nalgebra::DVector;
 use nalgebra::{storage::Storage, U1, Dynamic};
@@ -12,7 +15,7 @@ use crate::algebra::{SVector, SMatrix};
 
 /// The Prior trait
 ///
-/// Requires a function mapping an input to an output
+/// If you want to provide a user-defined kernel, you should implement this trait.
 pub trait Prior
 {
    /// Default value for the prior
@@ -21,7 +24,7 @@ pub trait Prior
    /// Takes and input and return an output.
    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>;
 
-   /// Optional, function that performs an automatic fit of the prior
+   /// Optional, function that fits the prior on training data
    fn fit<SM: Storage<f64, Dynamic, Dynamic> + Clone, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                                      _training_inputs: &SMatrix<SM>,
                                                                                      _training_outputs: &SVector<SV>)
@@ -33,6 +36,8 @@ pub trait Prior
 // CLASSICAL PRIOR
 
 /// The Zero prior
+///
+/// this prior always return zero.
 #[derive(Clone, Copy, Debug)]
 pub struct Zero {}
 
@@ -52,6 +57,9 @@ impl Prior for Zero
 //-----------------------------------------------
 
 /// The Constant prior
+///
+/// This prior returns a constant.
+/// It can be fit to return the mean of the training data.
 #[derive(Clone, Debug)]
 pub struct Constant
 {
@@ -91,6 +99,8 @@ impl Prior for Constant
 //-----------------------------------------------
 
 /// The Linear prior
+///
+/// This prior is a linear function which can be fit on the training data.
 #[derive(Clone, Debug)]
 pub struct Linear
 {
@@ -101,7 +111,7 @@ pub struct Linear
 impl Linear
 {
    /// Constructs a new linear prior
-   /// te first row of w is the bias such that `prior = [1|input] * w`
+   /// the first row of w is the bias such that `prior = [1|input] * w`
    pub fn new(weights: DVector<f64>, intercept: f64) -> Self
    {
       Linear { weights, intercept }
