@@ -1,7 +1,13 @@
-//! Available kernels
+//! # Kernels
 //!
-//! Inspired from rusty-machines' [implementation](https://github.com/AtheMathmo/rusty-machine/blob/master/src/learning/toolkit/kernel.rs).
-//! For more informations on the kernels and their usecase, see [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) and [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions)
+//! A kernel is a function that maps from two row vectors to a scalar which is used to express the similarity between the vectors.
+//!
+//! To learn more about the properties of the provided kernels, we recommand the [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) Wikipedia page and the [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions) article.
+//!
+//! If you want to provide a user-defined kernel, it should implement the Kernel trait.
+//! To learn more about the implementation of kernels adapted to a particular problem, we recommend the chapter two (*Expressing Structure with Kernels*) and three (*Automatic Model Construction*) of the very good [Automatic Model Construction with Gaussian Processes](http://www.cs.toronto.edu/~duvenaud/thesis.pdf).
+//!
+//! This implementation is inspired by [rusty-machines'](https://github.com/AtheMathmo/rusty-machine/blob/master/src/learning/toolkit/kernel.rs).
 
 use std::ops::{Add, Mul};
 use nalgebra::{storage::Storage, U1, Dynamic};
@@ -12,16 +18,16 @@ use crate::algebra::{SRowVector, SVector, SMatrix};
 
 /// The Kernel trait
 ///
-/// Requires a function mapping two vectors to a scalar.
+/// If you want to provide a user-defined kernel, you should implement this trait.
 pub trait Kernel: Default
 {
-   /// Takes two equal length slices and returns a scalar.
+   /// Takes two equal length slices (row vector) and returns a scalar.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64;
 
-   /// Optional, function that performs an automatic fit of the kernel parameters
+   /// Optional, function that fits the kernel parameters on the raining data
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              _training_inputs: &SMatrix<SM>,
                                                                              _training_outputs: &SVector<SV>)
@@ -32,8 +38,9 @@ pub trait Kernel: Default
 //---------------------------------------------------------------------------------------
 // FIT
 
-/// provides a rough estimate for the badnwith
-/// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) to have a guess at the bandwith
+/// provides a rough estimate for the bandwith
+///
+/// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) which shoud return at least the correct magnitude for the bandwith
 /// this might be too large if the distribution of the distances is not normal but is fast to compute, o(n²) of the number of samples
 fn fit_bandwith_silverman<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatrix<S>) -> f64
 {
@@ -69,12 +76,10 @@ fn fit_amplitude_var<S: Storage<f64, Dynamic, U1>>(training_outputs: &SVector<S>
 
 /// The sum of two kernels
 ///
-/// This struct should not be directly instantiated but instead
-/// is created when we add two kernels together.
+/// This struct should not be directly instantiated but instead is created when we add two kernels together.
 ///
-/// Note that it will be more efficient to implement the final kernel
-/// manually yourself. However this provides an easy mechanism to test
-/// different combinations.
+/// Note that it will be more efficient to implement the final kernel manually yourself.
+/// However this provides an easy mechanism to test different combinations.
 #[derive(Debug)]
 pub struct KernelSum<T, U>
    where T: Kernel,
@@ -118,12 +123,10 @@ impl<T: Kernel, U: Kernel> Default for KernelSum<T, U>
 
 /// The pointwise product of two kernels
 ///
-/// This struct should not be directly instantiated but instead
-/// is created when we multiply two kernels together.
+/// This struct should not be directly instantiated but instead is created when we multiply two kernels together.
 ///
-/// Note that it will be more efficient to implement the final kernel
-/// manually yourself. However this provides an easy mechanism to test
-/// different combinations.
+/// Note that it will be more efficient to implement the final kernel manually yourself.
+/// However this provides an easy mechanism to test different combinations.
 #[derive(Debug)]
 pub struct KernelProd<T, U>
    where T: Kernel,
@@ -289,7 +292,7 @@ impl Kernel for Polynomial
 
 /// Gaussian kernel
 ///
-/// Equivalently a squared exponential kernel.
+/// Equivalent to a squared exponential kernel.
 ///
 /// k(x,y) = A exp(-||x-y||² / 2l²)
 ///
@@ -298,7 +301,7 @@ pub type Gaussian = SquaredExp;
 
 /// Squared exponential kernel
 ///
-/// Equivalently a gaussian function.
+/// Equivalent to a gaussian kernel.
 ///
 /// k(x,y) = A exp(-||x-y||² / 2l²)
 ///
