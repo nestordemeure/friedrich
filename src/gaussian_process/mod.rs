@@ -29,12 +29,12 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
    covmat_cholesky: Cholesky<f64, Dynamic>
 }
 
-impl GaussianProcess<kernel::Gaussian, prior::Constant>
+impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
 {
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
    pub fn default<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::ConstantPrior>::new(training_inputs, training_outputs)
       .fit_kernel()
       .fit_prior()
       .train()
@@ -43,9 +43,9 @@ impl GaussianProcess<kernel::Gaussian, prior::Constant>
    /// returns a default gaussian process with a gaussian kernel and a constant prior, both fitted to the data
    pub fn builder<T: Input>(training_inputs: T,
                             training_outputs: T::InVector)
-                            -> GaussianProcessBuilder<kernel::Gaussian, prior::Constant>
+                            -> GaussianProcessBuilder<kernel::Gaussian, prior::ConstantPrior>
    {
-      GaussianProcessBuilder::<kernel::Gaussian, prior::Constant>::new(training_inputs, training_outputs)
+      GaussianProcessBuilder::<kernel::Gaussian, prior::ConstantPrior>::new(training_inputs, training_outputs)
    }
 }
 

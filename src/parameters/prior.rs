@@ -39,13 +39,13 @@ pub trait Prior
 ///
 /// this prior always return zero.
 #[derive(Clone, Copy, Debug)]
-pub struct Zero {}
+pub struct ZeroPrior {}
 
-impl Prior for Zero
+impl Prior for ZeroPrior
 {
    fn default(_input_dimension: usize) -> Self
    {
-      Zero {}
+      Self {}
    }
 
    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>
@@ -61,25 +61,25 @@ impl Prior for Zero
 /// This prior returns a constant.
 /// It can be fit to return the mean of the training data.
 #[derive(Clone, Debug)]
-pub struct Constant
+pub struct ConstantPrior
 {
    c: f64
 }
 
-impl Constant
+impl ConstantPrior
 {
    /// Constructs a new constant prior
-   pub fn new(c: f64) -> Constant
+   pub fn new(c: f64) -> Self
    {
-      Constant { c: c }
+      Self { c: c }
    }
 }
 
-impl Prior for Constant
+impl Prior for ConstantPrior
 {
-   fn default(_input_dimension: usize) -> Constant
+   fn default(_input_dimension: usize) -> Self
    {
-      Constant::new(0f64)
+      Self::new(0f64)
    }
 
    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>
@@ -102,27 +102,27 @@ impl Prior for Constant
 ///
 /// This prior is a linear function which can be fit on the training data.
 #[derive(Clone, Debug)]
-pub struct Linear
+pub struct LinearPrior
 {
    weights: DVector<f64>,
    intercept: f64
 }
 
-impl Linear
+impl LinearPrior
 {
    /// Constructs a new linear prior
    /// the first row of w is the bias such that `prior = [1|input] * w`
    pub fn new(weights: DVector<f64>, intercept: f64) -> Self
    {
-      Linear { weights, intercept }
+      LinearPrior { weights, intercept }
    }
 }
 
-impl Prior for Linear
+impl Prior for LinearPrior
 {
-   fn default(input_dimension: usize) -> Linear
+   fn default(input_dimension: usize) -> Self
    {
-      Linear { weights: DVector::zeros(input_dimension), intercept: 0f64 }
+      Self { weights: DVector::zeros(input_dimension), intercept: 0f64 }
    }
 
    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>

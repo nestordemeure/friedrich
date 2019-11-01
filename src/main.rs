@@ -6,14 +6,8 @@ mod algebra;
 mod conversion;
 
 use crate::gaussian_process::GaussianProcess;
-use crate::parameters::kernel::Kernel;
-use crate::parameters::prior::Prior;
-
-// testing deref
-fn print_noise<K: Kernel, P: Prior>(gp: &GaussianProcess<K, P>)
-{
-   println!("noise: {}", gp.noise)
-}
+use crate::parameters::prior::*;
+use crate::parameters::kernel::*;
 
 fn main()
 {
@@ -21,11 +15,17 @@ fn main()
    let training_inputs: Vec<_> = [0.8, 1.2, 3.8, 4.2].iter().map(|&x| vec![x]).collect();
    let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 
+   let input_dimension = 1;
+   let output_noise = 0.1;
+   let exponential_kernel = Exponential::default();
+   let linear_prior = LinearPrior::default(input_dimension);
+
    // builds a model
    //let mut gp = GaussianProcess::default(training_inputs, training_outputs);
-   //print_noise(&gp);
-   let mut gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(0.1f64)
+   let mut gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(output_noise)
+                                                                           .set_kernel(exponential_kernel)
                                                                            .fit_kernel()
+                                                                           .set_prior(linear_prior)
                                                                            .fit_prior()
                                                                            .train();
    gp.fit_parameters(true, true);

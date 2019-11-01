@@ -8,8 +8,27 @@ use crate::conversion::Input;
 ///
 /// This class is meant to be produced by the `builder` method of the gaussian process and can be used to select the various parameters of the gaussian process :
 ///
+/// ```rust
+/// # fn main() {
+/// // training data
+/// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+/// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 ///
+/// // model parameters
+/// let input_dimension = 1;
+/// let output_noise = 0.1;
+/// let exponential_kernel = Exponential::default();
+/// let linear_prior = LinearPrior::default(input_dimension);
 ///
+/// // defining and training a model
+/// let gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(output_noise)
+///                                                                     .set_kernel(exponential_kernel)
+///                                                                     .fit_kernel()
+///                                                                     .set_prior(linear_prior)
+///                                                                     .fit_prior()
+///                                                                     .train();
+/// # }
+/// ```
 pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
 {
    /// value to which the process will regress in the absence of informations
