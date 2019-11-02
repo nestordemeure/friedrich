@@ -270,6 +270,58 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       T::from_dvector(&variances)
    }
 
+   /// Predicts both the mean and the variance of the gaussian process for each row of the input.
+   ///
+   /// Faster than calling `predict` and `predict_variance` separately.
+   ///
+   /// ```rust
+   /// # use friedrich::gaussian_process::GaussianProcess;
+   /// # fn main() {
+   /// # let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
+   /// # let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
+   /// let gp = GaussianProcess::default(training_inputs, training_outputs);
+   /// let input = vec![1.];
+   /// let (mean, var) = gp.predict_mean_variance(&input);
+   /// println!("prediction: {} ± {}", mean, var.sqrt());
+   /// # }
+   /// ```
+   pub fn predict_mean_variance<T: Input>(&self, inputs: &T) -> (T::OutVector, T::OutVector)
+   {
+      let inputs = T::to_dmatrix(inputs);
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
+
+      // computes weights to give each training sample
+      let cov_train_inputs = make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
+      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
+
+      // ----- mean -----
+
+      // computes prior for the given inputs
+      let mut prior = self.prior.prior(&inputs);
+
+      // weights.transpose() * &self.training_outputs + prior
+      prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
+
+      let mean = T::from_dvector(&prior);
+
+      // ----- variance -----
+
+      // (cov_inputs_inputs - cov_train_inputs.transpose() * weights).diagonal()
+      let mut variances = DVector::<f64>::zeros(inputs.nrows());
+      for (i, input) in inputs.row_iter().enumerate()
+      {
+         let base_cov = self.kernel.kernel(&input, &input);
+         let predicted_cov = cov_train_inputs.column(i).dot(&weights.column(i));
+         variances[i] = base_cov - predicted_cov;
+      }
+
+      let variance = T::from_dvector(&variances);
+
+      // ----- result -----
+
+      (mean, variance)
+   }
+
    /// Returns the covariancematrix for the rows of the input.
    pub fn predict_covariance<T: Input>(&self, inputs: &T) -> DMatrix<f64>
    {
