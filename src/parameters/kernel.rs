@@ -40,9 +40,8 @@ pub trait Kernel: Default
 
 /// provides a rough estimate for the bandwith
 ///
-/// use a formula adapted from [Silverman's rule of thumb](https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator) which shoud return at least the correct magnitude for the bandwith
-/// this might be too large if the distribution of the distances is not normal but is fast to compute, o(n²) of the number of samples
-fn fit_bandwith_silverman<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatrix<S>) -> f64
+/// use the mean distance between points as a baseline for the bandwith
+fn fit_bandwith_mean<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatrix<S>) -> f64
 {
    // builds the sum of all distances between different samples
    let mut sum_distances = 0.;
@@ -59,10 +58,8 @@ fn fit_bandwith_silverman<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &S
    let nb_samples = training_inputs.nrows();
    let nb_distances = ((nb_samples * nb_samples - nb_samples) / 2) as f64;
 
-   // computes silverman's formula for the univariate case
-   let mean_distance = sum_distances / nb_distances;
-   // 0.9 instead of 1.059 as recommended by silverman
-   mean_distance * 0.9f64 * nb_distances.powf(0.2f64)
+   // mean distance
+   sum_distances / nb_distances
 }
 
 /// outputs the variance of the outputs as a best guess of the amplitude
@@ -354,7 +351,7 @@ impl Kernel for SquaredExp
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
    {
-      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
    }
 }
@@ -414,7 +411,7 @@ impl Kernel for Exponential
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
    {
-      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
    }
 }
@@ -474,7 +471,7 @@ impl Kernel for Matern1
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
    {
-      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
    }
 }
@@ -534,7 +531,7 @@ impl Kernel for Matern2
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
    {
-      self.ls = fit_bandwith_silverman(training_inputs);
+      self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
    }
 }
