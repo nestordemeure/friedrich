@@ -261,15 +261,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                    .expect("predict_covariance : solve failed");
 
       // (cov_inputs_inputs - (kl.transpose() * kl)).diagonal()
-      let mut variances = DVector::<f64>::zeros(inputs.nrows());
-      for i in 0..inputs.nrows()
-      {
-         // Note that this might be done with a zipped iterator
-         let input = inputs.row(i);
-         let base_cov = self.kernel.kernel(&input, &input);
-         let predicted_cov = kl.column(i).norm_squared();
-         variances[i] = base_cov - predicted_cov;
-      }
+      let variances = inputs.row_iter()
+                            .map(|row| self.kernel.kernel(&row, &row)) // variance of input points with themselves
+                            .zip(kl.column_iter().map(|col| col.norm_squared())) // diag(kl^T * kl)
+                            .map(|(base_cov, predicted_cov)| base_cov - predicted_cov);
+      let variances = DVector::<f64>::from_iterator(inputs.nrows(), variances);
 
       T::from_dvector(&variances)
    }
