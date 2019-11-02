@@ -146,7 +146,8 @@ impl Prior for LinearPrior
 
       // TODO solve cannot be used with qr and full_piv_lu due to issue 667
       // https://github.com/rustsim/nalgebra/issues/667
-      // TODO solve_mut fails on non-square systems with both qr and full_piv_lu
+      // TODO solve_mut fails on non-square systems with both qr and full_piv_lu due to issue 672
+      // https://github.com/rustsim/nalgebra/issues/672
 
       // extracts weights and intercept
       self.intercept = weights[0];
