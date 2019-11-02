@@ -16,7 +16,7 @@
 //!
 //! - define a gaussian process with default parameters or using the builder pattern
 //! - train it on multidimensional data
-//! - fit the parameters (kernel and prior) on the training data
+//! - fit the parameters (kernel and prior) on the training data (the fit is currently based on fast heuristics)
 //! - add additional samples and refit the process
 //! - predict the mean and variance and covariance matrix for given inputs
 //! - sample the distribution at a given position

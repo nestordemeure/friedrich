@@ -66,7 +66,6 @@ A trait is provided to add your own pairs.
 The list of things that could be done to improve on the current implementation includes :
 
 - Add better algorithms to fit kernel parameters (cross validation or gradient descent on likelyhood).
-- Improve efficiency of the linear algebra operations used.
 - Add function to predict both mean and variance (factoring some code for improved performances).
 - Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
 - Add simple kernel regression (not as clever but much faster).

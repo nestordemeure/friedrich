@@ -248,25 +248,26 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Predicts the variance of the gaussian process for each row of the input.
    pub fn predict_variance<T: Input>(&self, inputs: &T) -> T::OutVector
    {
-      // There is a better formula available if one can solve system directly using a triangular matrix
-      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
-      // cov_inputs_inputs - (kl.transpose() * kl).diagonal()
-      // note that here the diagonal is just the sum of the squares of the values in the columns of kl
       let inputs = T::to_dmatrix(inputs);
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
-      // compute the weights
+      // compute the covariances
       let cov_train_inputs = make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
 
-      // (cov_inputs_inputs - cov_train_inputs.transpose() * weights).diagonal()
+      // solve linear system
+      let kl = self.covmat_cholesky
+                   .l()
+                   .solve_lower_triangular(&cov_train_inputs)
+                   .expect("predict_covariance : solve failed");
+
+      // (cov_inputs_inputs - (kl.transpose() * kl)).diagonal()
       let mut variances = DVector::<f64>::zeros(inputs.nrows());
       for i in 0..inputs.nrows()
       {
          // Note that this might be done with a zipped iterator
          let input = inputs.row(i);
          let base_cov = self.kernel.kernel(&input, &input);
-         let predicted_cov = cov_train_inputs.column(i).dot(&weights.column(i));
+         let predicted_cov = kl.column(i).norm_squared();
          variances[i] = base_cov - predicted_cov;
       }
 
@@ -276,21 +277,21 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Returns the covariancematrix for the rows of the input.
    pub fn predict_covariance<T: Input>(&self, inputs: &T) -> DMatrix<f64>
    {
-      // There is a better formula available if one can solve system directly using a triangular matrix
-      // let kl = self.covmat_cholesky.l().solve(cov_train_inputs);
-      // cov_inputs_inputs - (kl.transpose() * kl)
       let inputs = T::to_dmatrix(inputs);
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
-      // compute the weights
+      // compute the covariances
       let cov_train_inputs = make_covariance_matrix(&self.training_inputs.as_matrix(), &inputs, &self.kernel);
-      let weights = self.covmat_cholesky.solve(&cov_train_inputs);
-
-      // computes the intra points covariance
       let mut cov_inputs_inputs = make_covariance_matrix(&inputs, &inputs, &self.kernel);
 
-      // cov_inputs_inputs - cov_train_inputs.transpose() * weights
-      cov_inputs_inputs.gemm_tr(-1f64, &cov_train_inputs, &weights, 1f64);
+      // solve linear system
+      let kl = self.covmat_cholesky
+                   .l()
+                   .solve_lower_triangular(&cov_train_inputs)
+                   .expect("predict_covariance : solve failed");
+
+      // cov_inputs_inputs - (kl.transpose() * kl)
+      cov_inputs_inputs.gemm_tr(-1f64, &kl, &kl, 1f64);
       cov_inputs_inputs
    }
 
