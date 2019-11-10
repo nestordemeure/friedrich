@@ -22,8 +22,7 @@ use crate::algebra::{SRowVector, SVector, SMatrix};
 pub trait Kernel: Default
 {
    /// numbers of parameters of the kernel
-   const nb_parameters : usize;
-   
+   const NB_PARAMETERS: usize;
    /// Takes two equal length slices (row vector) and returns a scalar.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -32,15 +31,16 @@ pub trait Kernel: Default
 
    /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter.
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
-      x1: &SRowVector<S1>,
-      x2: &SRowVector<S2>)
-      -> Vec<f64>;
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>;
 
    /// Optional, function that fits the kernel parameters on the raining data
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              _training_inputs: &SMatrix<SM>,
                                                                              _training_outputs: &SVector<SV>)
-   {}
+   {
+   }
 }
 
 //---------------------------------------------------------------------------------------
@@ -99,12 +99,25 @@ impl<T, U> Kernel for KernelSum<T, U>
    where T: Kernel,
          U: Kernel
 {
+   const NB_PARAMETERS: usize = T::NB_PARAMETERS + U::NB_PARAMETERS;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
       self.k1.kernel(x1, x2) + self.k2.kernel(x1, x2)
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let mut g1 = self.k1.gradient(x1, x2);
+      let mut g2 = self.k2.gradient(x1, x2);
+      g1.append(&mut g2);
+      g1
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -146,12 +159,25 @@ impl<T, U> Kernel for KernelProd<T, U>
    where T: Kernel,
          U: Kernel
 {
+   const NB_PARAMETERS: usize = T::NB_PARAMETERS + U::NB_PARAMETERS;
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
       self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let k1 = self.k1.kernel(x1, x2);
+      let k2 = self.k2.kernel(x1, x2);
+      let g1 = self.k1.gradient(x1, x2);
+      let g2 = self.k2.gradient(x1, x2);
+      g1.iter().map(|g1| g1 * k2).chain(g2.iter().map(|g2| g2 * k1)).collect()
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -234,12 +260,23 @@ impl Default for Linear
 
 impl Kernel for Linear
 {
+   const NB_PARAMETERS: usize = 1;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
       x1.dot(&x2) + self.c
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             _x1: &SRowVector<S1>,
+                                                                             _x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let grad_c = 1.;
+      vec![grad_c]
    }
 }
 
@@ -284,12 +321,28 @@ impl Default for Polynomial
 
 impl Kernel for Polynomial
 {
+   const NB_PARAMETERS: usize = 3;
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
       (self.alpha * x1.dot(&x2) + self.c).powf(self.d)
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let x = x1.dot(&x2);
+      let inner_term = self.alpha * x + self.c;
+
+      let grad_c = self.d * inner_term.powf(self.d - 1.); // (a + x)^b -> b*(a+x)^(b-1)
+      let grad_alpha = x * grad_c; // (a + c*x)^b -> c*b*(a+c*x)^(b-1)
+      let grad_d = inner_term.ln() * inner_term.powf(self.d); // a^x -> log(a) * a^x
+
+      vec![grad_alpha, grad_c, grad_d]
    }
 }
 
@@ -344,6 +397,7 @@ impl Default for SquaredExp
 
 impl Kernel for SquaredExp
 {
+   const NB_PARAMETERS: usize = 2;
    /// The squared exponential kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -353,6 +407,19 @@ impl Kernel for SquaredExp
       let distance_squared = (x1 - x2).norm_squared();
       let x = -distance_squared / (2f64 * self.ls * self.ls);
       self.ampl * x.exp()
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let distance_squared = (x1 - x2).norm_squared();
+
+      let grad_ls = distance_squared / (self.ls * self.ls);
+      let grad_ampl = (-grad_ls / 2.).exp();
+
+      vec![grad_ls, grad_ampl]
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -404,6 +471,7 @@ impl Default for Exponential
 
 impl Kernel for Exponential
 {
+   const NB_PARAMETERS: usize = 2;
    /// The squared exponential kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -413,6 +481,19 @@ impl Kernel for Exponential
       let distance = (x1 - x2).norm();
       let x = -distance / (2f64 * self.ls * self.ls);
       self.ampl * x.exp()
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let distance = (x1 - x2).norm();
+
+      let grad_ls = distance / (self.ls * self.ls);
+      let grad_ampl = (-grad_ls / 2.).exp();
+
+      vec![grad_ls, grad_ampl]
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -464,6 +545,7 @@ impl Default for Matern1
 
 impl Kernel for Matern1
 {
+   const NB_PARAMETERS: usize = 2;
    /// The matèrn1 kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -473,6 +555,20 @@ impl Kernel for Matern1
       let distance = (x1 - x2).norm();
       let x = (3f64).sqrt() * distance / self.ls;
       self.ampl * (1f64 + x) * (-x).exp()
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let distance = (x1 - x2).norm();
+      let x = 3f64.sqrt() * distance / self.ls;
+
+      let grad_ls = (3. * self.ampl * distance.powi(2) * (-x).exp()) / (self.ls.powi(3));
+      let grad_ampl = (1. + x) * (-x).exp();
+
+      vec![grad_ls, grad_ampl]
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -524,6 +620,7 @@ impl Default for Matern2
 
 impl Kernel for Matern2
 {
+   const NB_PARAMETERS: usize = 2;
    /// The matèrn2 kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -533,6 +630,23 @@ impl Kernel for Matern2
       let distance = (x1 - x2).norm();
       let x = (5f64).sqrt() * distance / self.ls;
       self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let distance = (x1 - x2).norm();
+      let x = (5f64).sqrt() * distance / self.ls;
+
+      let grad_ls = self.ampl
+                    * ((2. * self.ls / 3. + 1.)
+                       + distance * 5f64.sqrt() * ((self.ls.powi(2) / 3. + self.ls + 1.) / self.ls.powi(2)))
+                    * (-x).exp();
+      let grad_ampl = (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp();
+
+      vec![grad_ls, grad_ampl]
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -582,12 +696,25 @@ impl Default for HyperTan
 
 impl Kernel for HyperTan
 {
+   const NB_PARAMETERS: usize = 2;
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
       (self.alpha * x1.dot(&x2) + self.c).tanh()
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let x = x1.dot(&x2);
+      let grad_c = 1. / (self.alpha * x + self.c).cosh().powi(2);
+      let grad_alpha = x * grad_c;
+
+      vec![grad_alpha, grad_c]
    }
 }
 
@@ -626,12 +753,22 @@ impl Default for Multiquadric
 
 impl Kernel for Multiquadric
 {
+   const NB_PARAMETERS: usize = 2;
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
       (x1 - x2).norm_squared().hypot(self.c)
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let grad_c = self.c / (x1 - x2).norm().hypot(self.c);
+      vec![grad_c]
    }
 }
 
@@ -673,6 +810,7 @@ impl Default for RationalQuadratic
 
 impl Kernel for RationalQuadratic
 {
+   const NB_PARAMETERS: usize = 2;
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
@@ -680,5 +818,30 @@ impl Kernel for RationalQuadratic
    {
       let distance_squared = (x1 - x2).norm_squared();
       (1f64 + distance_squared / (2f64 * self.alpha * self.ls * self.ls)).powf(-self.alpha)
+   }
+
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+                                                                             x1: &SRowVector<S1>,
+                                                                             x2: &SRowVector<S2>)
+                                                                             -> Vec<f64>
+   {
+      let distance_squared = (x1 - x2).norm_squared();
+      // (1f64 + distance_squared / (2f64 * self.alpha * self.ls * self.ls)).powf(-self.alpha)
+      // (1 + d / (2 * a * l²))^(-a)
+
+      let grad_alpha = ((distance_squared + 2. * self.ls.powi(2) * self.alpha)
+                        / (self.ls.powi(2) * self.alpha))
+                                                         .powf(-self.alpha)
+                       * (2f64.powf(self.alpha)
+                          * (1.
+                             - ((distance_squared + 2. * self.ls.powi(2) * self.alpha)
+                                / (2. * self.ls.powi(2) * self.alpha))
+                                                                      .ln())
+                          - (self.ls.powi(2) * 2f64.powf(self.alpha + 1.) * self.alpha)
+                            / (distance_squared + 2. * self.ls.powi(2) * self.alpha));
+      let grad_ls = distance_squared
+                    * (distance_squared / (2. * self.alpha * self.ls * self.ls) + 1.).powf(-self.alpha - 1.)
+                    / self.ls.powi(3);
+      vec![grad_alpha, grad_ls]
    }
 }
