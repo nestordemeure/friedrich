@@ -30,12 +30,17 @@ pub trait Kernel: Default
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64;
 
-   /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter.
+   /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter in an arbitrary order.
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                              x1: &SRowVector<S1>,
                                                                              x2: &SRowVector<S2>)
                                                                              -> Vec<f64>;
 
+   /// Returns a vector containing all the parameters of the kernel in the same order as the outputs of the `gradient` function
+   fn get_parameters(&self) -> Vec<f64>;
+
+   /// Sets all the parameters of the kernel by reading them from a slice where they are in the same order as the outputs of the `gradient` function
+   fn set_parameters(&mut self, parameters: &[f64]);
    /// Optional, function that fits the kernel parameters on the raining data
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              _training_inputs: &SMatrix<SM>,
@@ -121,6 +126,20 @@ impl<T, U> Kernel for KernelSum<T, U>
       g1
    }
 
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      let mut p1 = self.k1.get_parameters();
+      let mut p2 = self.k2.get_parameters();
+      p1.append(&mut p2);
+      p1
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.k1.set_parameters(&parameters[..T::NB_PARAMETERS]);
+      self.k2.set_parameters(&parameters[T::NB_PARAMETERS..]);
+   }
+
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
@@ -179,6 +198,20 @@ impl<T, U> Kernel for KernelProd<T, U>
       let g1 = self.k1.gradient(x1, x2);
       let g2 = self.k2.gradient(x1, x2);
       g1.iter().map(|g1| g1 * k2).chain(g2.iter().map(|g2| g2 * k1)).collect()
+   }
+
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      let mut p1 = self.k1.get_parameters();
+      let mut p2 = self.k2.get_parameters();
+      p1.append(&mut p2);
+      p1
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.k1.set_parameters(&parameters[..T::NB_PARAMETERS]);
+      self.k2.set_parameters(&parameters[T::NB_PARAMETERS..]);
    }
 
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -279,6 +312,16 @@ impl Kernel for Linear
       let grad_c = 1.;
       vec![grad_c]
    }
+
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.c]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.c = parameters[0];
+   }
 }
 
 //-----------------------------------------------
@@ -344,6 +387,18 @@ impl Kernel for Polynomial
       let grad_d = inner_term.ln() * inner_term.powf(self.d); // a^x -> log(a) * a^x
 
       vec![grad_alpha, grad_c, grad_d]
+   }
+
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.alpha, self.c, self.d]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.alpha = parameters[0];
+      self.c = parameters[1];
+      self.d = parameters[2];
    }
 }
 
@@ -423,6 +478,16 @@ impl Kernel for SquaredExp
       vec![grad_ls, grad_ampl]
    }
 
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.ls, self.ampl]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.ls = parameters[0];
+      self.ampl = parameters[1];
+   }
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
@@ -497,6 +562,16 @@ impl Kernel for Exponential
       vec![grad_ls, grad_ampl]
    }
 
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.ls, self.ampl]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.ls = parameters[0];
+      self.ampl = parameters[1];
+   }
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
@@ -572,6 +647,16 @@ impl Kernel for Matern1
       vec![grad_ls, grad_ampl]
    }
 
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.ls, self.ampl]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.ls = parameters[0];
+      self.ampl = parameters[1];
+   }
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
@@ -650,6 +735,17 @@ impl Kernel for Matern2
       vec![grad_ls, grad_ampl]
    }
 
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.ls, self.ampl]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.ls = parameters[0];
+      self.ampl = parameters[1];
+   }
+
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              training_inputs: &SMatrix<SM>,
                                                                              training_outputs: &SVector<SV>)
@@ -717,6 +813,17 @@ impl Kernel for HyperTan
 
       vec![grad_alpha, grad_c]
    }
+
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.alpha, self.c]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.alpha = parameters[0];
+      self.c = parameters[1];
+   }
 }
 
 //-----------------------------------------------
@@ -770,6 +877,16 @@ impl Kernel for Multiquadric
    {
       let grad_c = self.c / (x1 - x2).norm().hypot(self.c);
       vec![grad_c]
+   }
+
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.c]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.c = parameters[1];
    }
 }
 
@@ -844,5 +961,16 @@ impl Kernel for RationalQuadratic
                     * (distance_squared / (2. * self.alpha * self.ls * self.ls) + 1.).powf(-self.alpha - 1.)
                     / self.ls.powi(3);
       vec![grad_alpha, grad_ls]
+   }
+
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      vec![self.alpha, self.ls]
+   }
+
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.alpha = parameters[0];
+      self.ls = parameters[1];
    }
 }
