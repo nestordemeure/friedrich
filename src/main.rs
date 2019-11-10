@@ -21,6 +21,10 @@ fn main()
       let var = gp.predict_variance(&input);
       println!("prediction: {} ± {}", mean, var.sqrt());
 
+      // computes the likelihood of the model
+      let likelihood = gp.likelihood();
+      println!("likelihood of the current model : {}", likelihood);
+
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
       let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];

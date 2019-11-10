@@ -65,8 +65,16 @@ A trait is provided to add your own pairs.
 
 The list of things that could be done to improve on the current implementation includes :
 
-- Add better algorithms to fit kernel parameters (cross validation or gradient descent on likelyhood).
+- Add better algorithms to [fit kernel parameters](http://www.gaussianprocess.org/gpml/chapters/RW5.pdf) (cross-validation or [gradient descent](https://math.stackexchange.com/questions/1030534/gradients-of-marginal-likelihood-of-gaussian-process-with-squared-exponential-co/1072701#1072701) on likelyhood).
 - Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
-- Add simple kernel regression (not as clever but much faster).
+- Add simple [kernel regression](https://en.wikipedia.org/wiki/Kernel_regression#Nadaraya%E2%80%93Watson_kernel_regression) (not as clever but much faster).
+- Add scalable variations of the algorithm.
 
 *Do not hesitate to send pull request or ask for features.*
+
+## TODO
+
+- Add likelyhood formula
+- Add gradient expression for kernel parameters
+- Add default initialization for kernel parameters
+- Add gradient descent for kernel parameters

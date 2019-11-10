@@ -226,9 +226,42 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    //----------------------------------------------------------------------------------------------
    // PREDICT
 
+   /// Computes the log likelihood of the current model given the training data
+   ///
+   /// This quantity can be used for model selection.
+   /// Given two models, the one with the highest score would be the one with the highest probability of producing the data
+   pub fn likelihood(&self) -> f64
+   {
+      // formula : -1/2 (transpose(output)*cov(train,train)^-1*output + trace(log|cov(train,train)|) + size(train)*log(2*pi))
+
+      // how well do we fit the trainnig data ?
+      // TODO clone_owned needed by `solve_lower_triangular` due to a current bug in nalgebra
+      let output = self.training_outputs.as_vector().clone_owned();
+      // transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
+      let ol = self.covmat_cholesky.l().solve_lower_triangular(&output).expect("likelihood : solve failed");
+      let data_fit: f64 = ol.iter().map(|x| x * x).sum();
+
+      // penalizes complex models
+      // recomputing kernels seems easier than extracting and squaring the diagonal of the cholesky matrix
+      let complexity_penalty: f64 = self.training_inputs
+                                        .as_matrix()
+                                        .row_iter()
+                                        .map(|r| self.kernel.kernel(&r, &r) + self.noise * self.noise)
+                                        .map(|c| c.abs().ln())
+                                        .sum();
+
+      // rescales the output to make it independant of the number of samples
+      let n = self.training_inputs.as_matrix().nrows();
+      let normalization_constant = (n as f64) * (2. * std::f64::consts::PI).ln();
+
+      -0.5 * (data_fit + complexity_penalty + normalization_constant)
+   }
+
    /// Predicts the mean of the gaussian process for each row of the input.
    pub fn predict<T: Input>(&self, inputs: &T) -> T::OutVector
    {
+      // formula : prior + cov(input,train)*cov(train,train)^-1 * output
+
       let inputs = T::to_dmatrix(inputs);
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
@@ -248,6 +281,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Predicts the variance of the gaussian process for each row of the input.
    pub fn predict_variance<T: Input>(&self, inputs: &T) -> T::OutVector
    {
+      // formula, diagonal of : cov(input,input) - cov(input,train)*cov(train,train)^-1*cov(train,input)
+
       let inputs = T::to_dmatrix(inputs);
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
@@ -325,6 +360,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Returns the covariancematrix for the rows of the input.
    pub fn predict_covariance<T: Input>(&self, inputs: &T) -> DMatrix<f64>
    {
+      // formula : cov(input,input) - cov(input,train)*cov(train,train)^-1*cov(train,input)
+
       let inputs = T::to_dmatrix(inputs);
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
