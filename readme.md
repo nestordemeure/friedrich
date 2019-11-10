@@ -74,9 +74,14 @@ The list of things that could be done to improve on the current implementation i
 
 ## TODO
 
-- Add parameter number and gradient (row -> row -> vec<f64>) method to kernel trait
-- add gradient_cov_matrix(inputs, kernel) -> [iter<Matrix>](https://stackoverflow.com/questions/27535289/what-is-the-correct-way-to-return-an-iterator-or-any-other-trait) method to algebra
+- add default_parameters method to kernel (instead of fit)
+- make noise optimization optional
+- add ADAM optimizer
+- improve API
 
-- Add get_parameters, set_parameters and default_parameters methods to kernel trait
-
-- Add gradient descent for kernel parameters (ADAM?)
+ADAM is great on the second case while gradient descent is great on the first
+what to do ?
+choose one ?
+find another technique great at both ?
+use both with a criteria to decide if we need to switch (switch when perf degrade instead of improving ?) ?
+can likelihood be computed at the same time as gradient ?

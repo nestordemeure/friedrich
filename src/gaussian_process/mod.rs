@@ -324,7 +324,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    pub fn gradient_descent(&mut self, nb_iter: usize, epsilon: f64)
    {
       let mut parameters = self.get_parameters();
-      println!("initial likelihood:{}\tinitial parameters:{:?}", self.likelihood(), parameters);
+      let mut previous_likelihood = self.likelihood();
+      println!("initial likelihood:{}\tinitial parameters:{:?}", previous_likelihood, parameters);
 
       for i in 0..nb_iter
       {
@@ -334,12 +335,65 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             *p += epsilon * gradient;
          }
          self.set_parameters(&parameters);
+
+         let new_likelihood = self.likelihood();
          println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
-                  i,
-                  self.likelihood(),
-                  parameters,
-                  gradients);
+                  i, new_likelihood, parameters, gradients);
+         if new_likelihood <= previous_likelihood
+         {
+            break;
+         }
+         previous_likelihood = new_likelihood;
       }
+   }
+
+   /// tries to fit all the parameters using the ADAM gradient descent optimizer
+   /// see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/) for a good point on the formula
+   pub fn adam_descent(&mut self, nb_iter: usize)
+   {
+      // constant parameters
+      let beta1 = 0.9;
+      let beta2 = 0.999;
+      let epsilon = 1e-8;
+      let learning_rate = 0.1; // 0.001
+
+      let mut previous_likelihood = self.likelihood();
+      let mut parameters = self.get_parameters();
+      let mut mean_grad = vec![0.; parameters.len()];
+      let mut var_grad = vec![0.; parameters.len()];
+
+      println!("initial likelihood:{}\tinitial parameters:{:?}", previous_likelihood, parameters);
+
+      for i in 1..=nb_iter
+      {
+         let gradients = self.gradient_marginal_likelihood();
+         for p in 0..parameters.len()
+         {
+            mean_grad[p] = beta1 * mean_grad[p] + (1. - beta1) * gradients[p];
+            var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
+            let bias_corrected_mean = mean_grad[p] / (1. - beta1.powi(i as i32));
+            let bias_corrected_variance = var_grad[p] / (1. - beta2.powi(i as i32));
+            parameters[p] -=
+               (learning_rate * bias_corrected_mean) / (bias_corrected_variance.sqrt() + epsilon)
+         }
+         self.set_parameters(&parameters);
+
+         let new_likelihood = self.likelihood();
+         println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
+                  i, new_likelihood, parameters, gradients);
+         if new_likelihood <= previous_likelihood
+         {
+            break;
+         }
+         previous_likelihood = new_likelihood;
+      }
+   }
+
+   pub fn mixed_optimized(&mut self, nb_iter: usize)
+   {
+      self.adam_descent(nb_iter);
+      println!("finished running ADAM");
+      self.gradient_descent(nb_iter, 0.1);
    }
 
    //----------------------------------------------------------------------------------------------
