@@ -21,18 +21,26 @@ use crate::algebra::{SRowVector, SVector, SMatrix};
 /// If you want to provide a user-defined kernel, you should implement this trait.
 pub trait Kernel: Default
 {
+   /// numbers of parameters of the kernel
+   const nb_parameters : usize;
+   
    /// Takes two equal length slices (row vector) and returns a scalar.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64;
 
+   /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter.
+   fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
+      x1: &SRowVector<S1>,
+      x2: &SRowVector<S2>)
+      -> Vec<f64>;
+
    /// Optional, function that fits the kernel parameters on the raining data
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              _training_inputs: &SMatrix<SM>,
                                                                              _training_outputs: &SVector<SV>)
-   {
-   }
+   {}
 }
 
 //---------------------------------------------------------------------------------------

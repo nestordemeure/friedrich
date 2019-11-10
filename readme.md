@@ -74,7 +74,9 @@ The list of things that could be done to improve on the current implementation i
 
 ## TODO
 
-- Add likelyhood formula
-- Add gradient expression for kernel parameters
-- Add default initialization for kernel parameters
-- Add gradient descent for kernel parameters
+- Add parameter number and gradient (row -> row -> vec<f64>) method to kernel trait
+- add gradient_cov_matrix(inputs, kernel) -> [iter<Matrix>](https://stackoverflow.com/questions/27535289/what-is-the-correct-way-to-return-an-iterator-or-any-other-trait) method to algebra
+
+- Add get_parameters, set_parameters and default_parameters methods to kernel trait
+
+- Add gradient descent for kernel parameters (ADAM?)
