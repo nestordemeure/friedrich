@@ -23,6 +23,7 @@ pub trait Kernel: Default
 {
    /// numbers of parameters of the kernel
    const NB_PARAMETERS: usize;
+
    /// Takes two equal length slices (row vector) and returns a scalar.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,

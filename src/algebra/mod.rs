@@ -81,6 +81,34 @@ pub fn make_cholesky_covariance_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Ker
    return covmatix.cholesky().expect("Cholesky decomposition failed!");
 }
 
+/// Returns a vector with the gradient of the covariance matrix (which is a matrix) for each kernel parameter.
+pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(inputs: &SMatrix<S>,
+                                                                                       kernel: &K)
+                                                                                       -> Vec<DMatrix<f64>>
+{
+   // empty covariance matrices
+   let mut covmatrices: Vec<_> =
+      (0..K::NB_PARAMETERS).map(|_| {
+                              DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), std::f64::NAN)
+                           })
+                           .collect();
+
+   // computes the covariance for all the lower triangular matrix
+   for (col_index, x) in inputs.row_iter().enumerate()
+   {
+      for (row_index, y) in inputs.row_iter().enumerate().skip(col_index)
+      {
+         for (&grad, mat) in kernel.gradient(&x, &y).iter().zip(covmatrices.iter_mut())
+         {
+            mat[(row_index, col_index)] = grad;
+            mat[(col_index, row_index)] = grad;
+         }
+      }
+   }
+
+   return covmatrices;
+}
+
 //-----------------------------------------------------------------------------
 // CONVERSION
 

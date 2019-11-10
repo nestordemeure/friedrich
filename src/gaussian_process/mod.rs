@@ -39,7 +39,8 @@
 
 use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
 use nalgebra::{Cholesky, Dynamic, DMatrix, DVector};
-use crate::algebra::{EMatrix, EVector, make_cholesky_covariance_matrix, make_covariance_matrix};
+use crate::algebra::{EMatrix, EVector, make_cholesky_covariance_matrix, make_covariance_matrix,
+                 make_gradient_covariance_matrices};
 use crate::conversion::Input;
 
 mod multivariate_normal;
@@ -259,7 +260,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// Computes the gradient of the marginal likelihood for the current value of each parameter
    /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
-   fn gradient_marginal_likelihood(&self) -> Vec<f64>
+   /// TODO this method should not be pub
+   pub fn gradient_marginal_likelihood(&self) -> Vec<f64>
    {
       // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
       // K = cov(train,train)
@@ -270,13 +272,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       let cov_inv = self.covmat_cholesky.inverse();
       let alpha = &cov_inv * self.training_outputs.as_vector();
 
+      // loop on the gradient matrix for each parameter
       let mut results = vec![];
-      // TODO loop on all per parameter derivatives parameters
+      for cov_gradient in make_gradient_covariance_matrices(&self.training_inputs.as_matrix(), &self.kernel)
       {
-         // TODO temporary value
-         let n = self.training_outputs.as_vector().nrows();
-         let cov_gradient = DMatrix::<f64>::from_element(n, n, std::f64::NAN);
-
          // transpose(alpha) * cov_gradient * alpha
          let data_fit: f64 = cov_gradient.column_iter()
                                          .zip(alpha.iter())
@@ -285,7 +284,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
          // trace(cov_inv * cov_gradient)
          let complexity_penalty: f64 =
-            cov_inv.row_iter().zip(cov_gradient.column_iter()).map(|(c, d)| c.dot(&d)).sum();
+            cov_inv.row_iter().zip(cov_gradient.column_iter()).map(|(c, d)| c.tr_dot(&d)).sum();
 
          results.push((data_fit - complexity_penalty) / 2.);
       }
