@@ -254,7 +254,50 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       let n = self.training_inputs.as_matrix().nrows();
       let normalization_constant = (n as f64) * (2. * std::f64::consts::PI).ln();
 
-      -0.5 * (data_fit + complexity_penalty + normalization_constant)
+      -(data_fit + complexity_penalty + normalization_constant) / 2.
+   }
+
+   /// Computes the gradient of the marginal likelihood for the current value of each parameter
+   /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
+   fn gradient_marginal_likelihood(&self) -> Vec<f64>
+   {
+      // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
+      // K = cov(train,train)
+      // alpha = K^-1 * output
+      // dp = gradient(K, parameter)
+
+      // needed for the per parameter gradient computation
+      let cov_inv = self.covmat_cholesky.inverse();
+      let alpha = &cov_inv * self.training_outputs.as_vector();
+
+      let mut results = vec![];
+      // TODO loop on all per parameter derivatives parameters
+      {
+         // TODO temporary value
+         let n = self.training_outputs.as_vector().nrows();
+         let cov_gradient = DMatrix::<f64>::from_element(n, n, std::f64::NAN);
+
+         // transpose(alpha) * cov_gradient * alpha
+         let data_fit: f64 = cov_gradient.column_iter()
+                                         .zip(alpha.iter())
+                                         .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
+                                         .sum();
+
+         // trace(cov_inv * cov_gradient)
+         let complexity_penalty: f64 =
+            cov_inv.row_iter().zip(cov_gradient.column_iter()).map(|(c, d)| c.dot(&d)).sum();
+
+         results.push((data_fit - complexity_penalty) / 2.);
+      }
+
+      // adds the noise parameter
+      // gradient(K, noise) = 2*noise*Id
+      let data_fit = alpha.dot(&alpha);
+      let complexity_penalty = cov_inv.trace();
+      let noise_gradient = self.noise * (data_fit - complexity_penalty) / 2.;
+      results.push(noise_gradient);
+
+      results
    }
 
    /// Predicts the mean of the gaussian process for each row of the input.
