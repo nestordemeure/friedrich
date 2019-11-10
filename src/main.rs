@@ -26,7 +26,7 @@ fn main()
       println!("likelihood of the current model : {}", likelihood);
 
       // optimizes parameters
-      gp.gradient_descent(100);
+      gp.gradient_descent(100, 0.1);
 
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
@@ -39,6 +39,9 @@ fn main()
       let inputs = vec![vec![1.0], vec![2.0], vec![3.0]];
       let outputs = gp.predict(&inputs);
       println!("predictions: {:?}", outputs);
+
+      // optimizes parameters
+      //gp.gradient_descent(100, 0.1);
 
       // samples from the distribution
       let new_inputs = vec![vec![1.0], vec![2.0]];

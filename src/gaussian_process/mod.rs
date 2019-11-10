@@ -321,9 +321,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    /// tries to fit all the parameters by gradient descent
-   pub fn gradient_descent(&mut self, nb_iter: usize)
+   pub fn gradient_descent(&mut self, nb_iter: usize, epsilon: f64)
    {
-      let epsilon = 1e-4;
       let mut parameters = self.get_parameters();
       println!("initial likelihood:{}\tinitial parameters:{:?}", self.likelihood(), parameters);
 
@@ -332,10 +331,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          let gradients = self.gradient_marginal_likelihood();
          for (p, gradient) in parameters.iter_mut().zip(gradients.iter())
          {
-            *p += epsilon*gradient;
+            *p += epsilon * gradient;
          }
          self.set_parameters(&parameters);
-         println!("{}: likelihood:{}\tparameters{:?}", i, self.likelihood(), parameters);
+         println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
+                  i,
+                  self.likelihood(),
+                  parameters,
+                  gradients);
       }
    }
 
