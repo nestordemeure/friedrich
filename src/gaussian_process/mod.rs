@@ -144,7 +144,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    //----------------------------------------------------------------------------------------------
-   // FIT
+   // ADD SAMPLE
 
    /// Adds new samples to the model.
    ///
@@ -225,7 +225,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    //----------------------------------------------------------------------------------------------
-   // PREDICT
+   // FIT
 
    /// Computes the log likelihood of the current model given the training data
    ///
@@ -261,7 +261,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Computes the gradient of the marginal likelihood for the current value of each parameter
    /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
    /// TODO this method should not be pub
-   pub fn gradient_marginal_likelihood(&self) -> Vec<f64>
+   fn gradient_marginal_likelihood(&self) -> Vec<f64>
    {
       // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
       // K = cov(train,train)
@@ -298,6 +298,49 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
       results
    }
+
+   /// Returns a vector containing all the parameters of the kernel plus the noise
+   /// in the same order as the outputs of the `gradient_marginal_likelihood` function
+   fn get_parameters(&self) -> Vec<f64>
+   {
+      let mut parameters = self.kernel.get_parameters();
+      parameters.push(self.noise);
+      parameters
+   }
+
+   /// Sets all the parameters of the kernel plus the noise
+   /// by reading them from a slice where they are in the same order as the outputs of the `gradient_marginal_likelihood` function
+   fn set_parameters(&mut self, parameters: &[f64])
+   {
+      self.noise =
+         *parameters.last().expect("set_parameters: there should be at least one, noise, parameter!");
+      self.kernel.set_parameters(&parameters[..parameters.len() - 1]);
+      // retrains the model on new parameters
+      self.covmat_cholesky =
+         make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+   }
+
+   /// tries to fit all the parameters by gradient descent
+   pub fn gradient_descent(&mut self, nb_iter: usize)
+   {
+      let epsilon = 1e-4;
+      let mut parameters = self.get_parameters();
+      println!("initial likelihood:{}\tinitial parameters:{:?}", self.likelihood(), parameters);
+
+      for i in 0..nb_iter
+      {
+         let gradients = self.gradient_marginal_likelihood();
+         for (p, gradient) in parameters.iter_mut().zip(gradients.iter())
+         {
+            *p += epsilon*gradient;
+         }
+         self.set_parameters(&parameters);
+         println!("{}: likelihood:{}\tparameters{:?}", i, self.likelihood(), parameters);
+      }
+   }
+
+   //----------------------------------------------------------------------------------------------
+   // PREDICT
 
    /// Predicts the mean of the gaussian process for each row of the input.
    pub fn predict<T: Input>(&self, inputs: &T) -> T::OutVector

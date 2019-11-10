@@ -41,6 +41,7 @@ pub trait Kernel: Default
 
    /// Sets all the parameters of the kernel by reading them from a slice where they are in the same order as the outputs of the `gradient` function
    fn set_parameters(&mut self, parameters: &[f64]);
+
    /// Optional, function that fits the kernel parameters on the raining data
    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                              _training_inputs: &SMatrix<SM>,

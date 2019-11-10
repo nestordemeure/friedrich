@@ -25,8 +25,8 @@ fn main()
       let likelihood = gp.likelihood();
       println!("likelihood of the current model : {}", likelihood);
 
-      let grad = gp.gradient_marginal_likelihood();
-      println!("grad: {:?}", grad);
+      // optimizes parameters
+      gp.gradient_descent(100);
 
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
