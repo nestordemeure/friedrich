@@ -34,7 +34,6 @@
 mod algebra;
 mod parameters;
 mod conversion;
-mod optimizer;
 pub mod gaussian_process;
 pub use parameters::*;
 pub use conversion::Input;
