@@ -24,7 +24,11 @@
 //! let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
 //! let fit_prior = true;
 //! let fit_kernel = true;
-//! gp.add_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
+//! let fit_noise = true;
+//! let max_iter = 100;
+//! let convergence_fraction = 0.01;
+//! gp.add_samples(&additional_inputs, &additional_outputs);
+//! gp.fit_parameters(fit_prior, fit_kernel, fit_noise, max_iter, convergence_fraction);
 //!
 //! // samples from the distribution
 //! let new_inputs = vec![vec![1.0], vec![2.0]];
@@ -323,7 +327,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       }
       else if fit_noise
       {
-         unimplemented!();
+         unimplemented!("At the moment it is not possible to fit the noise parameter without fitting the kernel at the same time.");
       }
    }
 
@@ -348,44 +352,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       self.covmat_cholesky =
          make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
       // TODO update cholesky matrix instead of recomputing it from scratch
-   }
-
-   /// Adds new samples to the model and fit the parameters.
-   ///
-   /// Faster than doing `add_samples().fit_parameters()`.
-   ///
-   /// The fit of the noise and kernel parameters is done by gradient descent.
-   /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
-   ///
-   /// We recommend setting `fit_noise` to true, `max_iter` to 100 and `convergence_fraction` to 0.01
-   pub fn add_samples_fit<T: Input>(&mut self,
-                                    inputs: &T,
-                                    outputs: &T::InVector,
-                                    fit_prior: bool,
-                                    fit_kernel: bool,
-                                    fit_noise: bool,
-                                    max_iter: usize,
-                                    convergence_fraction: f64)
-   {
-      let inputs = T::to_dmatrix(inputs);
-      let outputs = T::to_dvector(outputs);
-      assert_eq!(inputs.nrows(), outputs.nrows());
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-      // grows the training matrix
-      let outputs = outputs - self.prior.prior(&inputs);
-      self.training_inputs.add_rows(&inputs);
-      self.training_outputs.add_rows(&outputs);
-      // refit the parameters and retrain the model from scratch
-      if fit_kernel || fit_prior || fit_noise
-      {
-         self.fit_parameters(fit_prior, fit_kernel, fit_noise, max_iter, convergence_fraction);
-      }
-      else
-      {
-         // retrains the model anyway if no fit happened
-         self.covmat_cholesky =
-            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
-      }
    }
 
    //----------------------------------------------------------------------------------------------

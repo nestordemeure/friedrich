@@ -74,11 +74,6 @@ The list of things that could be done to improve on the current implementation i
 
 ## TODO
 
-- add default_parameters method to kernel (instead of fit)
-- make noise optimization optional
-- improve API
-
-test clipped gradient
-test for of normalized gradient (but not adam)
-
-default noie value : 1% of std of outputs
+add default_parameters method to kernel (instead of fit)
+default noise value : 1% of std of outputs
+when to use default parameters ?
