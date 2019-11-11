@@ -296,7 +296,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
    ///
    /// We recommend setting `fit_noise` to true unless you have a very good estimate of the noise in the output data.
-   /// , `max_iter` to 100 and `convergence_fraction` to 0.01
+   /// Note that if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
+   ///
+   /// Good base values for `max_iter` and `convergence_fraction` are 100 and 0.01
    pub fn fit_parameters(&mut self,
                          fit_prior: bool,
                          fit_kernel: bool,
