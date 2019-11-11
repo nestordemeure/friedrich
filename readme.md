@@ -85,3 +85,11 @@ choose one ?
 find another technique great at both ?
 use both with a criteria to decide if we need to switch (switch when perf degrade instead of improving ?) ?
 can likelihood be computed at the same time as gradient ?
+
+put gradient descent alorithms in a dedicaced file
+test L-BFGS, see if it is provided in a crate
+
+stop when gradient is below 1% of value
+
+default noie value : 1% of std of outputs
+

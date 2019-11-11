@@ -389,6 +389,36 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       }
    }
 
+   pub fn rmsprop_descent(&mut self, nb_iter: usize)
+   {
+      // constant parameters
+      let beta2 = 0.9;
+      let epsilon = 1e-8;
+      let learning_rate = 0.1; // 0.001
+
+      let mut parameters = self.get_parameters();
+      let mut var_grad = vec![0.; parameters.len()];
+
+      println!("initial likelihood:{}\tinitial parameters:{:?}", self.likelihood(), parameters);
+
+      for i in 1..=nb_iter
+      {
+         let gradients = self.gradient_marginal_likelihood();
+         for p in 0..parameters.len()
+         {
+            var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
+            parameters[p] -= (learning_rate * gradients[p]) / (var_grad[p] + epsilon).sqrt()
+         }
+
+         self.set_parameters(&parameters);
+         println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
+                  i,
+                  self.likelihood(),
+                  parameters,
+                  gradients);
+      }
+   }
+
    pub fn mixed_optimized(&mut self, nb_iter: usize)
    {
       self.adam_descent(nb_iter);

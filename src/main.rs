@@ -26,9 +26,9 @@ fn main()
       println!("likelihood of the current model : {}", likelihood);
 
       // optimizes parameters
-      //gp.gradient_descent(100, 0.1);
+      gp.gradient_descent(100, 0.1);
       //gp.adam_descent(100);
-      //gp.mixed_optimized(100);
+      //gp.rmsprop_descent(100);
 
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
@@ -44,8 +44,6 @@ fn main()
 
       // optimizes parameters
       //gp.gradient_descent(100, 0.1);
-      //gp.adam_descent(100);
-      gp.mixed_optimized(100);
 
       // samples from the distribution
       let new_inputs = vec![vec![1.0], vec![2.0]];
