@@ -304,62 +304,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          self.set_parameters(&parameters, fit_noise);
          if !continue_search
          {
-            //println!("Fit done in {} iterations.", i);
+            //println!("Fit done in {} iterations to {}.", i, self.likelihood());
             break;
          };
       }
-   }
-
-   fn rprop_optimize_parameters(&mut self, fit_noise: bool, max_iter: usize, convergence_fraction: f64)
-   {
-      // https://pdfs.semanticscholar.org/aa65/042ae494455a14811927eb0574871d276454.pdf
-      // https://stats.stackexchange.com/questions/253815/resilient-backpropagation-parameters-selection
-
-      // constant parameters
-      let learning_rate = 0.1f64;
-      let max_learning_rate = 50.;
-      let min_learning_rate = 1e-6;
-      let increase_factor = 1.2;
-      let decrease_factor = 0.5;
-
-      let mut parameters = self.get_parameters();
-      let mut learning_rates = vec![learning_rate; parameters.len()];
-      let mut previous_grad_sign = vec![0.; parameters.len()];
-      for i in 1..=max_iter
-      {
-         let gradients = self.gradient_marginal_likelihood();
-
-         let mut continue_search = false;
-         for p in 0..parameters.len()
-         {
-            // increase learning rate as a function of the sign changement in the gradient
-            let grad_sign = gradients[p].signum();
-            match grad_sign * previous_grad_sign[p]
-            {
-               s if s > 0. => learning_rates[p] *= increase_factor,
-               s if s < 0. => learning_rates[p] *= decrease_factor,
-               _ => ()
-            }
-            // clip learning rate
-            match learning_rates[p]
-            {
-               r if r > max_learning_rate => learning_rates[p] = max_learning_rate,
-               r if r < min_learning_rate => learning_rates[p] = min_learning_rate,
-               _ => ()
-            }
-            previous_grad_sign[p] = grad_sign;
-            continue_search |= learning_rates[p].abs() > (convergence_fraction * parameters[p]).abs();
-            parameters[p] += grad_sign * learning_rates[p];
-         }
-
-         self.set_parameters(&parameters, fit_noise);
-         if !continue_search
-         {
-            println!("Fit done in {} iterations to {}.", i, self.likelihood());
-            break;
-         };
-      }
-      println!("Fit done to {}.", self.likelihood());
    }
 
    /// Fits the requested parameters and retrains the model.
@@ -403,8 +351,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       if fit_kernel
       {
          // fit kernel and retrains model from scratch
-         //self.optimize_parameters(fit_noise, max_iter, convergence_fraction);
-         self.rprop_optimize_parameters(fit_noise, max_iter, convergence_fraction);
+         self.optimize_parameters(fit_noise, max_iter, convergence_fraction);
       }
    }
 
