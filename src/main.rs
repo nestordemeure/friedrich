@@ -27,7 +27,7 @@ fn main()
       println!("likelihood of the current model : {}", likelihood);
 
       // optimizes parameters
-      gp.optimize();
+      //gp.optimize();
 
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
@@ -42,7 +42,7 @@ fn main()
       println!("predictions: {:?}", outputs);
 
       // optimizes parameters
-      //gp.optimize();
+      gp.optimize();
 
       // samples from the distribution
       let new_inputs = vec![vec![1.0], vec![2.0]];

@@ -324,10 +324,18 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    pub fn optimize(&mut self)
    {
       let max_iter = 1000;
-      let epsilon = 0.1;
-      optimizer::gradient_descent(self, max_iter, epsilon);
+      // easy: 59 -9.8
+      // hard: 1 -132 (finds very bad result)
+      //optimizer::gradient_descent(self, max_iter);
+      // easy: 286 -62.5
+      // hard: 47 -29
       //optimizer::adam(self, max_iter);
-      //optimizer::rmsprop(self, max_iter);
+      // easy: 26 -61 (with stop on delta minus learning rate: 79 -22)
+      // hard: 21 -29.6 (with stop on delta minus learning rate: 45 -28)
+      //optimizer::nadam(self, max_iter);
+      // easy: 27 -10
+      // hard: 24 -19.6
+      optimizer::amsgrad(self, max_iter);
    }
 
    //----------------------------------------------------------------------------------------------
