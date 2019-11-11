@@ -42,6 +42,7 @@ use nalgebra::{Cholesky, Dynamic, DMatrix, DVector};
 use crate::algebra::{EMatrix, EVector, make_cholesky_covariance_matrix, make_covariance_matrix,
                  make_gradient_covariance_matrices};
 use crate::conversion::Input;
+use crate::optimizer;
 
 mod multivariate_normal;
 pub use multivariate_normal::MultivariateNormal;
@@ -260,8 +261,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// Computes the gradient of the marginal likelihood for the current value of each parameter
    /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
-   /// TODO this method should not be pub
-   fn gradient_marginal_likelihood(&self) -> Vec<f64>
+   pub fn gradient_marginal_likelihood(&self) -> Vec<f64>
    {
       // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
       // K = cov(train,train)
@@ -301,7 +301,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// Returns a vector containing all the parameters of the kernel plus the noise
    /// in the same order as the outputs of the `gradient_marginal_likelihood` function
-   fn get_parameters(&self) -> Vec<f64>
+   pub fn get_parameters(&self) -> Vec<f64>
    {
       let mut parameters = self.kernel.get_parameters();
       parameters.push(self.noise);
@@ -310,7 +310,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// Sets all the parameters of the kernel plus the noise
    /// by reading them from a slice where they are in the same order as the outputs of the `gradient_marginal_likelihood` function
-   fn set_parameters(&mut self, parameters: &[f64])
+   pub fn set_parameters(&mut self, parameters: &[f64])
    {
       self.noise =
          *parameters.last().expect("set_parameters: there should be at least one, noise, parameter!");
@@ -320,110 +320,14 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
    }
 
-   /// tries to fit all the parameters by gradient descent
-   pub fn gradient_descent(&mut self, nb_iter: usize, epsilon: f64)
+   /// Fit parameters using a gradient descent algorithm
+   pub fn optimize(&mut self)
    {
-      let mut parameters = self.get_parameters();
-      let mut previous_likelihood = self.likelihood();
-      println!("initial likelihood:{}\tinitial parameters:{:?}", previous_likelihood, parameters);
-
-      for i in 0..nb_iter
-      {
-         let gradients = self.gradient_marginal_likelihood();
-         for (p, gradient) in parameters.iter_mut().zip(gradients.iter())
-         {
-            *p += epsilon * gradient;
-         }
-         self.set_parameters(&parameters);
-
-         let new_likelihood = self.likelihood();
-         println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
-                  i, new_likelihood, parameters, gradients);
-         if new_likelihood <= previous_likelihood
-         {
-            break;
-         }
-         previous_likelihood = new_likelihood;
-      }
-   }
-
-   /// tries to fit all the parameters using the ADAM gradient descent optimizer
-   /// see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/) for a good point on the formula
-   pub fn adam_descent(&mut self, nb_iter: usize)
-   {
-      // constant parameters
-      let beta1 = 0.9;
-      let beta2 = 0.999;
-      let epsilon = 1e-8;
-      let learning_rate = 0.1; // 0.001
-
-      let mut previous_likelihood = self.likelihood();
-      let mut parameters = self.get_parameters();
-      let mut mean_grad = vec![0.; parameters.len()];
-      let mut var_grad = vec![0.; parameters.len()];
-
-      println!("initial likelihood:{}\tinitial parameters:{:?}", previous_likelihood, parameters);
-
-      for i in 1..=nb_iter
-      {
-         let gradients = self.gradient_marginal_likelihood();
-         for p in 0..parameters.len()
-         {
-            mean_grad[p] = beta1 * mean_grad[p] + (1. - beta1) * gradients[p];
-            var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
-            let bias_corrected_mean = mean_grad[p] / (1. - beta1.powi(i as i32));
-            let bias_corrected_variance = var_grad[p] / (1. - beta2.powi(i as i32));
-            parameters[p] -=
-               (learning_rate * bias_corrected_mean) / (bias_corrected_variance.sqrt() + epsilon)
-         }
-         self.set_parameters(&parameters);
-
-         let new_likelihood = self.likelihood();
-         println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
-                  i, new_likelihood, parameters, gradients);
-         if new_likelihood <= previous_likelihood
-         {
-            break;
-         }
-         previous_likelihood = new_likelihood;
-      }
-   }
-
-   pub fn rmsprop_descent(&mut self, nb_iter: usize)
-   {
-      // constant parameters
-      let beta2 = 0.9;
-      let epsilon = 1e-8;
-      let learning_rate = 0.1; // 0.001
-
-      let mut parameters = self.get_parameters();
-      let mut var_grad = vec![0.; parameters.len()];
-
-      println!("initial likelihood:{}\tinitial parameters:{:?}", self.likelihood(), parameters);
-
-      for i in 1..=nb_iter
-      {
-         let gradients = self.gradient_marginal_likelihood();
-         for p in 0..parameters.len()
-         {
-            var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
-            parameters[p] -= (learning_rate * gradients[p]) / (var_grad[p] + epsilon).sqrt()
-         }
-
-         self.set_parameters(&parameters);
-         println!("{}: likelihood {}\n- parameters {:?}\n- gradients  {:?}",
-                  i,
-                  self.likelihood(),
-                  parameters,
-                  gradients);
-      }
-   }
-
-   pub fn mixed_optimized(&mut self, nb_iter: usize)
-   {
-      self.adam_descent(nb_iter);
-      println!("finished running ADAM");
-      self.gradient_descent(nb_iter, 0.1);
+      let max_iter = 1000;
+      let epsilon = 0.1;
+      optimizer::gradient_descent(self, max_iter, epsilon);
+      //optimizer::adam(self, max_iter);
+      //optimizer::rmsprop(self, max_iter);
    }
 
    //----------------------------------------------------------------------------------------------

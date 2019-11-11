@@ -4,6 +4,7 @@ mod parameters;
 mod gaussian_process;
 mod algebra;
 mod conversion;
+mod optimizer;
 
 use crate::gaussian_process::GaussianProcess;
 
@@ -26,9 +27,7 @@ fn main()
       println!("likelihood of the current model : {}", likelihood);
 
       // optimizes parameters
-      gp.gradient_descent(100, 0.1);
-      //gp.adam_descent(100);
-      //gp.rmsprop_descent(100);
+      gp.optimize();
 
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
@@ -43,7 +42,7 @@ fn main()
       println!("predictions: {:?}", outputs);
 
       // optimizes parameters
-      //gp.gradient_descent(100, 0.1);
+      //gp.optimize();
 
       // samples from the distribution
       let new_inputs = vec![vec![1.0], vec![2.0]];
