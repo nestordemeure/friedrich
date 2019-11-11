@@ -10,15 +10,13 @@ All of those properties make them an algorithm of choice to perform regression w
 
 However, the `o(n^3)` complexity of the algorithm makes the classical implementation unsuitable for large datasets.
 
-**WARNING: This crate is still in an alpha state, its interface might evolve.**
-
 ## Functionalities
 
 This implementation lets you :
 
 - define a gaussian process with default parameters or using the builder pattern
 - train it on multidimensional data
-- fit the parameters (kernel and prior) on the training data
+- fit the parameters (kernel, prior and noise) on the training data
 - add additional samples and refit the process
 - predict the mean and variance and covariance matrix for given inputs
 - sample the distribution at a given position
@@ -65,15 +63,8 @@ A trait is provided to add your own pairs.
 
 The list of things that could be done to improve on the current implementation includes :
 
-- Add better algorithms to [fit kernel parameters](http://www.gaussianprocess.org/gpml/chapters/RW5.pdf) (cross-validation or [gradient descent](https://math.stackexchange.com/questions/1030534/gradients-of-marginal-likelihood-of-gaussian-process-with-squared-exponential-co/1072701#1072701) on likelyhood).
 - Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
 - Add simple [kernel regression](https://en.wikipedia.org/wiki/Kernel_regression#Nadaraya%E2%80%93Watson_kernel_regression) (not as clever but much faster).
 - Add scalable variations of the algorithm.
 
 *Do not hesitate to send pull request or ask for features.*
-
-## TODO
-
-add default_parameters method to kernel (instead of fit)
-default noise value : 1% of std of outputs
-when to use default parameters ?

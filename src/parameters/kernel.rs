@@ -42,10 +42,11 @@ pub trait Kernel: Default
    /// Sets all the parameters of the kernel by reading them from a slice where they are in the same order as the outputs of the `gradient` function
    fn set_parameters(&mut self, parameters: &[f64]);
 
-   /// Optional, function that fits the kernel parameters on the raining data
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             _training_inputs: &SMatrix<SM>,
-                                                                             _training_outputs: &SVector<SV>)
+   /// Optional, function that fits the kernel parameters on the training data using fast heuristics.
+   /// This is used as a starting point for gradient descent.
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       _training_inputs: &SMatrix<SM>,
+                                                                                       _training_outputs: &SVector<SV>)
    {
    }
 }
@@ -141,12 +142,12 @@ impl<T, U> Kernel for KernelSum<T, U>
       self.k2.set_parameters(&parameters[T::NB_PARAMETERS..]);
    }
 
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             training_inputs: &SMatrix<SM>,
-                                                                             training_outputs: &SVector<SV>)
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       training_inputs: &SMatrix<SM>,
+                                                                                       training_outputs: &SVector<SV>)
    {
-      self.k1.fit(training_inputs, training_outputs);
-      self.k2.fit(training_inputs, training_outputs);
+      self.k1.heuristic_fit(training_inputs, training_outputs);
+      self.k2.heuristic_fit(training_inputs, training_outputs);
    }
 }
 
@@ -215,13 +216,12 @@ impl<T, U> Kernel for KernelProd<T, U>
       self.k2.set_parameters(&parameters[T::NB_PARAMETERS..]);
    }
 
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             training_inputs: &SMatrix<SM>,
-                                                                             training_outputs: &SVector<SV>)
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       training_inputs: &SMatrix<SM>,
+                                                                                       training_outputs: &SVector<SV>)
    {
-      // TODO this is not a great way to fit parameters
-      self.k1.fit(training_inputs, training_outputs);
-      self.k2.fit(training_inputs, training_outputs);
+      self.k1.heuristic_fit(training_inputs, training_outputs);
+      self.k2.heuristic_fit(training_inputs, training_outputs);
    }
 }
 
@@ -489,9 +489,10 @@ impl Kernel for SquaredExp
       self.ls = parameters[0];
       self.ampl = parameters[1];
    }
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             training_inputs: &SMatrix<SM>,
-                                                                             training_outputs: &SVector<SV>)
+
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       training_inputs: &SMatrix<SM>,
+                                                                                       training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -573,9 +574,10 @@ impl Kernel for Exponential
       self.ls = parameters[0];
       self.ampl = parameters[1];
    }
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             training_inputs: &SMatrix<SM>,
-                                                                             training_outputs: &SVector<SV>)
+
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       training_inputs: &SMatrix<SM>,
+                                                                                       training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -658,9 +660,10 @@ impl Kernel for Matern1
       self.ls = parameters[0];
       self.ampl = parameters[1];
    }
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             training_inputs: &SMatrix<SM>,
-                                                                             training_outputs: &SVector<SV>)
+
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       training_inputs: &SMatrix<SM>,
+                                                                                       training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);
@@ -747,9 +750,9 @@ impl Kernel for Matern2
       self.ampl = parameters[1];
    }
 
-   fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
-                                                                             training_inputs: &SMatrix<SM>,
-                                                                             training_outputs: &SVector<SV>)
+   fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+                                                                                       training_inputs: &SMatrix<SM>,
+                                                                                       training_outputs: &SVector<SV>)
    {
       self.ls = fit_bandwith_mean(training_inputs);
       self.ampl = fit_amplitude_var(training_outputs);

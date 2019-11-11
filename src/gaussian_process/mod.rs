@@ -284,6 +284,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          self.set_parameters(&parameters, fit_noise);
          if !continue_search
          {
+            //println!("Fit done in {} iterations.", i);
             break;
          };
       }

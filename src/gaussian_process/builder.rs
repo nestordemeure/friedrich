@@ -69,7 +69,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       // makes builder
       let prior = PriorType::default(training_inputs.ncols());
       let kernel = KernelType::default();
-      let noise = 1e-7f64;
+      let noise = 0.01 * training_outputs.row_variance()[0].sqrt(); // 1% of output std by default
       let should_fit_kernel = false;
       let should_fit_prior = false;
       let should_fit_noise = true;
@@ -166,17 +166,22 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
    /// Trains the gaussian process.
    /// Fits the parameters if requested.
-   pub fn train(self) -> GaussianProcess<KernelType, PriorType>
+   pub fn train(mut self) -> GaussianProcess<KernelType, PriorType>
    {
+      // prepare kernel and noise values using heuristics
+      // TODO how to detect if values have been entered by the user meaning that he does not want an heuristic ?
+      if self.should_fit_kernel
+      {
+         self.kernel.heuristic_fit(&self.training_inputs, &self.training_outputs);
+      }
+
       // builds a gp
-      // TODO here we waste a training if we will fit anyway
-      // TODO a new_fitted funtion might solve it
-      // TODO or a raw construction that does not perform a fit
       let mut gp = GaussianProcess::<KernelType, PriorType>::new(self.prior,
                                                                  self.kernel,
                                                                  self.noise,
                                                                  self.training_inputs,
                                                                  self.training_outputs);
+
       // fit the model, if requested, on the training data
       gp.fit_parameters(self.should_fit_prior,
                         self.should_fit_kernel,
