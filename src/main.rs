@@ -25,15 +25,21 @@ fn main()
       let likelihood = gp.likelihood();
       println!("likelihood of the current model : {}", likelihood);
 
-      // optimizes parameters
-      gp.optimize_parameters(1000, 0.01, true);
-
       // updates the model
       let additional_inputs = vec![vec![0.], vec![1.], vec![2.], vec![5.]];
       let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
       let fit_prior = true;
       let fit_kernel = true;
-      gp.add_samples_fit(&additional_inputs, &additional_outputs, fit_prior, fit_kernel);
+      let fit_noise = true;
+      let max_iter = 100;
+      let convergence_fraction = 0.01;
+      gp.add_samples_fit(&additional_inputs,
+                         &additional_outputs,
+                         fit_prior,
+                         fit_kernel,
+                         fit_noise,
+                         max_iter,
+                         convergence_fraction);
 
       // makes several prediction
       let inputs = vec![vec![1.0], vec![2.0], vec![3.0]];

@@ -144,87 +144,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    //----------------------------------------------------------------------------------------------
-   // ADD SAMPLE
-
-   /// Adds new samples to the model.
-   ///
-   /// Updates the model (which is faster than a retraining from scratch)
-   /// but does not refit the parameters.
-   pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::InVector)
-   {
-      let inputs = T::to_dmatrix(inputs);
-      let outputs = T::to_dvector(outputs);
-      assert_eq!(inputs.nrows(), outputs.nrows());
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-      // grows the training matrix
-      let outputs = outputs - self.prior.prior(&inputs);
-      self.training_inputs.add_rows(&inputs);
-      self.training_outputs.add_rows(&outputs);
-      // recompute cholesky matrix
-      self.covmat_cholesky =
-         make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
-      // TODO update cholesky matrix instead of recomputing it from scratch
-   }
-
-   /// Fits the parameters, if requested, and retrain the model from scratch.
-   pub fn fit_parameters(&mut self, fit_prior: bool, fit_kernel: bool)
-   {
-      if fit_prior
-      {
-         // gets the original data back in order to update the prior
-         let training_outputs =
-            self.training_outputs.as_vector() + self.prior.prior(&self.training_inputs.as_matrix());
-         self.prior.fit(&self.training_inputs.as_matrix(), &training_outputs);
-         let training_outputs = training_outputs - self.prior.prior(&self.training_inputs.as_matrix());
-         self.training_outputs.assign(&training_outputs);
-         // NOTE: adding and substracting each time we fit a prior might be numerically unstable
-      }
-
-      if fit_kernel
-      {
-         // fit kernel using new data and new prior
-         self.kernel.fit(&self.training_inputs.as_matrix(), &self.training_outputs.as_vector());
-      }
-
-      if fit_prior || fit_kernel
-      {
-         // retranis model if a fit happened
-         self.covmat_cholesky =
-            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
-      }
-   }
-
-   /// Adds new samples to the model and fit the parameters.
-   ///
-   /// Faster than doing `add_samples().fit_parameters()`.
-   pub fn add_samples_fit<T: Input>(&mut self,
-                                    inputs: &T,
-                                    outputs: &T::InVector,
-                                    fit_prior: bool,
-                                    fit_kernel: bool)
-   {
-      let inputs = T::to_dmatrix(inputs);
-      let outputs = T::to_dvector(outputs);
-      assert_eq!(inputs.nrows(), outputs.nrows());
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-      // grows the training matrix
-      let outputs = outputs - self.prior.prior(&inputs);
-      self.training_inputs.add_rows(&inputs);
-      self.training_outputs.add_rows(&outputs);
-      // refit the parameters and retrain the model from scratch
-      if fit_kernel || fit_prior
-      {
-         self.fit_parameters(fit_prior, fit_kernel);
-      }
-      else
-      {
-         // retrains the model anyway if no fit happened
-         self.covmat_cholesky =
-            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
-      }
-   }
-
-   //----------------------------------------------------------------------------------------------
    // FIT
 
    /// Computes the log likelihood of the current model given the training data
@@ -315,7 +234,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       if set_noise
       {
          self.noise =
-         *parameters.last().expect("set_parameters: there should be at least one, noise, parameter!");
+            *parameters.last().expect("set_parameters: there should be at least one, noise, parameter!");
       }
       // retrains the model on new parameters
       self.covmat_cholesky =
@@ -327,7 +246,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
    /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.01 is a good default value).
    /// Does not fit the noise parameter if `fit_noise` is set to false
-   pub fn optimize_parameters(&mut self, max_iter: usize, convergence_fraction: f64, fit_noise: bool)
+   fn optimize_parameters(&mut self, fit_noise: bool, max_iter: usize, convergence_fraction: f64)
    {
       // use the ADAM gradient descent algorithm
       // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
@@ -354,7 +273,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             let bias_corrected_mean = mean_grad[p] / (1. - beta1.powi(i as i32));
             let bias_corrected_variance = var_grad[p] / (1. - beta2.powi(i as i32));
             let delta = learning_rate * bias_corrected_mean / (bias_corrected_variance.sqrt() + epsilon);
-            continue_search |= delta.abs() > parameters[p].abs() * convergence_fraction;
+            continue_search |= delta.abs() > (convergence_fraction * parameters[p]).abs();
             parameters[p] += delta;
          }
 
@@ -363,6 +282,109 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          {
             break;
          };
+      }
+   }
+
+   /// Fits the parameters, if requested, and retrain the model from scratch.
+   ///
+   /// The fit of the noise and kernel parameters is done by gradient descent.
+   /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
+   ///
+   /// We recommend setting `fit_noise` to true, `max_iter` to 100 and `convergence_fraction` to 0.01
+   pub fn fit_parameters(&mut self,
+                         fit_prior: bool,
+                         fit_kernel: bool,
+                         fit_noise: bool,
+                         max_iter: usize,
+                         convergence_fraction: f64)
+   {
+      if fit_prior
+      {
+         // gets the original data back in order to update the prior
+         let training_outputs =
+            self.training_outputs.as_vector() + self.prior.prior(&self.training_inputs.as_matrix());
+         self.prior.fit(&self.training_inputs.as_matrix(), &training_outputs);
+         let training_outputs = training_outputs - self.prior.prior(&self.training_inputs.as_matrix());
+         self.training_outputs.assign(&training_outputs);
+         // NOTE: adding and substracting each time we fit a prior might be numerically unwise
+
+         if !fit_kernel
+         {
+            // retrains model from scratch
+            self.covmat_cholesky =
+               make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+         }
+      }
+
+      if fit_kernel
+      {
+         // fit kernel and retrains model from scratch
+         self.optimize_parameters(fit_noise, max_iter, convergence_fraction);
+      }
+      else if fit_noise
+      {
+         unimplemented!();
+      }
+   }
+
+   //----------------------------------------------------------------------------------------------
+   // ADD SAMPLE
+
+   /// Adds new samples to the model.
+   ///
+   /// Updates the model (which is faster than a retraining from scratch)
+   /// but does not refit the parameters.
+   pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::InVector)
+   {
+      let inputs = T::to_dmatrix(inputs);
+      let outputs = T::to_dvector(outputs);
+      assert_eq!(inputs.nrows(), outputs.nrows());
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
+      // grows the training matrix
+      let outputs = outputs - self.prior.prior(&inputs);
+      self.training_inputs.add_rows(&inputs);
+      self.training_outputs.add_rows(&outputs);
+      // recompute cholesky matrix
+      self.covmat_cholesky =
+         make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+      // TODO update cholesky matrix instead of recomputing it from scratch
+   }
+
+   /// Adds new samples to the model and fit the parameters.
+   ///
+   /// Faster than doing `add_samples().fit_parameters()`.
+   ///
+   /// The fit of the noise and kernel parameters is done by gradient descent.
+   /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
+   ///
+   /// We recommend setting `fit_noise` to true, `max_iter` to 100 and `convergence_fraction` to 0.01
+   pub fn add_samples_fit<T: Input>(&mut self,
+                                    inputs: &T,
+                                    outputs: &T::InVector,
+                                    fit_prior: bool,
+                                    fit_kernel: bool,
+                                    fit_noise: bool,
+                                    max_iter: usize,
+                                    convergence_fraction: f64)
+   {
+      let inputs = T::to_dmatrix(inputs);
+      let outputs = T::to_dvector(outputs);
+      assert_eq!(inputs.nrows(), outputs.nrows());
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
+      // grows the training matrix
+      let outputs = outputs - self.prior.prior(&inputs);
+      self.training_inputs.add_rows(&inputs);
+      self.training_outputs.add_rows(&outputs);
+      // refit the parameters and retrain the model from scratch
+      if fit_kernel || fit_prior || fit_noise
+      {
+         self.fit_parameters(fit_prior, fit_kernel, fit_noise, max_iter, convergence_fraction);
+      }
+      else
+      {
+         // retrains the model anyway if no fit happened
+         self.covmat_cholesky =
+            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
       }
    }
 
