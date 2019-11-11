@@ -147,6 +147,26 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       GaussianProcess { prior, kernel, noise, training_inputs, training_outputs, covmat_cholesky }
    }
 
+   /// Adds new samples to the model.
+   ///
+   /// Updates the model (which is faster than a retraining from scratch)
+   /// but does not refit the parameters.
+   pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::InVector)
+   {
+      let inputs = T::to_dmatrix(inputs);
+      let outputs = T::to_dvector(outputs);
+      assert_eq!(inputs.nrows(), outputs.nrows());
+      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
+      // grows the training matrix
+      let outputs = outputs - self.prior.prior(&inputs);
+      self.training_inputs.add_rows(&inputs);
+      self.training_outputs.add_rows(&outputs);
+      // recompute cholesky matrix
+      self.covmat_cholesky =
+         make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+      // TODO update cholesky matrix instead of recomputing it from scratch
+   }
+
    //----------------------------------------------------------------------------------------------
    // FIT
 
@@ -290,12 +310,65 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       }
    }
 
-   /// Fits the requested parameters and retrain the model from scratch.
+   fn rprop_optimize_parameters(&mut self, fit_noise: bool, max_iter: usize, convergence_fraction: f64)
+   {
+      // https://pdfs.semanticscholar.org/aa65/042ae494455a14811927eb0574871d276454.pdf
+      // https://stats.stackexchange.com/questions/253815/resilient-backpropagation-parameters-selection
+
+      // constant parameters
+      let learning_rate = 0.1f64;
+      let max_learning_rate = 50.;
+      let min_learning_rate = 1e-6;
+      let increase_factor = 1.2;
+      let decrease_factor = 0.5;
+
+      let mut parameters = self.get_parameters();
+      let mut learning_rates = vec![learning_rate; parameters.len()];
+      let mut previous_grad_sign = vec![0.; parameters.len()];
+      for i in 1..=max_iter
+      {
+         let gradients = self.gradient_marginal_likelihood();
+
+         let mut continue_search = false;
+         for p in 0..parameters.len()
+         {
+            // increase learning rate as a function of the sign changement in the gradient
+            let grad_sign = gradients[p].signum();
+            match grad_sign * previous_grad_sign[p]
+            {
+               s if s > 0. => learning_rates[p] *= increase_factor,
+               s if s < 0. => learning_rates[p] *= decrease_factor,
+               _ => ()
+            }
+            // clip learning rate
+            match learning_rates[p]
+            {
+               r if r > max_learning_rate => learning_rates[p] = max_learning_rate,
+               r if r < min_learning_rate => learning_rates[p] = min_learning_rate,
+               _ => ()
+            }
+            previous_grad_sign[p] = grad_sign;
+            continue_search |= learning_rates[p].abs() > (convergence_fraction * parameters[p]).abs();
+            parameters[p] += grad_sign * learning_rates[p];
+         }
+
+         self.set_parameters(&parameters, fit_noise);
+         if !continue_search
+         {
+            println!("Fit done in {} iterations to {}.", i, self.likelihood());
+            break;
+         };
+      }
+      println!("Fit done to {}.", self.likelihood());
+   }
+
+   /// Fits the requested parameters and retrains the model.
    ///
    /// The fit of the noise and kernel parameters is done by gradient descent.
    /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
    ///
-   /// We recommend setting `fit_noise` to true unless you have a very good estimate of the noise in the output data.
+   /// You cannot fit the noise parameter without also fitting the kernel.
+   /// We recommend setting `fit_noise` to true when you fit the kernel unless you have a very good estimate of the noise in the output data.
    /// Note that if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
    ///
    /// Good base values for `max_iter` and `convergence_fraction` are 100 and 0.01
@@ -306,6 +379,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                          max_iter: usize,
                          convergence_fraction: f64)
    {
+      assert!(!fit_noise || fit_kernel,
+              "fit_parameters: You cannot fit the noise without also fitting the kernel parameters.");
+
       if fit_prior
       {
          // gets the original data back in order to update the prior
@@ -327,35 +403,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       if fit_kernel
       {
          // fit kernel and retrains model from scratch
-         self.optimize_parameters(fit_noise, max_iter, convergence_fraction);
+         //self.optimize_parameters(fit_noise, max_iter, convergence_fraction);
+         self.rprop_optimize_parameters(fit_noise, max_iter, convergence_fraction);
       }
-      else if fit_noise
-      {
-         unimplemented!("At the moment it is not possible to fit the noise parameter without fitting the kernel at the same time.");
-      }
-   }
-
-   //----------------------------------------------------------------------------------------------
-   // ADD SAMPLE
-
-   /// Adds new samples to the model.
-   ///
-   /// Updates the model (which is faster than a retraining from scratch)
-   /// but does not refit the parameters.
-   pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::InVector)
-   {
-      let inputs = T::to_dmatrix(inputs);
-      let outputs = T::to_dvector(outputs);
-      assert_eq!(inputs.nrows(), outputs.nrows());
-      assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
-      // grows the training matrix
-      let outputs = outputs - self.prior.prior(&inputs);
-      self.training_inputs.add_rows(&inputs);
-      self.training_outputs.add_rows(&outputs);
-      // recompute cholesky matrix
-      self.covmat_cholesky =
-         make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
-      // TODO update cholesky matrix instead of recomputing it from scratch
    }
 
    //----------------------------------------------------------------------------------------------

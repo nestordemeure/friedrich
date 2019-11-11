@@ -487,7 +487,7 @@ impl Kernel for SquaredExp
    fn set_parameters(&mut self, parameters: &[f64])
    {
       self.ls = parameters[0];
-      self.ampl = parameters[1];
+      self.ampl = parameters[1].abs();
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -572,7 +572,7 @@ impl Kernel for Exponential
    fn set_parameters(&mut self, parameters: &[f64])
    {
       self.ls = parameters[0];
-      self.ampl = parameters[1];
+      self.ampl = parameters[1].abs();
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -657,8 +657,8 @@ impl Kernel for Matern1
 
    fn set_parameters(&mut self, parameters: &[f64])
    {
-      self.ls = parameters[0];
-      self.ampl = parameters[1];
+      self.ls = parameters[0].abs();
+      self.ampl = parameters[1].abs();
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -746,8 +746,8 @@ impl Kernel for Matern2
 
    fn set_parameters(&mut self, parameters: &[f64])
    {
-      self.ls = parameters[0];
-      self.ampl = parameters[1];
+      self.ls = parameters[0].abs();
+      self.ampl = parameters[1].abs();
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
