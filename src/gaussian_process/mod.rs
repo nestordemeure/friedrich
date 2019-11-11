@@ -60,7 +60,7 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
    pub prior: PriorType,
    /// kernel used to fit the process on the data
    pub kernel: KernelType,
-   /// amplitude of the noise of the data
+   /// amplitude of the noise of the data as provided by the user or deduced by the optimizer
    pub noise: f64,
    /// data used for fit
    training_inputs: EMatrix,
@@ -150,10 +150,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    //----------------------------------------------------------------------------------------------
    // FIT
 
-   /// Computes the log likelihood of the current model given the training data
+   /// Computes the log likelihood of the current model given the training data.
    ///
    /// This quantity can be used for model selection.
-   /// Given two models, the one with the highest score would be the one with the highest probability of producing the data
+   /// Given two models, the one with the highest score would be the one with the highest probability of producing the data.
    pub fn likelihood(&self) -> f64
    {
       // formula : -1/2 (transpose(output)*cov(train,train)^-1*output + trace(log|cov(train,train)|) + size(train)*log(2*pi))
@@ -290,12 +290,13 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       }
    }
 
-   /// Fits the parameters, if requested, and retrain the model from scratch.
+   /// Fits the requested parameters and retrain the model from scratch.
    ///
    /// The fit of the noise and kernel parameters is done by gradient descent.
    /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
    ///
-   /// We recommend setting `fit_noise` to true, `max_iter` to 100 and `convergence_fraction` to 0.01
+   /// We recommend setting `fit_noise` to true unless you have a very good estimate of the noise in the output data.
+   /// , `max_iter` to 100 and `convergence_fraction` to 0.01
    pub fn fit_parameters(&mut self,
                          fit_prior: bool,
                          fit_kernel: bool,
@@ -358,7 +359,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    //----------------------------------------------------------------------------------------------
    // PREDICT
 
-   /// Predicts the mean of the gaussian process for each row of the input.
+   /// Makes a prediction (the mean of the gaussian process) for each row of the input.
    pub fn predict<T: Input>(&self, inputs: &T) -> T::OutVector
    {
       // formula : prior + cov(input,train)*cov(train,train)^-1 * output
@@ -380,6 +381,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    }
 
    /// Predicts the variance of the gaussian process for each row of the input.
+   /// This quantity (and its square root) can be used as a proxy for the uncertainty of the prediction.
    pub fn predict_variance<T: Input>(&self, inputs: &T) -> T::OutVector
    {
       // formula, diagonal of : cov(input,input) - cov(input,train)*cov(train,train)^-1*cov(train,input)
@@ -458,7 +460,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       (mean, variance)
    }
 
-   /// Returns the covariancematrix for the rows of the input.
+   /// Returns the covariance matrix for the rows of the input.
    pub fn predict_covariance<T: Input>(&self, inputs: &T) -> DMatrix<f64>
    {
       // formula : cov(input,input) - cov(input,train)*cov(train,train)^-1*cov(train,input)
@@ -483,7 +485,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// Produces a multivariate gaussian that can be used to sample at the input points.
    ///
-   /// The sampling is requires a random number generator compatible with the [rand](https://crates.io/crates/rand) crate :
+   /// The sampling requires a random number generator compatible with the [rand](https://crates.io/crates/rand) crate :
    ///
    /// ```rust
    /// # use friedrich::gaussian_process::GaussianProcess;

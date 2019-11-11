@@ -21,7 +21,7 @@ use crate::algebra::{SRowVector, SVector, SMatrix};
 /// If you want to provide a user-defined kernel, you should implement this trait.
 pub trait Kernel: Default
 {
-   /// numbers of parameters of the kernel
+   /// numbers of parameters (such as bandwith and amplitude) of the kernel
    const NB_PARAMETERS: usize;
 
    /// Takes two equal length slices (row vector) and returns a scalar.

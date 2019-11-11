@@ -59,9 +59,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// the defaults are :
    /// - constant prior (0 unless fitted)
    /// - a gaussian kernel
-   /// - a noise of 1e-7
+   /// - a noise of 1% of the output standard deviation (might be re-fitted in the absence of user provided value)
    /// - does not fit parameters
-   /// - does fit prior
    pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
    {
       let training_inputs = T::into_dmatrix(training_inputs);
@@ -110,9 +109,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
    /// Sets the noise parameter.
    /// It correspond to the standard deviation of the noise in the outputs of the training set.
-   /// Setting this parameters deactivate noise fitting by default unless you use the `fit_noise` method afterward.
    pub fn set_noise(self, noise: f64) -> Self
    {
+      assert!(noise > 0., "The noise parameter should be over 0.");
       GaussianProcessBuilder { noise, should_fit_noise: false, ..self }
    }
 
@@ -134,27 +133,29 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                training_outputs: self.training_outputs }
    }
 
-   /// Sets the default parameters for the gradient descent used to fit the noise and kernel parameters
+   /// Modifies the stopping criteria of the gradient descent used to fit the noise and kernel parameters.
+   ///
+   /// The optimizer runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
    pub fn set_fit_parameters(self, max_iter: usize, convergence_fraction: f64) -> Self
    {
       GaussianProcessBuilder { max_iter: max_iter, convergence_fraction: convergence_fraction, ..self }
    }
 
-   /// Asks for the parameters of the kernel to be fit on the training data.
+   /// Asks for the parameters of the kernel to be fitted on the training data.
    /// The fitting will be done when the `train` method is called.
    pub fn fit_kernel(self) -> Self
    {
       GaussianProcessBuilder { should_fit_kernel: true, ..self }
    }
 
-   /// Asks for the prior to be fit on the training data.
+   /// Asks for the prior to be fitted on the training data.
    /// The fitting will be done when the `train` method is called.
    pub fn fit_prior(self) -> Self
    {
       GaussianProcessBuilder { should_fit_prior: true, ..self }
    }
 
-   /// Asks for the noise to be fit on the training data.
+   /// Asks for the noise to be fitted on the training data.
    /// The fitting will be done when the `train` method is called.
    pub fn fit_noise(self) -> Self
    {

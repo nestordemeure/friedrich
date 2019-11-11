@@ -63,6 +63,7 @@ A trait is provided to add your own pairs.
 
 The list of things that could be done to improve on the current implementation includes :
 
+- Reduce memory consumption for large datasets.
 - Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
 - Add simple [kernel regression](https://en.wikipedia.org/wiki/Kernel_regression#Nadaraya%E2%80%93Watson_kernel_regression) (not as clever but much faster).
 - Add scalable variations of the algorithm.
