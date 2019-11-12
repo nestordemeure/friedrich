@@ -461,9 +461,12 @@ impl Kernel for SquaredExp
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      // computes kernel
       let distance_squared = (x1 - x2).norm_squared();
       let x = -distance_squared / (2f64 * self.ls * self.ls);
-      self.ampl * x.exp()
+      ampl * x.exp()
    }
 
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
@@ -471,11 +474,14 @@ impl Kernel for SquaredExp
                                                                              x2: &SRowVector<S2>)
                                                                              -> Vec<f64>
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      let l = self.ls.abs();
+      // compute gradients
       let distance_squared = (x1 - x2).norm_squared();
-
-      let grad_ls = distance_squared / (self.ls * self.ls);
-      let grad_ampl = (-grad_ls / 2.).exp();
-
+      let exponential = (-distance_squared / (2f64 * l * l)).exp();
+      let grad_ls = (distance_squared * ampl * exponential) / l.powi(3);
+      let grad_ampl = self.ampl.signum() * exponential;
       vec![grad_ls, grad_ampl]
    }
 
@@ -487,7 +493,7 @@ impl Kernel for SquaredExp
    fn set_parameters(&mut self, parameters: &[f64])
    {
       self.ls = parameters[0];
-      self.ampl = parameters[1].abs();
+      self.ampl = parameters[1];
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
