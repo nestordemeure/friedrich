@@ -389,9 +389,9 @@ impl Kernel for Polynomial
       let x = x1.dot(&x2);
       let inner_term = self.alpha * x + self.c;
 
-      let grad_c = self.d * inner_term.powf(self.d - 1.); // (a + x)^b -> b*(a+x)^(b-1)
-      let grad_alpha = x * grad_c; // (a + c*x)^b -> c*b*(a+c*x)^(b-1)
-      let grad_d = inner_term.ln() * inner_term.powf(self.d); // a^x -> log(a) * a^x
+      let grad_c = self.d * inner_term.powf(self.d - 1.);
+      let grad_alpha = x * grad_c;
+      let grad_d = inner_term.ln() * inner_term.powf(self.d);
 
       vec![grad_alpha, grad_c, grad_d]
    }
@@ -482,11 +482,10 @@ impl Kernel for SquaredExp
    {
       // sanitize parameters
       let ampl = self.ampl.abs();
-      let l = self.ls.abs();
       // compute gradients
       let distance_squared = (x1 - x2).norm_squared();
-      let exponential = (-distance_squared / (2f64 * l * l)).exp();
-      let grad_ls = (distance_squared * ampl * exponential) / l.powi(3);
+      let exponential = (-distance_squared / (2f64 * self.ls * self.ls)).exp();
+      let grad_ls = (distance_squared * ampl * exponential) / self.ls.powi(3);
       let grad_ampl = self.ampl.signum() * exponential;
       vec![grad_ls, grad_ampl]
    }
@@ -573,11 +572,10 @@ impl Kernel for Exponential
    {
       // sanitize parameters
       let ampl = self.ampl.abs();
-      let l = self.ls.abs();
       // compute gradients
       let distance = (x1 - x2).norm();
-      let exponential = (-distance / (2f64 * l * l)).exp();
-      let grad_ls = (distance * ampl * exponential) / l.powi(3);
+      let exponential = (-distance / (2f64 * self.ls * self.ls)).exp();
+      let grad_ls = (distance * ampl * exponential) / self.ls.powi(3);
       let grad_ampl = self.ampl.signum() * exponential;
       vec![grad_ls, grad_ampl]
    }
@@ -669,8 +667,8 @@ impl Kernel for Matern1
       // compute gradient
       let distance = (x1 - x2).norm();
       let x = 3f64.sqrt() * distance / l;
-      let grad_ls = (3. * ampl * distance.powi(2) * (-x).exp()) / (l.powi(3));
-      let grad_ampl = (1. + x) * (-x).exp();
+      let grad_ls = (3. * ampl * distance.powi(2) * (-x).exp()) / (self.ls.powi(3));
+      let grad_ampl = self.ampl.signum() * (1. + x) * (-x).exp();
       vec![grad_ls, grad_ampl]
    }
 
@@ -761,10 +759,12 @@ impl Kernel for Matern2
       // compute gradient
       let distance = (x1 - x2).norm();
       let x = (5f64).sqrt() * distance / self.ls;
-      let grad_ls = ampl
+      let grad_ls = self.ls.signum()
+                    * ampl
                     * ((2. * l / 3. + 1.) + distance * 5f64.sqrt() * ((l.powi(2) / 3. + l + 1.) / l.powi(2)))
                     * (-x).exp();
-      let grad_ampl = (1f64 + x + (5f64 * distance * distance) / (3f64 * l * l)) * (-x).exp();
+      let grad_ampl =
+         self.ampl.signum() * (1f64 + x + (5f64 * distance * distance) / (3f64 * l * l)) * (-x).exp();
       vec![grad_ls, grad_ampl]
    }
 
@@ -988,7 +988,7 @@ impl Kernel for RationalQuadratic
               / (distance_squared + 2. * l.powi(2) * self.alpha));
       let grad_ls = distance_squared
                     * (distance_squared / (2. * self.alpha * l * l) + 1.).powf(-self.alpha - 1.)
-                    / l.powi(3);
+                    / self.ls.powi(3);
       vec![grad_alpha, grad_ls]
    }
 
