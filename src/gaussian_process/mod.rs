@@ -243,22 +243,26 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    /// Returns a vector containing all the parameters of the kernel plus the noise
    /// in the same order as the outputs of the `gradient_marginal_likelihood` function
+   ///
+   /// NOTE: noise is given in logarithmic scale `ln(noise)` as it make more sense to optimize it in log space
    fn get_parameters(&self) -> Vec<f64>
    {
       let mut parameters = self.kernel.get_parameters();
-      parameters.push(self.noise);
+      parameters.push(self.noise.ln());
       parameters
    }
 
    /// Sets all the parameters of the kernel plus the noise
    /// by reading them from a slice where they are in the same order as the outputs of the `gradient_marginal_likelihood` function
+   ///
+   /// NOTE: noise is taken in logarithmic scale `ln(noise)` as it make more sense to optimize it in log space
    fn set_parameters(&mut self, parameters: &[f64], set_noise: bool)
    {
       self.kernel.set_parameters(&parameters[..parameters.len() - 1]);
       if set_noise
       {
          self.noise =
-            *parameters.last().expect("set_parameters: there should be at least one, noise, parameter!");
+            parameters.last().expect("set_parameters: there should be at least one, noise, parameter!").exp();
       }
       // retrains the model on new parameters
       self.covmat_cholesky =
@@ -304,7 +308,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          self.set_parameters(&parameters, fit_noise);
          if !continue_search
          {
-            //println!("Fit done in {} iterations to {}.", i, self.likelihood());
+            //println!("Fit done. iterations:{} likelihood:{} parameters:{:?}", i, self.likelihood(), parameters);
             break;
          };
       }
