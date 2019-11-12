@@ -310,10 +310,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          self.set_parameters(&parameters, fit_noise);
          if !continue_search
          {
-            println!("Fit done. iterations:{} likelihood:{} parameters:{:?}",
-                     i,
-                     self.likelihood(),
-                     parameters);
+            //println!("Fit done. iterations:{} likelihood:{} parameters:{:?}", i, self.likelihood(), parameters);
             break;
          };
       }

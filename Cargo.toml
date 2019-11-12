@@ -1,6 +1,6 @@
 [package]
 name = "friedrich"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Nestor Demeure"]
 edition = "2018"
 
