@@ -25,12 +25,18 @@ pub trait Kernel: Default
    const NB_PARAMETERS: usize;
 
    /// Takes two equal length slices (row vector) and returns a scalar.
+   ///
+   /// NOTE: due to the optimization algorithm, this function might get illegal parameters (such as negativ parameters),
+   /// it is the duty of the function implementer to deal with them properly (by using an absolute value)
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64;
 
    /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter in an arbitrary order.
+   ///
+   /// NOTE: due to the optimization algorithm, this function might get illegal parameters (such as negativ parameters),
+   /// it is the duty of the function implementer to deal with them properly (by using the absolute value of the parameter and multiplying its gradient by its original sign)
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                              x1: &SRowVector<S1>,
                                                                              x2: &SRowVector<S2>)
@@ -552,9 +558,12 @@ impl Kernel for Exponential
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      // compute kernel
       let distance = (x1 - x2).norm();
       let x = -distance / (2f64 * self.ls * self.ls);
-      self.ampl * x.exp()
+      ampl * x.exp()
    }
 
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
@@ -562,11 +571,14 @@ impl Kernel for Exponential
                                                                              x2: &SRowVector<S2>)
                                                                              -> Vec<f64>
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      let l = self.ls.abs();
+      // compute gradients
       let distance = (x1 - x2).norm();
-
-      let grad_ls = distance / (self.ls * self.ls);
-      let grad_ampl = (-grad_ls / 2.).exp();
-
+      let exponential = (-distance / (2f64 * l * l)).exp();
+      let grad_ls = (distance * ampl * exponential) / l.powi(3);
+      let grad_ampl = self.ampl.signum() * exponential;
       vec![grad_ls, grad_ampl]
    }
 
@@ -578,7 +590,7 @@ impl Kernel for Exponential
    fn set_parameters(&mut self, parameters: &[f64])
    {
       self.ls = parameters[0];
-      self.ampl = parameters[1].abs();
+      self.ampl = parameters[1];
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -637,9 +649,13 @@ impl Kernel for Matern1
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      let l = self.ls.abs();
+      // compute kernel
       let distance = (x1 - x2).norm();
-      let x = (3f64).sqrt() * distance / self.ls;
-      self.ampl * (1f64 + x) * (-x).exp()
+      let x = (3f64).sqrt() * distance / l;
+      ampl * (1f64 + x) * (-x).exp()
    }
 
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
@@ -647,12 +663,14 @@ impl Kernel for Matern1
                                                                              x2: &SRowVector<S2>)
                                                                              -> Vec<f64>
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      let l = self.ls.abs();
+      // compute gradient
       let distance = (x1 - x2).norm();
-      let x = 3f64.sqrt() * distance / self.ls;
-
-      let grad_ls = (3. * self.ampl * distance.powi(2) * (-x).exp()) / (self.ls.powi(3));
+      let x = 3f64.sqrt() * distance / l;
+      let grad_ls = (3. * ampl * distance.powi(2) * (-x).exp()) / (l.powi(3));
       let grad_ampl = (1. + x) * (-x).exp();
-
       vec![grad_ls, grad_ampl]
    }
 
@@ -663,8 +681,8 @@ impl Kernel for Matern1
 
    fn set_parameters(&mut self, parameters: &[f64])
    {
-      self.ls = parameters[0].abs();
-      self.ampl = parameters[1].abs();
+      self.ls = parameters[0];
+      self.ampl = parameters[1];
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -723,9 +741,13 @@ impl Kernel for Matern2
                                                                            x2: &SRowVector<S2>)
                                                                            -> f64
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      let l = self.ls.abs();
+      // compute kernel
       let distance = (x1 - x2).norm();
-      let x = (5f64).sqrt() * distance / self.ls;
-      self.ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp()
+      let x = (5f64).sqrt() * distance / l;
+      ampl * (1f64 + x + (5f64 * distance * distance) / (3f64 * l * l)) * (-x).exp()
    }
 
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
@@ -733,15 +755,16 @@ impl Kernel for Matern2
                                                                              x2: &SRowVector<S2>)
                                                                              -> Vec<f64>
    {
+      // sanitize parameters
+      let ampl = self.ampl.abs();
+      let l = self.ls.abs();
+      // compute gradient
       let distance = (x1 - x2).norm();
       let x = (5f64).sqrt() * distance / self.ls;
-
-      let grad_ls = self.ampl
-                    * ((2. * self.ls / 3. + 1.)
-                       + distance * 5f64.sqrt() * ((self.ls.powi(2) / 3. + self.ls + 1.) / self.ls.powi(2)))
+      let grad_ls = ampl
+                    * ((2. * l / 3. + 1.) + distance * 5f64.sqrt() * ((l.powi(2) / 3. + l + 1.) / l.powi(2)))
                     * (-x).exp();
-      let grad_ampl = (1f64 + x + (5f64 * distance * distance) / (3f64 * self.ls * self.ls)) * (-x).exp();
-
+      let grad_ampl = (1f64 + x + (5f64 * distance * distance) / (3f64 * l * l)) * (-x).exp();
       vec![grad_ls, grad_ampl]
    }
 
@@ -752,8 +775,8 @@ impl Kernel for Matern2
 
    fn set_parameters(&mut self, parameters: &[f64])
    {
-      self.ls = parameters[0].abs();
-      self.ampl = parameters[1].abs();
+      self.ls = parameters[0];
+      self.ampl = parameters[1];
    }
 
    fn heuristic_fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
@@ -953,23 +976,19 @@ impl Kernel for RationalQuadratic
                                                                              x2: &SRowVector<S2>)
                                                                              -> Vec<f64>
    {
+      // sanitize parameters
+      let l = self.ls.abs();
+      // compute gradient
       let distance_squared = (x1 - x2).norm_squared();
-      // (1f64 + distance_squared / (2f64 * self.alpha * self.ls * self.ls)).powf(-self.alpha)
-      // (1 + d / (2 * a * l²))^(-a)
-
-      let grad_alpha = ((distance_squared + 2. * self.ls.powi(2) * self.alpha)
-                        / (self.ls.powi(2) * self.alpha))
-                                                         .powf(-self.alpha)
-                       * (2f64.powf(self.alpha)
-                          * (1.
-                             - ((distance_squared + 2. * self.ls.powi(2) * self.alpha)
-                                / (2. * self.ls.powi(2) * self.alpha))
-                                                                      .ln())
-                          - (self.ls.powi(2) * 2f64.powf(self.alpha + 1.) * self.alpha)
-                            / (distance_squared + 2. * self.ls.powi(2) * self.alpha));
+      let grad_alpha =
+         ((distance_squared + 2. * l.powi(2) * self.alpha) / (l.powi(2) * self.alpha)).powf(-self.alpha)
+         * (2f64.powf(self.alpha)
+            * (1. - ((distance_squared + 2. * l.powi(2) * self.alpha) / (2. * l.powi(2) * self.alpha)).ln())
+            - (l.powi(2) * 2f64.powf(self.alpha + 1.) * self.alpha)
+              / (distance_squared + 2. * l.powi(2) * self.alpha));
       let grad_ls = distance_squared
-                    * (distance_squared / (2. * self.alpha * self.ls * self.ls) + 1.).powf(-self.alpha - 1.)
-                    / self.ls.powi(3);
+                    * (distance_squared / (2. * self.alpha * l * l) + 1.).powf(-self.alpha - 1.)
+                    / l.powi(3);
       vec![grad_alpha, grad_ls]
    }
 

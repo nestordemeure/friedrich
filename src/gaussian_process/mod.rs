@@ -204,7 +204,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Computes the gradient of the marginal likelihood for the current value of each parameter
    /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
    ///
-   /// NOTE: the gradient given for the noise is given in log scale (it is the gradient for log(noise))
+   /// NOTE: the gradient given for the noise is given in log scale (it is the gradient for ln(noise))
    fn gradient_marginal_likelihood(&self) -> Vec<f64>
    {
       // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
