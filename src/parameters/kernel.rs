@@ -26,8 +26,8 @@ pub trait Kernel: Default
 
    /// Takes two equal length slices (row vector) and returns a scalar.
    ///
-   /// NOTE: due to the optimization algorithm, this function might get illegal parameters (such as negativ parameters),
-   /// it is the duty of the function implementer to deal with them properly (by using an absolute value)
+   /// NOTE: due to the optimization algorithm, this function might get illegal parameters (ie: negativ parameters),
+   /// it is the duty of the function implementer to deal with them properly (ie : using an absolute value).
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
@@ -35,8 +35,8 @@ pub trait Kernel: Default
 
    /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter in an arbitrary order.
    ///
-   /// NOTE: due to the optimization algorithm, this function might get illegal parameters (such as negativ parameters),
-   /// it is the duty of the function implementer to deal with them properly (by using the absolute value of the parameter and multiplying its gradient by its original sign)
+   /// NOTE: due to the optimization algorithm, this function might get illegal parameters (ie: negativ parameters),
+   /// it is the duty of the function implementer to deal with them properly (ie: using the absolute value of the parameter and multiplying its gradient by its original sign).
    fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                              x1: &SRowVector<S1>,
                                                                              x2: &SRowVector<S2>)
