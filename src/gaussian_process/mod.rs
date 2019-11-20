@@ -303,8 +303,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             let bias_corrected_mean = mean_grad[p] / (1. - beta1.powi(i as i32));
             let bias_corrected_variance = var_grad[p] / (1. - beta2.powi(i as i32));
             let delta = learning_rate * bias_corrected_mean / (bias_corrected_variance.sqrt() + epsilon);
-            continue_search |= delta.abs() > (convergence_fraction * parameters[p]).abs();
-            parameters[p] += delta;
+            continue_search |= delta.abs() > convergence_fraction;
+            parameters[p] *= 1. + delta;
          }
 
          self.set_parameters(&parameters, fit_noise);
