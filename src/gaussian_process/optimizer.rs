@@ -6,7 +6,6 @@
 //! TODO :
 //! - the paper [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
 //! introduces a way to compute the analyticaly optimal scale for the kernel
-//! this could let us get rid of the noise parameter
 //! - the current implementation is memory hungry and could clearly be optimized
 //! - is it better (for perf) to optimize noe parameter at a time or all at once ?
 
@@ -18,6 +17,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 {
    //-------------------------------------------------------------------------------------------------
    // NON-SCALABLE KERNEL
+   // the noise is optimized in log-space as its magnitude matters more that its precise value
 
    /// Computes the gradient of the marginal likelihood for the current value of each parameter
    /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
@@ -111,31 +111,39 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    //-------------------------------------------------------------------------------------------------
    // SCALABLE KERNEL
+   // use ideas from [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
+   // in order to avoid computing the gradient for the noise when the kernel can be rescaled
 
-   /// Computes the gradient of the marginal likelihood for the current value of each parameter
-   /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
-   ///
-   /// NOTE: the gradient given for the noise is given in log scale (it is the gradient for ln(noise))
-   fn scaled_gradient_marginal_likelihood(&self) -> Vec<f64>
+   /// Returns a couple containing the optimal scale for the kernel+noise (which is used to optimize the noise)
+   /// plus a vector containing the gradient per kernel parameter (but NOT the gradient for the noise parameter)
+   fn scaled_gradient_marginal_likelihood(&self) -> (f64, Vec<f64>)
    {
-      // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
+      // formula:
+      // gradient = 1/2 ( transpose(alpha) * dp * alpha / scale - trace(K^-1 * dp) )
+      // scale = transpose(output) * K^-1 * output / n
       // K = cov(train,train)
       // alpha = K^-1 * output
       // dp = gradient(K, parameter)
 
       // needed for the per parameter gradient computation
       let cov_inv = self.covmat_cholesky.inverse();
-      let alpha = &cov_inv * self.training_outputs.as_vector();
+      let training_output = self.training_outputs.as_vector();
+      let alpha = &cov_inv * training_output;
+
+      // scaling for the kernel
+      let scale = training_output.dot(&alpha) / (training_output.nrows() as f64);
 
       // loop on the gradient matrix for each parameter
       let mut results = vec![];
       for cov_gradient in make_gradient_covariance_matrices(&self.training_inputs.as_matrix(), &self.kernel)
       {
-         // transpose(alpha) * cov_gradient * alpha
-         let data_fit: f64 = cov_gradient.column_iter()
-                                         .zip(alpha.iter())
-                                         .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
-                                         .sum();
+         // transpose(alpha) * cov_gradient * alpha / scale
+         // NOTE: this quantity is divided by the scale wich is not the case for the unscaled gradient
+         let data_fit = cov_gradient.column_iter()
+                                    .zip(alpha.iter())
+                                    .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
+                                    .sum::<f64>()
+                        / scale;
 
          // trace(cov_inv * cov_gradient)
          let complexity_penalty: f64 =
@@ -144,14 +152,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          results.push((data_fit - complexity_penalty) / 2.);
       }
 
-      // adds the noise parameter
-      // gradient(K, noise) = 2*noise*Id
-      let data_fit = alpha.dot(&alpha);
-      let complexity_penalty = cov_inv.trace();
-      let noise_gradient = self.noise * (data_fit - complexity_penalty) / 2.;
-      results.push(noise_gradient);
-
-      results
+      (scale, results)
    }
 
    /// Fit parameters using a gradient descent algorithm.
@@ -175,7 +176,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       let mut var_grad = vec![0.; parameters.len()];
       for i in 1..=max_iter
       {
-         let gradients = self.gradient_marginal_likelihood();
+         let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
 
          let mut continue_search = false;
          for p in 0..parameters.len()
@@ -190,6 +191,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          }
 
          self.kernel.set_parameters(&parameters);
+         self.kernel.rescale(scale);
+         self.noise *= scale;
          if !continue_search
          {
             //println!("Fit done. iterations:{} likelihood:{} parameters:{:?}", i, self.likelihood(), parameters);
