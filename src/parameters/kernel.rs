@@ -24,6 +24,24 @@ pub trait Kernel: Default
    /// numbers of parameters (such as bandwith and amplitude) of the kernel
    const NB_PARAMETERS: usize;
 
+   /// can the kernel be rescaled (see the `rescale` function)
+   const IS_SCALABLE: bool; // TODO check whether more existing kernel can be made Is_SCALABLE
+
+   /// Multiplies the amplitude of the kernel by the `scale` parameter such that a kernel `a*K(x,y)` becomes `scale*a*K(x,y)`
+   ///
+   /// When possible, do implement this function as it unlock a faster parameter fitting algorithm.
+   fn rescale(&mut self, _scale: f64)
+   {
+      // TODO get rid of test and add ScalableKernel trait once specialization lands on stable
+      if Self::IS_SCALABLE
+      {
+         unimplemented!("The authors of this Kernel appears to have forgotten to implement the rescale function.")
+      }
+      else
+      {
+         panic!("You tried to rescale a Kernel that is not Scalable!")
+      }
+   }
    /// Takes two equal length slices (row vector) and returns a scalar.
    ///
    /// NOTE: due to the optimization algorithm, this function might get illegal parameters (ie: negativ parameters),
@@ -114,6 +132,7 @@ impl<T, U> Kernel for KernelSum<T, U>
          U: Kernel
 {
    const NB_PARAMETERS: usize = T::NB_PARAMETERS + U::NB_PARAMETERS;
+   const IS_SCALABLE: bool = T::IS_SCALABLE && U::IS_SCALABLE;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -188,6 +207,8 @@ impl<T, U> Kernel for KernelProd<T, U>
          U: Kernel
 {
    const NB_PARAMETERS: usize = T::NB_PARAMETERS + U::NB_PARAMETERS;
+   const IS_SCALABLE: bool = T::IS_SCALABLE || U::IS_SCALABLE;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
@@ -302,6 +323,7 @@ impl Default for Linear
 impl Kernel for Linear
 {
    const NB_PARAMETERS: usize = 1;
+   const IS_SCALABLE: bool = false;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -373,6 +395,8 @@ impl Default for Polynomial
 impl Kernel for Polynomial
 {
    const NB_PARAMETERS: usize = 3;
+   const IS_SCALABLE: bool = false;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
@@ -461,6 +485,8 @@ impl Default for SquaredExp
 impl Kernel for SquaredExp
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = true;
+
    /// The squared exponential kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -551,6 +577,8 @@ impl Default for Exponential
 impl Kernel for Exponential
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = true;
+
    /// The squared exponential kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -641,6 +669,8 @@ impl Default for Matern1
 impl Kernel for Matern1
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = true;
+
    /// The matèrn1 kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -733,6 +763,8 @@ impl Default for Matern2
 impl Kernel for Matern2
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = true;
+
    /// The matèrn2 kernel function.
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -827,6 +859,8 @@ impl Default for HyperTan
 impl Kernel for HyperTan
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = false;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
@@ -895,6 +929,8 @@ impl Default for Multiquadric
 impl Kernel for Multiquadric
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = false;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)
@@ -962,6 +998,8 @@ impl Default for RationalQuadratic
 impl Kernel for RationalQuadratic
 {
    const NB_PARAMETERS: usize = 2;
+   const IS_SCALABLE: bool = false;
+
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
                                                                            x2: &SRowVector<S2>)

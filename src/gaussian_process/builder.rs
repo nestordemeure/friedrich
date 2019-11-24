@@ -43,7 +43,6 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
    /// type of fit to be applied
    should_fit_kernel: bool,
    should_fit_prior: bool,
-   should_fit_noise: bool,
    /// fit parameters
    max_iter: usize,
    convergence_fraction: f64,
@@ -71,7 +70,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       let noise = 0.01 * training_outputs.row_variance()[0].sqrt(); // 1% of output std by default
       let should_fit_kernel = false;
       let should_fit_prior = false;
-      let should_fit_noise = true;
       let max_iter = 100;
       let convergence_fraction = 0.01;
       GaussianProcessBuilder { prior,
@@ -79,7 +77,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                noise,
                                should_fit_kernel,
                                should_fit_prior,
-                               should_fit_noise,
                                max_iter,
                                convergence_fraction,
                                training_inputs,
@@ -100,7 +97,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                noise: self.noise,
                                should_fit_kernel: self.should_fit_kernel,
                                should_fit_prior: self.should_fit_prior,
-                               should_fit_noise: self.should_fit_noise,
                                max_iter: self.max_iter,
                                convergence_fraction: self.convergence_fraction,
                                training_inputs: self.training_inputs,
@@ -112,7 +108,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    pub fn set_noise(self, noise: f64) -> Self
    {
       assert!(noise > 0., "The noise parameter should be over 0.");
-      GaussianProcessBuilder { noise, should_fit_noise: false, ..self }
+      GaussianProcessBuilder { noise, ..self }
    }
 
    /// Changes the kernel of the gaussian process.
@@ -126,7 +122,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                noise: self.noise,
                                should_fit_kernel: self.should_fit_kernel,
                                should_fit_prior: self.should_fit_prior,
-                               should_fit_noise: self.should_fit_noise,
                                max_iter: self.max_iter,
                                convergence_fraction: self.convergence_fraction,
                                training_inputs: self.training_inputs,
@@ -155,13 +150,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       GaussianProcessBuilder { should_fit_prior: true, ..self }
    }
 
-   /// Asks for the noise to be fitted on the training data.
-   /// The fitting will be done when the `train` method is called.
-   pub fn fit_noise(self) -> Self
-   {
-      GaussianProcessBuilder { should_fit_noise: true, ..self }
-   }
-
    //----------------------------------------------------------------------------------------------
    // TRAIN
 
@@ -186,7 +174,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       // fit the model, if requested, on the training data
       gp.fit_parameters(self.should_fit_prior,
                         self.should_fit_kernel,
-                        self.should_fit_noise,
                         self.max_iter,
                         self.convergence_fraction);
       gp

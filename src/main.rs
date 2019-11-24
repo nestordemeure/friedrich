@@ -30,11 +30,10 @@ fn main()
       let additional_outputs = vec![2.0, 3.0, -1.0, -2.0];
       let fit_prior = true;
       let fit_kernel = true;
-      let fit_noise = true;
       let max_iter = 100;
       let convergence_fraction = 0.01;
       gp.add_samples(&additional_inputs, &additional_outputs);
-      gp.fit_parameters(fit_prior, fit_kernel, fit_noise, max_iter, convergence_fraction);
+      gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction);
 
       // makes several prediction
       let inputs = vec![vec![1.0], vec![2.0], vec![3.0]];
