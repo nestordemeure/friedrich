@@ -153,6 +153,12 @@ impl<T, U> Kernel for KernelSum<T, U>
       g1
    }
 
+   fn rescale(&mut self, scale: f64)
+   {
+      self.k1.rescale(scale);
+      self.k2.rescale(scale);
+   }
+
    fn get_parameters(&self) -> Vec<f64>
    {
       let mut p1 = self.k1.get_parameters();
@@ -227,6 +233,18 @@ impl<T, U> Kernel for KernelProd<T, U>
       let g1 = self.k1.gradient(x1, x2);
       let g2 = self.k2.gradient(x1, x2);
       g1.iter().map(|g1| g1 * k2).chain(g2.iter().map(|g2| g2 * k1)).collect()
+   }
+
+   fn rescale(&mut self, scale: f64)
+   {
+      if T::IS_SCALABLE
+      {
+         self.k1.rescale(scale);
+      }
+      else
+      {
+         self.k2.rescale(scale);
+      }
    }
 
    fn get_parameters(&self) -> Vec<f64>
@@ -516,6 +534,11 @@ impl Kernel for SquaredExp
       vec![grad_ls, grad_ampl]
    }
 
+   fn rescale(&mut self, scale: f64)
+   {
+      self.ampl *= scale;
+   }
+
    fn get_parameters(&self) -> Vec<f64>
    {
       vec![self.ls, self.ampl]
@@ -606,6 +629,11 @@ impl Kernel for Exponential
       let grad_ls = (distance * ampl * exponential) / self.ls.powi(3);
       let grad_ampl = self.ampl.signum() * exponential;
       vec![grad_ls, grad_ampl]
+   }
+
+   fn rescale(&mut self, scale: f64)
+   {
+      self.ampl *= scale;
    }
 
    fn get_parameters(&self) -> Vec<f64>
@@ -700,6 +728,11 @@ impl Kernel for Matern1
       let grad_ls = (3. * ampl * distance.powi(2) * (-x).exp()) / (self.ls.powi(3));
       let grad_ampl = self.ampl.signum() * (1. + x) * (-x).exp();
       vec![grad_ls, grad_ampl]
+   }
+
+   fn rescale(&mut self, scale: f64)
+   {
+      self.ampl *= scale;
    }
 
    fn get_parameters(&self) -> Vec<f64>
@@ -798,6 +831,11 @@ impl Kernel for Matern2
       let grad_ampl =
          self.ampl.signum() * (1f64 + x + (5f64 * distance * distance) / (3f64 * l * l)) * (-x).exp();
       vec![grad_ls, grad_ampl]
+   }
+
+   fn rescale(&mut self, scale: f64)
+   {
+      self.ampl *= scale;
    }
 
    fn get_parameters(&self) -> Vec<f64>
