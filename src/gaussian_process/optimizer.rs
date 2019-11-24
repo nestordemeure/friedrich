@@ -101,12 +101,20 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
          self.kernel.set_parameters(&parameters);
          parameters.last().map(|noise| self.noise = noise.exp()); // gets out of log-space before setting noise
+         self.covmat_cholesky =
+            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+
          if !continue_search
          {
-            //println!("Fit done. iterations:{} likelihood:{} parameters:{:?}", i, self.likelihood(), parameters);
+            println!("Iterations:{}", i);
             break;
          };
       }
+
+      /*println!("Fit done. likelihood:{} parameters:{:?} noise:{:e}",
+      self.likelihood(),
+      parameters,
+      self.noise);*/
    }
 
    //-------------------------------------------------------------------------------------------------
@@ -177,6 +185,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       for i in 1..=max_iter
       {
          let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
+         //println!("scale : {}", scale);
 
          let mut continue_search = false;
          for p in 0..parameters.len()
@@ -193,12 +202,21 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          self.kernel.set_parameters(&parameters);
          self.kernel.rescale(scale);
          self.noise *= scale;
+         parameters = self.kernel.get_parameters();
+         self.covmat_cholesky =
+            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+
          if !continue_search
          {
-            //println!("Fit done. iterations:{} likelihood:{} parameters:{:?}", i, self.likelihood(), parameters);
+            println!("Iterations:{}", i);
             break;
          };
       }
+
+      /*println!("Scaled fit done. likelihood:{} parameters:{:?} noise:{:e}",
+      self.likelihood(),
+      parameters,
+      self.noise);*/
    }
 
    //-------------------------------------------------------------------------------------------------

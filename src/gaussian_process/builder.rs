@@ -58,7 +58,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// the defaults are :
    /// - constant prior (0 unless fitted)
    /// - a gaussian kernel
-   /// - a noise of 1% of the output standard deviation (might be re-fitted in the absence of user provided value)
+   /// - a noise of 10% of the output standard deviation (might be re-fitted in the absence of user provided value)
    /// - does not fit parameters
    pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
    {
@@ -67,7 +67,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       // makes builder
       let prior = PriorType::default(training_inputs.ncols());
       let kernel = KernelType::default();
-      let noise = 0.01 * training_outputs.row_variance()[0].sqrt(); // 1% of output std by default
+      let noise = 0.1 * training_outputs.row_variance()[0].sqrt(); // 10% of output std by default
       let should_fit_kernel = false;
       let should_fit_prior = false;
       let max_iter = 100;
