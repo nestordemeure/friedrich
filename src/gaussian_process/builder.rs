@@ -107,7 +107,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
    /// It correspond to the standard deviation of the noise in the outputs of the training set.
    pub fn set_noise(self, noise: f64) -> Self
    {
-      assert!(noise > 0., "The noise parameter should be over 0.");
+      assert!(noise > 0., "The noise parameter should be strictly over 0.");
       GaussianProcessBuilder { noise, ..self }
    }
 
