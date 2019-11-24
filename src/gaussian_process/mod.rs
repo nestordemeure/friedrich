@@ -366,4 +366,53 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
       MultivariateNormal::new(mean, cov)
    }
+
+   //----------------------------------------------------------------------------------------------
+   // FIT
+
+   /// Fits the requested parameters and retrains the model.
+   ///
+   /// The fit of the noise and kernel parameters is done by gradient descent.
+   /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
+   ///
+   /// Good base values for `max_iter` and `convergence_fraction` are 100 and 0.05
+   ///
+   /// Note that, if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
+   pub fn fit_parameters(&mut self,
+                         fit_prior: bool,
+                         fit_kernel: bool,
+                         max_iter: usize,
+                         convergence_fraction: f64)
+   {
+      if fit_prior
+      {
+         // gets the original data back in order to update the prior
+         let training_outputs =
+            self.training_outputs.as_vector() + self.prior.prior(&self.training_inputs.as_matrix());
+         self.prior.fit(&self.training_inputs.as_matrix(), &training_outputs);
+         let training_outputs = training_outputs - self.prior.prior(&self.training_inputs.as_matrix());
+         self.training_outputs.assign(&training_outputs);
+         // NOTE: adding and substracting each time we fit a prior might be numerically unwise
+
+         if !fit_kernel
+         {
+            // retrains model from scratch
+            self.covmat_cholesky =
+               make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+         }
+      }
+
+      // fit kernel and retrains model from scratch
+      if fit_kernel
+      {
+         if KernelType::IS_SCALABLE
+         {
+            self.scaled_optimize_parameters(max_iter, convergence_fraction);
+         }
+         else
+         {
+            self.optimize_parameters(max_iter, convergence_fraction);
+         }
+      }
+   }
 }

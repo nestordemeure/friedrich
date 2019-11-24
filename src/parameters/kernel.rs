@@ -31,7 +31,7 @@ pub trait Kernel: Default
    ///
    /// When possible, do implement this function as it unlock a faster parameter fitting algorithm.
    ///
-   /// *WARNING:* the code will panic if you set `IS_SCALABLE` to true without providing a user defined implementation of this function.
+   /// *WARNING:* the code will panic if you set `IS_SCALABLE` to `true` without providing a user defined implementation of this function.
    fn rescale(&mut self, _scale: f64)
    {
       // TODO get rid of test and add ScalableKernel trait once specialization lands on stable
