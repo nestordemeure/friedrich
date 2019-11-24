@@ -21,11 +21,12 @@ use crate::algebra::{SRowVector, SVector, SMatrix};
 /// If you want to provide a user-defined kernel, you should implement this trait.
 pub trait Kernel: Default
 {
-   /// numbers of parameters (such as bandwith and amplitude) of the kernel
+   /// Numbers of parameters (such as bandwith and amplitude) of the kernel.
    const NB_PARAMETERS: usize;
 
-   /// can the kernel be rescaled (see the `rescale` function)
-   const IS_SCALABLE: bool; // TODO check whether more existing kernel can be made Is_SCALABLE
+   /// Can the kernel be rescaled (see the `rescale` function) ?
+   /// This value is `false` by default.
+   const IS_SCALABLE: bool = false; // TODO check whether more existing kernel can be made Is_SCALABLE
 
    /// Multiplies the amplitude of the kernel by the `scale` parameter such that a kernel `a*K(x,y)` becomes `scale*a*K(x,y)`
    ///
@@ -343,7 +344,6 @@ impl Default for Linear
 impl Kernel for Linear
 {
    const NB_PARAMETERS: usize = 1;
-   const IS_SCALABLE: bool = false;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -415,7 +415,6 @@ impl Default for Polynomial
 impl Kernel for Polynomial
 {
    const NB_PARAMETERS: usize = 3;
-   const IS_SCALABLE: bool = false;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -899,7 +898,6 @@ impl Default for HyperTan
 impl Kernel for HyperTan
 {
    const NB_PARAMETERS: usize = 2;
-   const IS_SCALABLE: bool = false;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -969,7 +967,6 @@ impl Default for Multiquadric
 impl Kernel for Multiquadric
 {
    const NB_PARAMETERS: usize = 2;
-   const IS_SCALABLE: bool = false;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
@@ -1038,7 +1035,6 @@ impl Default for RationalQuadratic
 impl Kernel for RationalQuadratic
 {
    const NB_PARAMETERS: usize = 2;
-   const IS_SCALABLE: bool = false;
 
    fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                            x1: &SRowVector<S1>,
