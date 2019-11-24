@@ -56,11 +56,10 @@ pub fn make_covariance_matrix<S1: Storage<f64, Dynamic, Dynamic>,
 /// computes the cholesky decomposition of the covariance matrix of some inputs
 /// adds a given diagonal noise
 /// relies on the fact that only the lower triangular part of the matrix is needed for the decomposition
-pub fn make_cholesky_covariance_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(
-   inputs: &SMatrix<S>,
-   kernel: &K,
-   diagonal_noise: f64)
-   -> Cholesky<f64, Dynamic>
+pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(inputs: &SMatrix<S>,
+                                                                              kernel: &K,
+                                                                              diagonal_noise: f64)
+                                                                              -> Cholesky<f64, Dynamic>
 {
    // empty covariance matrix
    // TODO it would be faster to start with an an uninitialized matrix but it would require unsafe

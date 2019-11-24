@@ -31,7 +31,7 @@ fn main()
       let fit_prior = true;
       let fit_kernel = true;
       let max_iter = 100;
-      let convergence_fraction = 0.01;
+      let convergence_fraction = 0.05;
       gp.add_samples(&additional_inputs, &additional_outputs);
       gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction);
 

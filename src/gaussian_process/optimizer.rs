@@ -3,24 +3,26 @@
 //! The fit of the parameters is done by gradient descent (using the ADAM algorithm) on the gradient of the marginal log-likelihood
 //! (which let us use all the data without bothering with cross-validation)
 //!
+//! If the kernel can be rescaled, we use ideas from [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
+//! to rescale the kernel at each step with the optimal magnitude which has the effect of fitting the noise without computing its gradient.
+//!
+//! Otherwise we fit the noise in log-scale as its magnitude matters more than its precise value.
+//!
 //! TODO :
-//! - the paper [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
-//! introduces a way to compute the analyticaly optimal scale for the kernel
-//! - the current implementation is memory hungry and could clearly be optimized
-//! - is it better (for perf) to optimize noe parameter at a time or all at once ?
+//! - the current implementation of `gradient_marginal_likelihood` is memory hungry and could clearly be optimized
+//! - is it better (for perf) to optimize one parameter at a time or all at once ?
 
 use crate::parameters::{kernel::Kernel, prior::Prior};
 use super::GaussianProcess;
-use crate::algebra::{make_cholesky_covariance_matrix, make_gradient_covariance_matrices};
+use crate::algebra::{make_cholesky_cov_matrix, make_gradient_covariance_matrices};
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
 {
    //-------------------------------------------------------------------------------------------------
    // NON-SCALABLE KERNEL
-   // the noise is optimized in log-space as its magnitude matters more that its precise value
 
    /// Computes the gradient of the marginal likelihood for the current value of each parameter
-   /// The produced vector contains the graident per kernel parameter followed by the gradient for the noise parameter
+   /// The produced vector contains the gradient per kernel parameter followed by the gradient for the noise parameter
    fn gradient_marginal_likelihood(&self) -> Vec<f64>
    {
       // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
@@ -53,7 +55,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       // gradient(K, noise) = 2*noise*Id
       let data_fit = alpha.dot(&alpha);
       let complexity_penalty = cov_inv.trace();
-      let noise_gradient = self.noise * (data_fit - complexity_penalty) / 2.;
+      let noise_gradient = self.noise * (data_fit - complexity_penalty);
       results.push(noise_gradient);
 
       results
@@ -62,7 +64,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// Fit parameters using a gradient descent algorithm.
    ///
    /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
-   /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.01 is a good default value).
+   /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.05 is a good default value).
    ///
    /// The `noise` parameter is fitted in log-scale as its magnitude matters more than its precise value
    fn optimize_parameters(&mut self, max_iter: usize, convergence_fraction: f64)
@@ -99,14 +101,17 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             parameters[p] *= 1. + delta;
          }
 
+         // sets parameters
          self.kernel.set_parameters(&parameters);
          parameters.last().map(|noise| self.noise = noise.exp()); // gets out of log-space before setting noise
+
+         // fits model
          self.covmat_cholesky =
-            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+            make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
 
          if !continue_search
          {
-            println!("Iterations:{}", i);
+            //println!("Iterations:{}", i);
             break;
          };
       }
@@ -119,11 +124,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
    //-------------------------------------------------------------------------------------------------
    // SCALABLE KERNEL
-   // use ideas from [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
-   // in order to avoid computing the gradient for the noise when the kernel can be rescaled
 
    /// Returns a couple containing the optimal scale for the kernel+noise (which is used to optimize the noise)
    /// plus a vector containing the gradient per kernel parameter (but NOT the gradient for the noise parameter)
+   ///
+   /// see [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
+   /// for the formula used to compute the scale and the modification to the gradient
    fn scaled_gradient_marginal_likelihood(&self) -> (f64, Vec<f64>)
    {
       // formula:
@@ -160,13 +166,21 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          results.push((data_fit - complexity_penalty) / 2.);
       }
 
+      // adds the noise parameter
+      // gradient(K, noise) = 2*noise*Id
+      /*let data_fit = alpha.dot(&alpha) / scale;
+      let complexity_penalty = cov_inv.trace();
+      let noise_gradient = self.noise * (data_fit - complexity_penalty);
+      results.push(noise_gradient);*/
+
       (scale, results)
    }
 
    /// Fit parameters using a gradient descent algorithm.
+   /// Additionnaly, at eac step, the kernel and noise are rescaled using the optimal magnitude.
    ///
    /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
-   /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.01 is a good default value).
+   /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.05 is a good default value).
    fn scaled_optimize_parameters(&mut self, max_iter: usize, convergence_fraction: f64)
    {
       // use the ADAM gradient descent algorithm
@@ -185,7 +199,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       for i in 1..=max_iter
       {
          let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
-         //println!("scale : {}", scale);
 
          let mut continue_search = false;
          for p in 0..parameters.len()
@@ -199,16 +212,19 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             parameters[p] *= 1. + delta;
          }
 
+         // set parameters
          self.kernel.set_parameters(&parameters);
          self.kernel.rescale(scale);
          self.noise *= scale;
-         parameters = self.kernel.get_parameters();
+         parameters = self.kernel.get_parameters(); // get parameters back as they have been rescaled
+
+         // fits model
          self.covmat_cholesky =
-            make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+            make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
 
          if !continue_search
          {
-            println!("Iterations:{}", i);
+            //println!("Iterations:{}", i);
             break;
          };
       }
@@ -227,9 +243,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    /// The fit of the noise and kernel parameters is done by gradient descent.
    /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
    ///
-   /// Good base values for `max_iter` and `convergence_fraction` are 100 and 0.01
+   /// Good base values for `max_iter` and `convergence_fraction` are 100 and 0.05
    ///
-   /// Note that if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
+   /// Note that, if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
    pub fn fit_parameters(&mut self,
                          fit_prior: bool,
                          fit_kernel: bool,
@@ -250,7 +266,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
          {
             // retrains model from scratch
             self.covmat_cholesky =
-               make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+               make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
          }
       }
 

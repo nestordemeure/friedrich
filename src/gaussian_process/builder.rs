@@ -71,7 +71,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
       let should_fit_kernel = false;
       let should_fit_prior = false;
       let max_iter = 100;
-      let convergence_fraction = 0.01;
+      let convergence_fraction = 0.05;
       GaussianProcessBuilder { prior,
                                kernel,
                                noise,

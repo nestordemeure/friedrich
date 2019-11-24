@@ -25,7 +25,7 @@
 //! let fit_prior = true;
 //! let fit_kernel = true;
 //! let max_iter = 100;
-//! let convergence_fraction = 0.01;
+//! let convergence_fraction = 0.05;
 //! gp.add_samples(&additional_inputs, &additional_outputs);
 //! gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction);
 //!
@@ -42,7 +42,7 @@
 
 use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
 use nalgebra::{Cholesky, Dynamic, DMatrix, DVector};
-use crate::algebra::{EMatrix, EVector, make_cholesky_covariance_matrix, make_covariance_matrix};
+use crate::algebra::{EMatrix, EVector, make_cholesky_cov_matrix, make_covariance_matrix};
 use crate::conversion::Input;
 
 mod multivariate_normal;
@@ -143,7 +143,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       let training_inputs = EMatrix::new(training_inputs);
       let training_outputs = EVector::new(training_outputs - prior.prior(&training_inputs.as_matrix()));
       // computes cholesky decomposition
-      let covmat_cholesky = make_cholesky_covariance_matrix(&training_inputs.as_matrix(), &kernel, noise);
+      let covmat_cholesky = make_cholesky_cov_matrix(&training_inputs.as_matrix(), &kernel, noise);
       GaussianProcess { prior, kernel, noise, training_inputs, training_outputs, covmat_cholesky }
    }
 
@@ -163,7 +163,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       self.training_outputs.add_rows(&outputs);
       // recompute cholesky matrix
       self.covmat_cholesky =
-         make_cholesky_covariance_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+         make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
       // TODO update cholesky matrix instead of recomputing it from scratch
    }
 
