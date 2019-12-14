@@ -21,6 +21,8 @@ This implementation lets you:
 - predict the mean and variance and covariance matrix for given inputs
 - sample the distribution at a given position
 
+(See the [todo](https://github.com/nestordemeure/friedrich/blob/master/todo.md) file to get up-to-date informations on current developements.)
+
 ## Code sample
 
 ```rust
@@ -58,17 +60,6 @@ Most methods of this library can currently work with the following `input -> oup
 - `DMatrix<f64> -> DVector<f64>` using a [nalgebra](https://www.nalgebra.org/) matrix with one row per sample
 
 A trait is provided to add your own pairs.
-
-## Future developements
-
-The list of things that could be done to improve on the current implementation includes:
-
-- Reduce memory consumption for large datasets.
-- Add [ndarray](https://docs.rs/ndarray/) support behind a feature flag.
-- Add simple [kernel regression](https://en.wikipedia.org/wiki/Kernel_regression#Nadaraya%E2%80%93Watson_kernel_regression) (not as clever but much faster).
-- Add scalable variations of the algorithm.
-
-*Do not hesitate to send pull request or open issues to ask for features.*
 
 ## Why call it Friedrich ?
 
