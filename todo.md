@@ -8,6 +8,7 @@ List of features that will be implemented (in no particular order) :
 - Add simple [kernel regression](https://en.wikipedia.org/wiki/Kernel_regression#Nadaraya%E2%80%93Watson_kernel_regression) (not as clever but much faster).
 - add [benchmarks](http://www.resibots.eu/limbo/release-2.0/reg_benchmarks.html) to confirm correctness and validate performances
 - Add sparse gaussian proces
+- Reduce memory usage (the fit, in particular, could use a lot less memory)
 - Improve test coverage
 
 List of API modifications that are being considered :
