@@ -7,10 +7,6 @@
 //! to rescale the kernel at each step with the optimal magnitude which has the effect of fitting the noise without computing its gradient.
 //!
 //! Otherwise we fit the noise in log-scale as its magnitude matters more than its precise value.
-//!
-//! TODO :
-//! - the current implementation of `gradient_marginal_likelihood` is memory hungry and could clearly be optimized
-//! - is it better (for perf) to optimize one parameter at a time or all at once ?
 
 use crate::parameters::{kernel::Kernel, prior::Prior};
 use super::GaussianProcess;
