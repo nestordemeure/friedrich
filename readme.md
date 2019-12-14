@@ -59,7 +59,7 @@ Most methods of this library can currently work with the following `input -> oup
 
 A trait is provided to add your own pairs.
 
-## Potential future developements
+## Future developements
 
 The list of things that could be done to improve on the current implementation includes:
 
@@ -68,4 +68,8 @@ The list of things that could be done to improve on the current implementation i
 - Add simple [kernel regression](https://en.wikipedia.org/wiki/Kernel_regression#Nadaraya%E2%80%93Watson_kernel_regression) (not as clever but much faster).
 - Add scalable variations of the algorithm.
 
-*Do not hesitate to send pull request or ask for features.*
+*Do not hesitate to send pull request or open issues to ask for features.*
+
+## Why call it Friedrich ?
+
+Gaussian Process are named after the [Gaussian distribution](https://en.wikipedia.org/wiki/Gaussian_function) which is itself named after [Carl Friedrich Gauss](https://en.wikipedia.org/wiki/Carl_Friedrich_Gauss).
