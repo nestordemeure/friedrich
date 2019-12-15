@@ -14,7 +14,12 @@ keywords = ["regression", "gaussian", "process", "kernel", "kriging"]
 categories = ["algorithms", "science"] # crates.io/category_slugs
 license = "Apache-2.0"
 
+#[features]
+#friedrich_ndarray = ["ndarray"]
+
 [dependencies]
 nalgebra = "0.19.0"
 rand = "0.7.2"
 rand_distr = "0.2.2"
+ndarray = "0.13.0"
+#ndarray = { version = "0.13.0", optional = true }

@@ -1,6 +1,9 @@
 use nalgebra::{DMatrix, DVector};
 use crate::algebra;
 
+//#[cfg(feature = "friedrich_ndarray")]
+use ndarray::{Array1, ArrayBase, Ix1, Ix2, Data};
+
 //-----------------------------------------------------------------------------
 // TRAITS
 
@@ -127,6 +130,34 @@ impl Input for Vec<Vec<f64>>
    fn to_dvector(v: &Self::InVector) -> DVector<f64>
    {
       DVector::from_column_slice(v)
+   }
+
+   /// converts a DVector to an output vector
+   fn from_dvector(v: &DVector<f64>) -> Self::OutVector
+   {
+      v.iter().cloned().collect()
+   }
+}
+
+/// multiple rows, ndarray array type
+//#[cfg(feature = "friedrich_ndarray")]
+impl<D: Data<Elem = f64>> Input for ArrayBase<D, Ix2>
+{
+   type InVector = ArrayBase<D, Ix1>;
+   type OutVector = Array1<f64>;
+
+   /// converts an input matrix to a DMatrix
+   fn to_dmatrix(m: &Self) -> DMatrix<f64>
+   {
+      assert_ne!(m.nrows(), 0);
+      // use `.t()` to get from row-major to col-major
+      DMatrix::from_iterator(m.nrows(), m.ncols(), m.t().iter().cloned())
+   }
+
+   /// converts an input vector to a DVector
+   fn to_dvector(v: &Self::InVector) -> DVector<f64>
+   {
+      DVector::from_iterator(v.len(), v.iter().cloned())
    }
 
    /// converts a DVector to an output vector
