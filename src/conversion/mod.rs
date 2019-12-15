@@ -1,5 +1,4 @@
 use nalgebra::{DMatrix, DVector};
-use crate::algebra;
 
 #[cfg(feature = "friedrich_ndarray")]
 use ndarray::{Array1, ArrayBase, Ix1, Ix2, Data};
@@ -123,7 +122,10 @@ impl Input for Vec<Vec<f64>>
    /// converts an input matrix to a DMatrix
    fn to_dmatrix(m: &Self) -> DMatrix<f64>
    {
-      algebra::make_matrix_from_row_slices(m)
+      let nb_rows = m.len();
+      assert_ne!(nb_rows, 0);
+      let nb_cols = m[0].len();
+      DMatrix::from_fn(nb_rows, nb_cols, |r, c| m[r][c])
    }
 
    /// converts an input vector to a DVector

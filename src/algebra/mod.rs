@@ -107,15 +107,3 @@ pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: K
 
    return covmatrices;
 }
-
-//-----------------------------------------------------------------------------
-// CONVERSION
-
-/// takes a references to the row of a matrix and builds the matrix
-pub fn make_matrix_from_row_slices(rows: &[Vec<f64>]) -> DMatrix<f64>
-{
-   let nb_rows = rows.len();
-   assert_ne!(nb_rows, 0);
-   let nb_cols = rows[0].len();
-   DMatrix::from_fn(nb_rows, nb_cols, |r, c| rows[r][c])
-}
