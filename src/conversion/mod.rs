@@ -1,7 +1,7 @@
 use nalgebra::{DMatrix, DVector};
 use crate::algebra;
 
-//#[cfg(feature = "friedrich_ndarray")]
+#[cfg(feature = "friedrich_ndarray")]
 use ndarray::{Array1, ArrayBase, Ix1, Ix2, Data};
 
 //-----------------------------------------------------------------------------
@@ -140,7 +140,7 @@ impl Input for Vec<Vec<f64>>
 }
 
 /// multiple rows, ndarray array type
-//#[cfg(feature = "friedrich_ndarray")]
+#[cfg(feature = "friedrich_ndarray")]
 impl<D: Data<Elem = f64>> Input for ArrayBase<D, Ix2>
 {
    type InVector = ArrayBase<D, Ix1>;
@@ -164,5 +164,32 @@ impl<D: Data<Elem = f64>> Input for ArrayBase<D, Ix2>
    fn from_dvector(v: &DVector<f64>) -> Self::OutVector
    {
       v.iter().cloned().collect()
+   }
+}
+
+/// single row, ndarray array type
+#[cfg(feature = "friedrich_ndarray")]
+impl<D: Data<Elem = f64>> Input for ArrayBase<D, Ix1>
+{
+   type InVector = f64;
+   type OutVector = f64;
+
+   /// converts an input matrix to a DMatrix
+   fn to_dmatrix(m: &Self) -> DMatrix<f64>
+   {
+      DMatrix::from_iterator(1, m.len(), m.iter().cloned())
+   }
+
+   /// converts an input vector to a DVector
+   fn to_dvector(v: &Self::InVector) -> DVector<f64>
+   {
+      DVector::from_element(1, *v)
+   }
+
+   /// converts a DVector to an output vector
+   fn from_dvector(v: &DVector<f64>) -> Self::OutVector
+   {
+      assert_eq!(v.nrows(), 1);
+      v[0]
    }
 }
