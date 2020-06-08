@@ -18,7 +18,7 @@ license = "Apache-2.0"
 friedrich_ndarray = ["ndarray"]
 
 [dependencies]
-nalgebra = "0.19.0"
+nalgebra = "0.21.1"
 rand = "0.7.2"
 rand_distr = "0.2.2"
 ndarray = { version = "0.13.0", optional = true }
