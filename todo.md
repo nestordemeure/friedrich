@@ -1,6 +1,6 @@
 # TODO
 
-List of features that will be implemented (in no particular order) :
+List of features that should be implemented (in no particular order) :
 
 - Integrate nalgebra cholesky decomposition update once the new version is released
 - Add [serde](https://docs.rs/ndarray/) support behind a feature flag
@@ -17,7 +17,7 @@ List of algorithmic modifications that might be implemented (depending on their 
 
 List of API modifications that are being considered :
 
-- Replace the builder pattern with a macro (might rely on [duang](https://crates.io/crates/duang))
+- Replace the builder pattern with a macro (might rely on [duang](https://crates.io/crates/duang) or something similar)
 - Simplify the kernel trait
 
 *Do not hesitate to start an issue if you want to contribute to one of those points.*
