@@ -40,9 +40,9 @@
 //! # }
 //! ```
 
-use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
 use nalgebra::{Cholesky, Dynamic, DMatrix, DVector};
-use crate::algebra::{EMatrix, EVector, make_cholesky_cov_matrix, make_covariance_matrix};
+use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
+use crate::algebra::{EMatrix, EVector, make_cholesky_cov_matrix, add_rows_cholesky_cov_matrix, make_covariance_matrix};
 use crate::conversion::Input;
 
 mod multivariate_normal;
@@ -156,7 +156,6 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    {
       let inputs = T::to_dmatrix(inputs);
       let outputs = T::to_dvector(outputs);
-      let old_nb_samples = self.training_inputs.as_matrix().nrows();
       assert_eq!(inputs.nrows(), outputs.nrows());
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
       // grows the training matrix
@@ -164,26 +163,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       self.training_inputs.add_rows(&inputs);
       self.training_outputs.add_rows(&outputs);
       // add new rows to cholesky matrix
-
-      // TODO put split functionality in dedicated function
-      // this is a O(n²*c) operation where n is the number of training elements and c the number of new elements
-      let training_inputs_mat = self.training_inputs.as_matrix();
-      // add samples one row at a time
-      for (row_index, row) in inputs.row_iter().enumerate()
-      {
-         // index where the column will be added in the Cholesky decomposition
-         let col_index = old_nb_samples + row_index;
-         // computes the column, the covariance between the new row and previous rows
-         let column_size = col_index+1;
-         let mut new_column = DVector::<f64>::from_fn(column_size, |training_row_index,_| {
-            let training_row = training_inputs_mat.row(training_row_index);
-            self.kernel.kernel(&training_row, &row)
-         });
-         // add diagonal noise
-         new_column[col_index] += self.noise * self.noise;
-         // updates the cholesky decomposition
-         self.covmat_cholesky = self.covmat_cholesky.insert_column(col_index, new_column);
-      }
+      let nb_new_inputs = inputs.nrows();
+      add_rows_cholesky_cov_matrix(&mut self.covmat_cholesky, &self.training_inputs.as_matrix(), nb_new_inputs, &self.kernel, self.noise);
    }
 
    /// Computes the log likelihood of the current model given the training data.

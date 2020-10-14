@@ -6,7 +6,7 @@ mod extendable_matrix;
 pub use extendable_matrix::{EMatrix, EVector};
 
 use crate::parameters::kernel::Kernel;
-use nalgebra::{storage::Storage, SliceStorage, Dynamic, U1, Matrix, DMatrix, Cholesky};
+use nalgebra::{storage::Storage, SliceStorage, Dynamic, U1, Matrix, DMatrix, DVector, Cholesky};
 
 //-----------------------------------------------------------------------------
 // ARBITRARY STORAGE TYPES
@@ -78,6 +78,41 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(in
    }
 
    return covmatix.cholesky().expect("Cholesky decomposition failed!");
+}
+
+/// add rows to the covariance matrix by updating its Cholesky decomposition in place
+/// this is a O(n²*c) operation where n is the number of rows of the covariance matrix and c the number of new rows
+/// `all_inputs` is a matrix with one row per input, the `nb_new_inputs` last rows are the one we want to add
+pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(
+   covmat_cholesky: &mut Cholesky<f64, Dynamic>,
+   all_inputs: &SMatrix<S>,
+   nb_new_inputs: usize,
+   kernel: &K,
+   diagonal_noise: f64)
+{
+   // extracts the number of old inputs and new inputs from full inputs
+   let nb_old_inputs = all_inputs.nrows() - nb_new_inputs;
+   let new_inputs = all_inputs.rows(nb_old_inputs, nb_new_inputs);
+
+   // add samples one row at a time
+   for (row_index, row) in new_inputs.row_iter().enumerate()
+   {
+      // index where the column will be added in the Cholesky decomposition
+      let col_index = nb_old_inputs + row_index;
+
+      // computes the column, the covariance between the new row and previous rows
+      let column_size = col_index+1;
+      let mut new_column = DVector::<f64>::from_fn(column_size, |training_row_index,_| {
+         let training_row = all_inputs.row(training_row_index);
+         kernel.kernel(&training_row, &row)
+      });
+
+      // add diagonal noise
+      new_column[col_index] += diagonal_noise*diagonal_noise;
+
+      // updates the cholesky decomposition with O(n²) operation
+      *covmat_cholesky = covmat_cholesky.insert_column(col_index, new_column);
+   }
 }
 
 /// Returns a vector with the gradient of the covariance matrix (which is a matrix) for each kernel parameter.
