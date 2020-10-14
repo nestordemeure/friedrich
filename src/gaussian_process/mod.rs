@@ -156,16 +156,34 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
    {
       let inputs = T::to_dmatrix(inputs);
       let outputs = T::to_dvector(outputs);
+      let old_nb_samples = self.training_inputs.as_matrix().nrows();
       assert_eq!(inputs.nrows(), outputs.nrows());
       assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
       // grows the training matrix
       let outputs = outputs - self.prior.prior(&inputs);
       self.training_inputs.add_rows(&inputs);
       self.training_outputs.add_rows(&outputs);
-      // recompute cholesky matrix
-      self.covmat_cholesky =
-         make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
-      // TODO update cholesky matrix instead of recomputing it from scratch
+      // add new rows to cholesky matrix
+
+      // TODO put split functionality in dedicated function
+      // this is a O(n²*c) operation where n is the number of training elements and c the number of new elements
+      let training_inputs_mat = self.training_inputs.as_matrix();
+      // add samples one row at a time
+      for (row_index, row) in inputs.row_iter().enumerate()
+      {
+         // index where the column will be added in the Cholesky decomposition
+         let col_index = old_nb_samples + row_index;
+         // computes the column, the covariance between the new row and previous rows
+         let column_size = col_index+1;
+         let mut new_column = DVector::<f64>::from_fn(column_size, |training_row_index,_| {
+            let training_row = training_inputs_mat.row(training_row_index);
+            self.kernel.kernel(&training_row, &row)
+         });
+         // add diagonal noise
+         new_column[col_index] += self.noise * self.noise;
+         // updates the cholesky decomposition
+         self.covmat_cholesky = self.covmat_cholesky.insert_column(col_index, new_column);
+      }
    }
 
    /// Computes the log likelihood of the current model given the training data.
@@ -177,8 +195,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
       // formula : -1/2 (transpose(output)*cov(train,train)^-1*output + trace(log|cov(train,train)|) + size(train)*log(2*pi))
 
       // how well do we fit the trainnig data ?
-      // TODO clone_owned needed by `solve_lower_triangular` due to a current bug in nalgebra
-      let output = self.training_outputs.as_vector().clone_owned();
+      let output = self.training_outputs.as_vector().clone();
       // transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
       let ol = self.covmat_cholesky.l().solve_lower_triangular(&output).expect("likelihood : solve failed");
       let data_fit: f64 = ol.norm_squared();
