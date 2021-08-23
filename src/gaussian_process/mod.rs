@@ -136,7 +136,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                         training_outputs: T::InVector)
                         -> Self
    {
-      assert!(noise > 0., "The noise parameter should be strictly over 0.");
+      assert!(noise >= 0., "The noise parameter should non-negative but we tried to set it to {}", noise);
       let training_inputs = T::into_dmatrix(training_inputs);
       let training_outputs = T::into_dvector(training_outputs);
       assert_eq!(training_inputs.nrows(), training_outputs.nrows());
