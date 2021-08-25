@@ -39,6 +39,7 @@ pub trait Prior
 ///
 /// this prior always return zero.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ZeroPrior {}
 
 impl Prior for ZeroPrior
@@ -61,6 +62,7 @@ impl Prior for ZeroPrior
 /// This prior returns a constant.
 /// It can be fit to return the mean of the training data.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ConstantPrior
 {
    c: f64
@@ -102,6 +104,7 @@ impl Prior for ConstantPrior
 ///
 /// This prior is a linear function which can be fit on the training data.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct LinearPrior
 {
    weights: DVector<f64>,

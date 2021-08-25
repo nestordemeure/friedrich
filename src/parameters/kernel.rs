@@ -121,6 +121,7 @@ fn fit_amplitude_var<S: Storage<f64, Dynamic, U1>>(training_outputs: &SVector<S>
 /// Note that it will be more efficient to implement the final kernel manually yourself.
 /// However this provides an easy mechanism to test different combinations.
 #[derive(Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct KernelSum<T, U>
    where T: Kernel,
          U: Kernel
@@ -202,6 +203,7 @@ impl<T: Kernel, U: Kernel> Default for KernelSum<T, U>
 /// Note that it will be more efficient to implement the final kernel manually yourself.
 /// However this provides an easy mechanism to test different combinations.
 #[derive(Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct KernelProd<T, U>
    where T: Kernel,
          U: Kernel
@@ -285,6 +287,7 @@ impl<T: Kernel, U: Kernel> Default for KernelProd<T, U>
 
 /// A wrapper tuple struct used for kernel arithmetic
 #[derive(Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct KernelArith<K: Kernel>(pub K);
 
 impl<T: Kernel, U: Kernel> Add<KernelArith<T>> for KernelArith<U>
@@ -314,6 +317,7 @@ impl<T: Kernel, U: Kernel> Mul<KernelArith<T>> for KernelArith<U>
 ///
 /// k(x,y) = x^Ty + c
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Linear
 {
    /// Constant term added to inner product.
@@ -379,6 +383,7 @@ impl Kernel for Linear
 ///
 /// k(x,y) = (αx^Ty + c)^d
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Polynomial
 {
    /// Scaling of the inner product.
@@ -471,6 +476,7 @@ pub type Gaussian = SquaredExp;
 ///
 /// Where A is the amplitude and l the length scale.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct SquaredExp
 {
    /// The length scale of the kernel.
@@ -568,6 +574,7 @@ impl Kernel for SquaredExp
 ///
 /// Where A is the amplitude and l is the length scale.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Exponential
 {
    /// The length scale of the kernel.
@@ -665,6 +672,7 @@ impl Kernel for Exponential
 ///
 /// Where A is the amplitude and l is the length scale.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Matern1
 {
    /// The length scale of the kernel.
@@ -764,6 +772,7 @@ impl Kernel for Matern1
 ///
 /// Where A is the amplitude and l is the length scale.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Matern2
 {
    /// The length scale of the kernel.
@@ -865,6 +874,7 @@ impl Kernel for Matern2
 ///
 /// ker(x,y) = tanh(αx^Ty + c)
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct HyperTan
 {
    /// The scaling of the inner product.
@@ -937,6 +947,7 @@ impl Kernel for HyperTan
 ///
 /// k(x,y) = sqrt(||x-y||² + c²)
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Multiquadric
 {
    /// Constant added to square of difference.
@@ -1002,6 +1013,7 @@ impl Kernel for Multiquadric
 ///
 /// k(x,y) = (1 + ||x-y||² / (2αl²))^-α
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct RationalQuadratic
 {
    /// Controls inverse power and difference scale.
