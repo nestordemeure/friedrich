@@ -15,10 +15,13 @@ categories = ["algorithms", "science"] # crates.io/category_slugs
 license = "Apache-2.0"
 
 [features]
+default = ["friedrich_serde"]
 friedrich_ndarray = ["ndarray"]
+friedrich_serde = ["serde", "nalgebra/serde-serialize"]
 
 [dependencies]
 nalgebra = "0.23.0"
 rand = "0.7.3"
 rand_distr = "0.3.0"
 ndarray = { version = "0.13.1", optional = true }
+serde = { version = "1.0", optional = true, features = ["derive"] }
