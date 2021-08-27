@@ -48,11 +48,11 @@ pub fn make_covariance_matrix<
     m2: &SMatrix<S2>,
     kernel: &K,
 ) -> DMatrix<f64> {
-    return DMatrix::<f64>::from_fn(m1.nrows(), m2.nrows(), |r, c| {
+    DMatrix::<f64>::from_fn(m1.nrows(), m2.nrows(), |r, c| {
         let x = m1.row(r);
         let y = m2.row(c);
         kernel.kernel(&x, &y)
-    });
+    })
 }
 
 /// computes the cholesky decomposition of the covariance matrix of some inputs
@@ -77,7 +77,7 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(
         covmatix[(col_index, col_index)] += diagonal_noise * diagonal_noise;
     }
 
-    return covmatix.cholesky().expect("Cholesky decomposition failed!");
+    covmatix.cholesky().expect("Cholesky decomposition failed!")
 }
 
 /// add rows to the covariance matrix by updating its Cholesky decomposition in place
@@ -134,5 +134,5 @@ pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: K
         }
     }
 
-    return covmatrices;
+    covmatrices
 }

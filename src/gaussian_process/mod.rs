@@ -198,7 +198,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         // formula : -1/2 (transpose(output)*cov(train,train)^-1*output + trace(log|cov(train,train)|) + size(train)*log(2*pi))
 
         // how well do we fit the trainnig data ?
-        let output = self.training_outputs.as_vector().clone();
+        let output = self.training_outputs.as_vector();
         // transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
         let ol = self
             .covmat_cholesky
