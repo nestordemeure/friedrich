@@ -34,8 +34,8 @@
 //! See the `Input` trait if you want to add you own input type.
 //!
 mod algebra;
-mod parameters;
 mod conversion;
 pub mod gaussian_process;
-pub use parameters::*;
+mod parameters;
 pub use conversion::Input;
+pub use parameters::*;
