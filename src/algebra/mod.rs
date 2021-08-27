@@ -120,7 +120,7 @@ pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: K
     kernel: &K,
 ) -> Vec<DMatrix<f64>> {
     // empty covariance matrices
-    let mut covmatrices: Vec<_> = (0..K::NB_PARAMETERS)
+    let mut covmatrices: Vec<_> = (0..kernel.nb_parameters())
         .map(|_| DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), std::f64::NAN))
         .collect();
 
