@@ -139,8 +139,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
     /// The optimizer runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
     pub fn set_fit_parameters(self, max_iter: usize, convergence_fraction: f64) -> Self {
         GaussianProcessBuilder {
-            max_iter: max_iter,
-            convergence_fraction: convergence_fraction,
+            max_iter,
+            convergence_fraction,
             ..self
         }
     }

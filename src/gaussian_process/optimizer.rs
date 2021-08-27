@@ -89,9 +89,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut var_grad = vec![0.; parameters.len()];
         for i in 1..=max_iter {
             let mut gradients = self.gradient_marginal_likelihood();
-            gradients
-                .last_mut()
-                .map(|noise_grad| *noise_grad *= self.noise); // corrects gradient of noise for log-space
+            if let Some(noise_grad) = gradients.last_mut() {
+                // corrects gradient of noise for log-space
+                *noise_grad *= self.noise
+            }
 
             let mut continue_search = false;
             for p in 0..parameters.len() {
@@ -107,7 +108,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
             // sets parameters
             self.kernel.set_parameters(&parameters);
-            parameters.last().map(|noise| self.noise = noise.exp()); // gets out of log-space before setting noise
+            if let Some(noise) = parameters.last() {
+                // gets out of log-space before setting noise
+                self.noise = noise.exp()
+            }
 
             // fits model
             self.covmat_cholesky = make_cholesky_cov_matrix(

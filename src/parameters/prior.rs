@@ -73,7 +73,7 @@ pub struct ConstantPrior {
 impl ConstantPrior {
     /// Constructs a new constant prior
     pub fn new(c: f64) -> Self {
-        Self { c: c }
+        Self { c }
     }
 }
 
