@@ -37,5 +37,6 @@ mod algebra;
 mod conversion;
 pub mod gaussian_process;
 mod parameters;
+pub use algebra::{SMatrix, SRowVector, SVector};
 pub use conversion::Input;
 pub use parameters::*;
