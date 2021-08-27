@@ -435,7 +435,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
         // fit kernel and retrains model from scratch
         if fit_kernel {
-            if KernelType::IS_SCALABLE {
+            if self.kernel.is_scaleable() {
                 self.scaled_optimize_parameters(max_iter, convergence_fraction);
             } else {
                 self.optimize_parameters(max_iter, convergence_fraction);
