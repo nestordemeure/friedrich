@@ -1,7 +1,7 @@
 # Friedrich : Gaussian Process Regression
 
 This library implements [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process), also known as [Kriging](https://en.wikipedia.org/wiki/Kriging), in Rust.
-Our goal is to provide a building block for other algorithms (such as [Bayesian Optimization](https://en.wikipedia.org/wiki/Bayesian_optimization)).
+Our goal is to provide a solid and well featured building block for other algorithms (such as [Bayesian Optimization](https://en.wikipedia.org/wiki/Bayesian_optimization)).
 
 Gaussian processes have both the ability to extract a lot of information from their training data and to return a prediction and an uncertainty value on their prediction.
 Furthermore, they can handle non-linear phenomena, take uncertainty on the inputs into account, and encode a prior on the output.
