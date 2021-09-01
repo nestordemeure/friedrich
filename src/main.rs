@@ -33,6 +33,7 @@ fn main() {
         let convergence_fraction = 0.05;
         gp.add_samples(&additional_inputs, &additional_outputs);
         gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction);
+        println!("model is now updated.");
 
         // makes several prediction
         let inputs = vec![vec![1.0], vec![2.0], vec![3.0]];
