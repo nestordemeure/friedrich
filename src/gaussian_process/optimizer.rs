@@ -191,7 +191,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     }
 
     /// Fit parameters using a gradient descent algorithm.
-    /// Additionnaly, at eac step, the kernel and noise are rescaled using the optimal magnitude.
+    /// Additionnaly, at each step, the kernel and noise are rescaled using the optimal magnitude.
     ///
     /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
     /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.05 is a good default value).

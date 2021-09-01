@@ -192,6 +192,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
             self.max_iter,
             self.convergence_fraction,
         );
+
         gp
     }
 }

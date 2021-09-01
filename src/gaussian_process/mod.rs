@@ -355,7 +355,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
     /// Produces a multivariate gaussian that can be used to sample at the input points.
     ///
-    /// The sampling requires a random number generator compatible with the [rand](https://crates.io/crates/rand) crate :
+    /// The sampling requires a random number generator compatible with the [rand](https://crates.io/crates/rand) crate:
     ///
     /// ```rust
     /// # use friedrich::gaussian_process::GaussianProcess;

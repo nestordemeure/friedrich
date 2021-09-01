@@ -13,13 +13,14 @@
 //! ## Functionalities
 //!
 //! This implementation lets you :
-//!
+//! 
 //! - define a gaussian process with default parameters or using the builder pattern
 //! - train it on multidimensional data
 //! - fit the parameters (kernel, prior and noise) on the training data
-//! - add additional samples and refit the process
-//! - predict the mean and variance and covariance matrix for given inputs
+//! - add additional samples efficiently (`O(n^2)`) and refit the process
+//! - predict the mean, variance and covariance matrix for given inputs
 //! - sample the distribution at a given position
+//! - save and load a trained model with [serde](https://serde.rs/)
 //!
 //! ## Inputs
 //!
