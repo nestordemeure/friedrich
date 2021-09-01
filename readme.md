@@ -8,7 +8,7 @@ Furthermore, they can handle non-linear phenomena, take uncertainty on the input
 
 All of those properties make it an algorithm of choice to perform regression when data is scarce or when having uncertainty bars on the ouput is a desirable property.
 
-However, the `o(n^3)` complexity of the algorithm makes the classic implementation unsuitable for large datasets.
+However, the `O(n^3)` complexity of the algorithm makes the classic implementations unsuitable for large datasets.
 
 ## Functionalities
 
@@ -17,9 +17,10 @@ This implementation lets you:
 - define a gaussian process with default parameters or using the builder pattern
 - train it on multidimensional data
 - fit the parameters (kernel, prior and noise) on the training data
-- add additional samples and refit the process
-- predict the mean and variance and covariance matrix for given inputs
+- add additional samples efficiently (`O(n^2)`) and refit the process
+- predict the mean, variance and covariance matrix for given inputs
 - sample the distribution at a given position
+- save and load a trained model with [serde](https://serde.rs/)
 
 (See the [todo](https://github.com/nestordemeure/friedrich/blob/master/todo.md) file to get up-to-date informations on current developements.)
 
@@ -61,7 +62,7 @@ Most methods of this library can currently work with the following `input -> oup
 - `ArrayBase<f64, Ix1> -> f64` a single sample stored in a [ndarray](https://crates.io/crates/ndarray) array (using the `friedrich_ndarray` feature)
 - `ArrayBase<f64, Ix2> -> Array1<f64>` each row is a sample (using the `friedrich_ndarray` feature)
 
-A trait is provided to add your own pairs.
+The [Input trait](https://docs.rs/friedrich/latest/friedrich/trait.Input.html) is provided to add your own pairs.
 
 ## Why call it Friedrich ?
 
