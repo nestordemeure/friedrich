@@ -2,7 +2,6 @@
 
 List of features and modification considered for inclusion (from most likely to least likely):
 
-- Add a timeout to the `fit` function (default to one hour), to satisfy the existing issue on the subject.
 - Add forced cholesky decomposition (once the [PR passes in nalgebra](https://github.com/dimforge/nalgebra/pull/979)) to eliminate Cholesky failures (update doc and readme accordingly)
 
 - Replace the builder pattern with a macro (might rely on [duang](https://crates.io/crates/duang) or something similar)

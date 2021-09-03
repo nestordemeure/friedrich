@@ -13,7 +13,7 @@
 //! ## Functionalities
 //!
 //! This implementation lets you :
-//! 
+//!
 //! - define a gaussian process with default parameters or using the builder pattern
 //! - train it on multidimensional data
 //! - fit the parameters (kernel, prior and noise) on the training data

@@ -39,7 +39,9 @@ impl EMatrix {
         }
 
         // add rows below data
-        self.data.index_mut((self.nrows..required_size, ..)).copy_from(rows);
+        self.data
+            .index_mut((self.nrows..required_size, ..))
+            .copy_from(rows);
         self.nrows += rows.nrows();
     }
 
@@ -80,7 +82,9 @@ impl EVector {
         }
 
         // add rows below data
-        self.data.index_mut((self.nrows..required_size, ..)).copy_from(rows);
+        self.data
+            .index_mut((self.nrows..required_size, ..))
+            .copy_from(rows);
         self.nrows += rows.nrows();
     }
 

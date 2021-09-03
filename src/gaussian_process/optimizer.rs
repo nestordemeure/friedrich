@@ -64,9 +64,15 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     ///
     /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
     /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.05 is a good default value).
+    /// Stops prematurely if the runtime exceeds `max_time`.
     ///
     /// The `noise` parameter is fitted in log-scale as its magnitude matters more than its precise value
-    pub(super) fn optimize_parameters(&mut self, max_iter: usize, convergence_fraction: f64) {
+    pub(super) fn optimize_parameters(
+        &mut self,
+        max_iter: usize,
+        convergence_fraction: f64,
+        max_time: std::time::Duration,
+    ) {
         // use the ADAM gradient descent algorithm
         // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
         // for a good point on current gradient descent algorithms
@@ -84,9 +90,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             .map(|&p| if p == 0. { epsilon } else { p }) // insures no parameter is 0 (which would block the algorithm)
             .collect();
         parameters.push(self.noise.ln()); // adds noise in log-space
-
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
+
+        let time_start = std::time::Instant::now();
         for i in 1..=max_iter {
             let mut gradients = self.gradient_marginal_likelihood();
             if let Some(noise_grad) = gradients.last_mut() {
@@ -94,7 +101,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                 *noise_grad *= self.noise
             }
 
-            let mut continue_search = false;
+            let mut had_significant_progress = false;
             for p in 0..parameters.len() {
                 mean_grad[p] = beta1 * mean_grad[p] + (1. - beta1) * gradients[p];
                 var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
@@ -102,7 +109,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                 let bias_corrected_variance = var_grad[p] / (1. - beta2.powi(i as i32));
                 let delta = learning_rate * bias_corrected_mean
                     / (bias_corrected_variance.sqrt() + epsilon);
-                continue_search |= delta.abs() > convergence_fraction;
+                had_significant_progress |= delta.abs() > convergence_fraction;
                 parameters[p] *= 1. + delta;
             }
 
@@ -120,7 +127,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                 self.noise,
             );
 
-            if !continue_search {
+            if (!had_significant_progress) || (time_start.elapsed() > max_time) {
                 //println!("Iterations:{}", i);
                 break;
             };
@@ -195,10 +202,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     ///
     /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
     /// Stops prematurely if all the composants of the gradient go below `convergence_fraction` time the value of their respectiv parameter (0.05 is a good default value).
+    /// Stops prematurely if the runtime exceeds `max_time`.
     pub(super) fn scaled_optimize_parameters(
         &mut self,
         max_iter: usize,
         convergence_fraction: f64,
+        max_time: std::time::Duration,
     ) {
         // use the ADAM gradient descent algorithm
         // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
@@ -218,10 +227,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             .collect();
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
+
+        let time_start = std::time::Instant::now();
         for i in 1..=max_iter {
             let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
 
-            let mut continue_search = false;
+            let mut had_significant_progress = false;
             for p in 0..parameters.len() {
                 mean_grad[p] = beta1 * mean_grad[p] + (1. - beta1) * gradients[p];
                 var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
@@ -229,7 +240,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                 let bias_corrected_variance = var_grad[p] / (1. - beta2.powi(i as i32));
                 let delta = learning_rate * bias_corrected_mean
                     / (bias_corrected_variance.sqrt() + epsilon);
-                continue_search |= delta.abs() > convergence_fraction;
+                had_significant_progress |= delta.abs() > convergence_fraction;
                 parameters[p] *= 1. + delta;
             }
 
@@ -246,7 +257,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                 self.noise,
             );
 
-            if !continue_search {
+            if (!had_significant_progress) || (time_start.elapsed() > max_time) {
                 //println!("Iterations:{}", i);
                 break;
             };

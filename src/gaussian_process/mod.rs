@@ -26,8 +26,9 @@
 //! let fit_kernel = true;
 //! let max_iter = 100;
 //! let convergence_fraction = 0.05;
+//! let max_time = std::time::Duration::from_secs(3600);
 //! gp.add_samples(&additional_inputs, &additional_outputs);
-//! gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction);
+//! gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction, max_time);
 //!
 //! // samples from the distribution
 //! let new_inputs = vec![vec![1.0], vec![2.0]];
@@ -400,9 +401,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// Fits the requested parameters and retrains the model.
     ///
     /// The fit of the noise and kernel parameters is done by gradient descent.
-    /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
+    /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter
+    /// or if it runs for more than `max_time`.
     ///
-    /// Good base values for `max_iter` and `convergence_fraction` are 100 and 0.05
+    /// Good default values for `max_iter`, `convergence_fraction` and `max_time` are `100`, `0.05` and `std::time::Duration::from_secs(3600)` (one hour)
     ///
     /// Note that, if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
     pub fn fit_parameters(
@@ -411,6 +413,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         fit_kernel: bool,
         max_iter: usize,
         convergence_fraction: f64,
+        max_time: std::time::Duration,
     ) {
         if fit_prior {
             // gets the original data back in order to update the prior
@@ -436,9 +439,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         // fit kernel and retrains model from scratch
         if fit_kernel {
             if self.kernel.is_scaleable() {
-                self.scaled_optimize_parameters(max_iter, convergence_fraction);
+                self.scaled_optimize_parameters(max_iter, convergence_fraction, max_time);
             } else {
-                self.optimize_parameters(max_iter, convergence_fraction);
+                self.optimize_parameters(max_iter, convergence_fraction, max_time);
             }
         }
     }

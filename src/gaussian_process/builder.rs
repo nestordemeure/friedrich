@@ -45,6 +45,7 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior> {
     /// fit parameters
     max_iter: usize,
     convergence_fraction: f64,
+    max_time: std::time::Duration,
     /// data use for training
     training_inputs: DMatrix<f64>,
     training_outputs: DVector<f64>,
@@ -58,6 +59,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
     /// - a gaussian kernel
     /// - a noise of 10% of the output standard deviation (might be re-fitted in the absence of user provided value)
     /// - does not fit parameters
+    /// - fit will run for a maximum of 100 iteration or one hour unless all gradients are below 5% time their associated parameter
     pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self {
         let training_inputs = T::into_dmatrix(training_inputs);
         let training_outputs = T::into_dvector(training_outputs);
@@ -69,6 +71,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         let should_fit_prior = false;
         let max_iter = 100;
         let convergence_fraction = 0.05;
+        let max_time = std::time::Duration::from_secs(3600);
         GaussianProcessBuilder {
             prior,
             kernel,
@@ -77,6 +80,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
             should_fit_prior,
             max_iter,
             convergence_fraction,
+            max_time,
             training_inputs,
             training_outputs,
         }
@@ -99,6 +103,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
             should_fit_prior: self.should_fit_prior,
             max_iter: self.max_iter,
             convergence_fraction: self.convergence_fraction,
+            max_time: self.max_time,
             training_inputs: self.training_inputs,
             training_outputs: self.training_outputs,
         }
@@ -129,6 +134,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
             should_fit_prior: self.should_fit_prior,
             max_iter: self.max_iter,
             convergence_fraction: self.convergence_fraction,
+            max_time: self.max_time,
             training_inputs: self.training_inputs,
             training_outputs: self.training_outputs,
         }
@@ -136,7 +142,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
     /// Modifies the stopping criteria of the gradient descent used to fit the noise and kernel parameters.
     ///
-    /// The optimizer runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter.
+    /// The optimizer runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter
+    /// or if it runs for more than `max_time`.
     pub fn set_fit_parameters(self, max_iter: usize, convergence_fraction: f64) -> Self {
         GaussianProcessBuilder {
             max_iter,
@@ -191,6 +198,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
             self.should_fit_kernel,
             self.max_iter,
             self.convergence_fraction,
+            self.max_time,
         );
 
         gp

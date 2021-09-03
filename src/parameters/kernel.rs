@@ -419,11 +419,7 @@ pub struct Polynomial {
 impl Polynomial {
     /// Constructs a new Polynomial Kernel.
     pub fn new(alpha: f64, c: f64, d: f64) -> Polynomial {
-        Polynomial {
-            alpha,
-            c,
-            d,
-        }
+        Polynomial { alpha, c, d }
     }
 }
 
@@ -1063,10 +1059,7 @@ pub struct RationalQuadratic {
 impl RationalQuadratic {
     /// Constructs a new Rational Quadratic Kernel.
     pub fn new(alpha: f64, ls: f64) -> RationalQuadratic {
-        RationalQuadratic {
-            alpha,
-            ls,
-        }
+        RationalQuadratic { alpha, ls }
     }
 }
 
