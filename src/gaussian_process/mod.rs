@@ -56,6 +56,7 @@ pub use builder::GaussianProcessBuilder;
 mod optimizer;
 
 /// A Gaussian process that can be used to make predictions based on its training data
+#[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
 {
     /// value to which the process will regress in the absence of informations
