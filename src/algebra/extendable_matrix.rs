@@ -39,7 +39,7 @@ impl EMatrix
             let new_capacity = std::cmp::max(required_size, growed_capacity);
             // builds new matrix with more rows
             let mut new_data = DMatrix::from_element(new_capacity, self.data.ncols(), std::f64::NAN);
-            new_data.index_mut((..self.nrows, ..)).copy_from(&self.data);
+            new_data.index_mut((..self.nrows, ..)).copy_from(&self.as_matrix());
             self.data = new_data;
         }
 
@@ -87,7 +87,7 @@ impl EVector
             let new_capacity = std::cmp::max(required_size, growed_capacity);
             // builds new matrix with more rows
             let mut new_data = DVector::from_element(new_capacity, std::f64::NAN);
-            new_data.index_mut((..self.nrows, ..)).copy_from(&self.data);
+            new_data.index_mut((..self.nrows, ..)).copy_from(&self.as_vector());
             self.data = new_data;
         }
 
@@ -108,5 +108,20 @@ impl EVector
     {
         assert_eq!(rows.nrows(), self.nrows);
         self.data.index_mut((..rows.nrows(), ..)).copy_from(rows);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::conversion::Input;
+
+    #[test]
+    fn ematrix_add_rows_extend_size_when_some_of_current_data_is_masked() {
+        let x = Input::into_dmatrix(vec![vec![1.0f64], vec![2.0f64]]);
+        let mut e = EMatrix::new(x.clone());
+        for _ in 0..5 {
+            e.add_rows(&x);
+        }
     }
 }
