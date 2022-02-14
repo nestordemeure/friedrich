@@ -1,5 +1,8 @@
 # Friedrich : Gaussian Process Regression
 
+[![Crates.io](https://img.shields.io/crates/v/friedrich)](https://crates.io/crates/friedrich)
+[![docs](https://img.shields.io/crates/v/friedrich?color=yellow&label=docs)](https://docs.rs/friedrich)
+
 This library implements [Gaussian Process Regression](https://en.wikipedia.org/wiki/Gaussian_process), also known as [Kriging](https://en.wikipedia.org/wiki/Kriging), in Rust.
 Our goal is to provide a solid and well featured building block for other algorithms (such as [Bayesian Optimization](https://en.wikipedia.org/wiki/Bayesian_optimization)).
 
