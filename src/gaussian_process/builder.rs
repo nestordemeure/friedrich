@@ -31,7 +31,8 @@ use nalgebra::{DMatrix, DVector};
 ///     .fit_prior()
 ///     .train();
 /// ```
-pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior> {
+pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
+{
     /// Value to which the process will regress in the absence of information.
     prior: PriorType,
     /// Kernel used to fit the process on the data.
@@ -47,10 +48,11 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior> {
     max_time: std::time::Duration,
     /// Data use for training.
     training_inputs: DMatrix<f64>,
-    training_outputs: DVector<f64>,
+    training_outputs: DVector<f64>
 }
 
-impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, PriorType> {
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, PriorType>
+{
     /// Builds a new gaussian process with default parameters.
     ///
     /// The defaults are:
@@ -59,7 +61,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
     /// - a noise of 10% of the output standard deviation (might be re-fitted in the absence of user provided value)
     /// - does not fit parameters
     /// - fit will run for a maximum of 100 iteration or one hour unless all gradients are below 5% time their associated parameter
-    pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self {
+    pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
+    {
         let training_inputs = T::into_dmatrix(training_inputs);
         let training_outputs = T::into_dvector(training_outputs);
         // makes builder
@@ -71,18 +74,16 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         let max_iter = 100;
         let convergence_fraction = 0.05;
         let max_time = std::time::Duration::from_secs(3600);
-        GaussianProcessBuilder {
-            prior,
-            kernel,
-            noise,
-            should_fit_kernel,
-            should_fit_prior,
-            max_iter,
-            convergence_fraction,
-            max_time,
-            training_inputs,
-            training_outputs,
-        }
+        GaussianProcessBuilder { prior,
+                                 kernel,
+                                 noise,
+                                 should_fit_kernel,
+                                 should_fit_prior,
+                                 max_iter,
+                                 convergence_fraction,
+                                 max_time,
+                                 training_inputs,
+                                 training_outputs }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -90,83 +91,69 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
     /// Sets a new prior.
     /// See the documentation on priors for more information.
-    pub fn set_prior<NewPriorType: Prior>(
-        self,
-        prior: NewPriorType,
-    ) -> GaussianProcessBuilder<KernelType, NewPriorType> {
-        GaussianProcessBuilder {
-            prior,
-            kernel: self.kernel,
-            noise: self.noise,
-            should_fit_kernel: self.should_fit_kernel,
-            should_fit_prior: self.should_fit_prior,
-            max_iter: self.max_iter,
-            convergence_fraction: self.convergence_fraction,
-            max_time: self.max_time,
-            training_inputs: self.training_inputs,
-            training_outputs: self.training_outputs,
-        }
+    pub fn set_prior<NewPriorType: Prior>(self,
+                                          prior: NewPriorType)
+                                          -> GaussianProcessBuilder<KernelType, NewPriorType>
+    {
+        GaussianProcessBuilder { prior,
+                                 kernel: self.kernel,
+                                 noise: self.noise,
+                                 should_fit_kernel: self.should_fit_kernel,
+                                 should_fit_prior: self.should_fit_prior,
+                                 max_iter: self.max_iter,
+                                 convergence_fraction: self.convergence_fraction,
+                                 max_time: self.max_time,
+                                 training_inputs: self.training_inputs,
+                                 training_outputs: self.training_outputs }
     }
 
     /// Sets the noise parameter.
     /// It correspond to the standard deviation of the noise in the outputs of the training set.
-    pub fn set_noise(self, noise: f64) -> Self {
-        assert!(
-            noise >= 0.,
-            "The noise parameter should non-negative but we tried to set it to {}",
-            noise
-        );
+    pub fn set_noise(self, noise: f64) -> Self
+    {
+        assert!(noise >= 0., "The noise parameter should non-negative but we tried to set it to {}", noise);
         GaussianProcessBuilder { noise, ..self }
     }
 
     /// Changes the kernel of the gaussian process.
     /// See the documentations on Kernels for more information.
-    pub fn set_kernel<NewKernelType: Kernel>(
-        self,
-        kernel: NewKernelType,
-    ) -> GaussianProcessBuilder<NewKernelType, PriorType> {
-        GaussianProcessBuilder {
-            prior: self.prior,
-            kernel,
-            noise: self.noise,
-            should_fit_kernel: self.should_fit_kernel,
-            should_fit_prior: self.should_fit_prior,
-            max_iter: self.max_iter,
-            convergence_fraction: self.convergence_fraction,
-            max_time: self.max_time,
-            training_inputs: self.training_inputs,
-            training_outputs: self.training_outputs,
-        }
+    pub fn set_kernel<NewKernelType: Kernel>(self,
+                                             kernel: NewKernelType)
+                                             -> GaussianProcessBuilder<NewKernelType, PriorType>
+    {
+        GaussianProcessBuilder { prior: self.prior,
+                                 kernel,
+                                 noise: self.noise,
+                                 should_fit_kernel: self.should_fit_kernel,
+                                 should_fit_prior: self.should_fit_prior,
+                                 max_iter: self.max_iter,
+                                 convergence_fraction: self.convergence_fraction,
+                                 max_time: self.max_time,
+                                 training_inputs: self.training_inputs,
+                                 training_outputs: self.training_outputs }
     }
 
     /// Modifies the stopping criteria of the gradient descent used to fit the noise and kernel parameters.
     ///
     /// The optimizer runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter
     /// or if it runs for more than `max_time`.
-    pub fn set_fit_parameters(self, max_iter: usize, convergence_fraction: f64) -> Self {
-        GaussianProcessBuilder {
-            max_iter,
-            convergence_fraction,
-            ..self
-        }
+    pub fn set_fit_parameters(self, max_iter: usize, convergence_fraction: f64) -> Self
+    {
+        GaussianProcessBuilder { max_iter, convergence_fraction, ..self }
     }
 
     /// Asks for the parameters of the kernel to be fitted on the training data.
     /// The fitting will be done when the `train` method is called.
-    pub fn fit_kernel(self) -> Self {
-        GaussianProcessBuilder {
-            should_fit_kernel: true,
-            ..self
-        }
+    pub fn fit_kernel(self) -> Self
+    {
+        GaussianProcessBuilder { should_fit_kernel: true, ..self }
     }
 
     /// Asks for the prior to be fitted on the training data.
     /// The fitting will be done when the `train` method is called.
-    pub fn fit_prior(self) -> Self {
-        GaussianProcessBuilder {
-            should_fit_prior: true,
-            ..self
-        }
+    pub fn fit_prior(self) -> Self
+    {
+        GaussianProcessBuilder { should_fit_prior: true, ..self }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -174,31 +161,28 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
 
     /// Trains the gaussian process.
     /// Fits the parameters if requested.
-    pub fn train(mut self) -> GaussianProcess<KernelType, PriorType> {
+    pub fn train(mut self) -> GaussianProcess<KernelType, PriorType>
+    {
         // prepare kernel and noise values using heuristics
         // TODO how to detect if values have been entered by the user meaning that he does not want an heuristic ?
-        if self.should_fit_kernel {
-            self.kernel
-                .heuristic_fit(&self.training_inputs, &self.training_outputs);
+        if self.should_fit_kernel
+        {
+            self.kernel.heuristic_fit(&self.training_inputs, &self.training_outputs);
         }
 
         // Builds a gp.
-        let mut gp = GaussianProcess::<KernelType, PriorType>::new(
-            self.prior,
-            self.kernel,
-            self.noise,
-            self.training_inputs,
-            self.training_outputs,
-        );
+        let mut gp = GaussianProcess::<KernelType, PriorType>::new(self.prior,
+                                                                   self.kernel,
+                                                                   self.noise,
+                                                                   self.training_inputs,
+                                                                   self.training_outputs);
 
         // Fits the model, if requested, on the training data.
-        gp.fit_parameters(
-            self.should_fit_prior,
-            self.should_fit_kernel,
-            self.max_iter,
-            self.convergence_fraction,
-            self.max_time,
-        );
+        gp.fit_parameters(self.should_fit_prior,
+                          self.should_fit_kernel,
+                          self.max_iter,
+                          self.convergence_fraction,
+                          self.max_time);
 
         gp
     }
