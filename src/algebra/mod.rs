@@ -55,16 +55,16 @@ pub fn make_covariance_matrix<
     })
 }
 
-/// computes the cholesky decomposition of the covariance matrix of some inputs
-/// adds a given diagonal noise
-/// relies on the fact that only the lower triangular part of the matrix is needed for the decomposition
+/// Computes the cholesky decomposition of the covariance matrix of some inputs.
+/// Adds a given diagonal noise.
+/// Relies on the fact that only the lower triangular part of the matrix is needed for the decomposition.
 pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(
     inputs: &SMatrix<S>,
     kernel: &K,
     diagonal_noise: f64,
 ) -> Cholesky<f64, Dynamic> {
-    // empty covariance matrix
-    // TODO it would be faster to start with an an uninitialized matrix but it would require unsafe
+    // Empty covariance matrix
+    // TODO It would be faster to start with an an uninitialized matrix but it would require unsafe.
     let mut covmatix = DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), std::f64::NAN);
 
     // computes the covariance for all the lower triangular matrix
@@ -80,9 +80,9 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(
     covmatix.cholesky().expect("Cholesky decomposition failed!")
 }
 
-/// add rows to the covariance matrix by updating its Cholesky decomposition in place
-/// this is a O(n²*c) operation where n is the number of rows of the covariance matrix and c the number of new rows
-/// `all_inputs` is a matrix with one row per input, the `nb_new_inputs` last rows are the one we want to add
+/// Add rows to the covariance matrix by updating its Cholesky decomposition in place.
+/// This is a O(n²*c) operation where n is the number of rows of the covariance matrix and c the number of new rows.
+/// `all_inputs` is a matrix with one row per input, the `nb_new_inputs` last rows are the one we want to add.
 pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(
     covmat_cholesky: &mut Cholesky<f64, Dynamic>,
     all_inputs: &SMatrix<S>,
@@ -90,26 +90,26 @@ pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel
     kernel: &K,
     diagonal_noise: f64,
 ) {
-    // extracts the number of old inputs and new inputs from full inputs
+    // Extracts the number of old inputs and new inputs from full inputs.
     let nb_old_inputs = all_inputs.nrows() - nb_new_inputs;
     let new_inputs = all_inputs.rows(nb_old_inputs, nb_new_inputs);
 
-    // add samples one row at a time
+    // Add samples one row at a time.
     for (row_index, row) in new_inputs.row_iter().enumerate() {
-        // index where the column will be added in the Cholesky decomposition
+        // Index where the column will be added in the Cholesky decomposition.
         let col_index = nb_old_inputs + row_index;
 
-        // computes the column, the covariance between the new row and previous rows
+        // Computes the column, the covariance between the new row and previous rows.
         let column_size = col_index + 1;
         let mut new_column = DVector::<f64>::from_fn(column_size, |training_row_index, _| {
             let training_row = all_inputs.row(training_row_index);
             kernel.kernel(&training_row, &row)
         });
 
-        // add diagonal noise
+        // Add diagonal noise.
         new_column[col_index] += diagonal_noise * diagonal_noise;
 
-        // updates the cholesky decomposition with O(n²) operation
+        // Updates the cholesky decomposition with O(n²) operation.
         *covmat_cholesky = covmat_cholesky.insert_column(col_index, new_column);
     }
 }
@@ -119,12 +119,12 @@ pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: K
     inputs: &SMatrix<S>,
     kernel: &K,
 ) -> Vec<DMatrix<f64>> {
-    // empty covariance matrices
+    // Empty covariance matrices.
     let mut covmatrices: Vec<_> = (0..kernel.nb_parameters())
         .map(|_| DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), std::f64::NAN))
         .collect();
 
-    // computes the covariance for all the lower triangular matrix
+    // Computes the covariance for all the lower triangular matrix.
     for (col_index, x) in inputs.row_iter().enumerate() {
         for (row_index, y) in inputs.row_iter().enumerate().skip(col_index) {
             for (&grad, mat) in kernel.gradient(&x, &y).iter().zip(covmatrices.iter_mut()) {

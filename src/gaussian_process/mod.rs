@@ -63,16 +63,16 @@ mod optimizer;
     derive(serde::Deserialize, serde::Serialize)
 )]
 pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior> {
-    /// value to which the process will regress in the absence of informations
+    /// Value to which the process will regress in the absence of information.
     pub prior: PriorType,
-    /// kernel used to fit the process on the data
+    /// Kernel used to fit the process on the data.
     pub kernel: KernelType,
-    /// amplitude of the noise of the data as provided by the user or deduced by the optimizer
+    /// Amplitude of the noise of the data as provided by the user or deduced by the optimizer.
     pub noise: f64,
-    /// data used for fit
+    /// Data used for fit
     training_inputs: EMatrix,
     training_outputs: EVector,
-    /// cholesky decomposition of the covariance matrix trained on the current datapoints
+    /// Cholesky decomposition of the covariance matrix trained on the current data points.
     covmat_cholesky: Cholesky<f64, Dynamic>,
 }
 
@@ -202,9 +202,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     pub fn likelihood(&self) -> f64 {
         // formula : -1/2 (transpose(output)*cov(train,train)^-1*output + trace(log|cov(train,train)|) + size(train)*log(2*pi))
 
-        // how well do we fit the trainnig data ?
+        // How well do we fit the training data?
         let output = self.training_outputs.as_vector();
-        // transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
+        // Transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
         let ol = self
             .covmat_cholesky
             .l()
@@ -222,7 +222,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             .map(|c| c.abs().ln())
             .sum();
 
-        // rescales the output to make it independant of the number of samples
+        // rescales the output to make it independent of the number of samples
         let n = self.training_inputs.as_matrix().nrows();
         let normalization_constant = (n as f64) * (2. * std::f64::consts::PI).ln();
 
@@ -410,7 +410,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     ///
     /// Good default values for `max_iter`, `convergence_fraction` and `max_time` are `100`, `0.05` and `std::time::Duration::from_secs(3600)` (one hour)
     ///
-    /// Note that, if the `noise` parameter ends up unnaturaly large after the fit, it is a good sign that the kernel is unadapted to the data.
+    /// Note that, if the `noise` parameter ends up unnaturally large after the fit, it is a good sign that the kernel is unadapted to the data.
     pub fn fit_parameters(
         &mut self,
         fit_prior: bool,
@@ -420,7 +420,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         max_time: std::time::Duration,
     ) {
         if fit_prior {
-            // gets the original data back in order to update the prior
+            // Gets the original data back in order to update the prior.
             let training_outputs = self.training_outputs.as_vector()
                 + self.prior.prior(&self.training_inputs.as_matrix());
             self.prior
@@ -428,10 +428,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             let training_outputs =
                 training_outputs - self.prior.prior(&self.training_inputs.as_matrix());
             self.training_outputs.assign(&training_outputs);
-            // NOTE: adding and substracting each time we fit a prior might be numerically unwise
+            // NOTE: Adding and subtracting each time we fit a prior might be numerically unwise.
 
             if !fit_kernel {
-                // retrains model from scratch
+                // Retrains model from scratch.
                 self.covmat_cholesky = make_cholesky_cov_matrix(
                     &self.training_inputs.as_matrix(),
                     &self.kernel,
@@ -440,9 +440,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             }
         }
 
-        // fit kernel and retrains model from scratch
+        // Fit kernel and retrains model from scratch.
         if fit_kernel {
-            if self.kernel.is_scaleable() {
+            if self.kernel.is_scalable() {
                 self.scaled_optimize_parameters(max_iter, convergence_fraction, max_time);
             } else {
                 self.optimize_parameters(max_iter, convergence_fraction, max_time);

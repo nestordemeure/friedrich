@@ -12,49 +12,48 @@ use nalgebra::{DMatrix, DVector};
 /// # use friedrich::gaussian_process::GaussianProcess;
 /// # use friedrich::prior::*;
 /// # use friedrich::kernel::*;
-/// # fn main() {
-/// // training data
+/// // Training data.
 /// let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
 /// let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
 ///
-/// // model parameters
+/// // Model parameters.
 /// let input_dimension = 1;
 /// let output_noise = 0.1;
 /// let exponential_kernel = Exponential::default();
 /// let linear_prior = LinearPrior::default(input_dimension);
 ///
-/// // defining and training a model
-/// let gp = GaussianProcess::builder(training_inputs, training_outputs).set_noise(output_noise)
-///                                                                     .set_kernel(exponential_kernel)
-///                                                                     .fit_kernel()
-///                                                                     .set_prior(linear_prior)
-///                                                                     .fit_prior()
-///                                                                     .train();
-/// # }
+/// // Defining and training a model.
+/// let gp = GaussianProcess::builder(training_inputs, training_outputs)
+///     .set_noise(output_noise)
+///     .set_kernel(exponential_kernel)
+///     .fit_kernel()
+///     .set_prior(linear_prior)
+///     .fit_prior()
+///     .train();
 /// ```
 pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior> {
-    /// value to which the process will regress in the absence of informations
+    /// Value to which the process will regress in the absence of information.
     prior: PriorType,
-    /// kernel used to fit the process on the data
+    /// Kernel used to fit the process on the data.
     kernel: KernelType,
-    /// amplitude of the noise of the data
+    /// Amplitude of the noise of the data.
     noise: f64,
-    /// type of fit to be applied
+    /// Type of fit to be applied.
     should_fit_kernel: bool,
     should_fit_prior: bool,
-    /// fit parameters
+    /// Fit parameters.
     max_iter: usize,
     convergence_fraction: f64,
     max_time: std::time::Duration,
-    /// data use for training
+    /// Data use for training.
     training_inputs: DMatrix<f64>,
     training_outputs: DVector<f64>,
 }
 
 impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, PriorType> {
-    /// builds a new gaussian process with default parameters
+    /// Builds a new gaussian process with default parameters.
     ///
-    /// the defaults are :
+    /// The defaults are:
     /// - constant prior (0 unless fitted)
     /// - a gaussian kernel
     /// - a noise of 10% of the output standard deviation (might be re-fitted in the absence of user provided value)
@@ -90,7 +89,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
     // SETTERS
 
     /// Sets a new prior.
-    /// See the documentation on priors for more informations.
+    /// See the documentation on priors for more information.
     pub fn set_prior<NewPriorType: Prior>(
         self,
         prior: NewPriorType,
@@ -121,7 +120,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
     }
 
     /// Changes the kernel of the gaussian process.
-    /// See the documentations on Kernels for more informations.
+    /// See the documentations on Kernels for more information.
     pub fn set_kernel<NewKernelType: Kernel>(
         self,
         kernel: NewKernelType,
@@ -183,7 +182,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                 .heuristic_fit(&self.training_inputs, &self.training_outputs);
         }
 
-        // builds a gp
+        // Builds a gp.
         let mut gp = GaussianProcess::<KernelType, PriorType>::new(
             self.prior,
             self.kernel,
@@ -192,7 +191,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
             self.training_outputs,
         );
 
-        // fit the model, if requested, on the training data
+        // Fits the model, if requested, on the training data.
         gp.fit_parameters(
             self.should_fit_prior,
             self.should_fit_kernel,
