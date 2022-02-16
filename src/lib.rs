@@ -31,8 +31,8 @@
 //! [`Vec<f64>`] | [`f64`] | A single, multidimensional, sample.
 //! [`Vec<Vec<f64>>`] | [`Vec<f64>`] | Each inner vector is a training sample.
 //! [`DMatrix<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DMatrix.html) | [`DVector<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DVector.html) | Using a [nalgebra](https://www.nalgebra.org/) matrix with one row per sample.
-//! [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | [`f64`] | A single sample stored in a [ndarray](https://crates.io/crates/ndarray) array (using the `friedrich_ndarray` feature).
-//! [`Array2<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array2.html) | [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | Each row is a sample (using the `friedrich_ndarray` feature).
+//! [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | [`f64`] | A single sample stored in a [ndarray](https://crates.io/crates/ndarray) array (using the `ndarray` feature).
+//! [`Array2<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array2.html) | [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | Each row is a sample (using the `ndarray` feature).
 //!
 //! See the [`Input`] trait if you want to add you own input type.
 //!

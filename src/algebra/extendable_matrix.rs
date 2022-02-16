@@ -115,12 +115,12 @@ impl EVector
 mod tests
 {
     use super::*;
-    use crate::conversion::Input;
+    use crate::conversion::InternalConvert;
 
     #[test]
     fn ematrix_add_rows_extend_size_when_some_of_current_data_is_masked()
     {
-        let x = Input::into_dmatrix(vec![vec![1.0f64], vec![2.0f64]]);
+        let x = (vec![vec![1.0f64], vec![2.0f64]]).i_into();
         let mut e = EMatrix::new(x.clone());
         for _ in 0..5
         {

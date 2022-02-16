@@ -1,5 +1,5 @@
 use super::GaussianProcess;
-use crate::conversion::Input;
+use crate::conversion::{Input, InternalConvert};
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
 use nalgebra::{DMatrix, DVector};
@@ -61,10 +61,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
     /// - a noise of 10% of the output standard deviation (might be re-fitted in the absence of user provided value)
     /// - does not fit parameters
     /// - fit will run for a maximum of 100 iteration or one hour unless all gradients are below 5% time their associated parameter
-    pub fn new<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
+    pub fn new<T: Input>(training_inputs: T, training_outputs: T::Output) -> Self
     {
-        let training_inputs = T::into_dmatrix(training_inputs);
-        let training_outputs = T::into_dvector(training_outputs);
+        let training_inputs = training_inputs.i_into();
+        let training_outputs = training_outputs.i_into();
         // makes builder
         let prior = PriorType::default(training_inputs.ncols());
         let kernel = KernelType::default();
