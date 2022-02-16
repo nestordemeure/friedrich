@@ -2,7 +2,7 @@
 //!
 //! A kernel is a function that maps from two row vectors to a scalar which is used to express the similarity between the vectors.
 //!
-//! To learn more about the properties of the provided kernels, we recommand the [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) Wikipedia page and the [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions) article.
+//! To learn more about the properties of the provided kernels, we recommend the [Usual_covariance_functions](https://en.wikipedia.org/wiki/Gaussian_process#Usual_covariance_functions) Wikipedia page and the [kernel-functions-for-machine-learning-applications](http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#kernel_functions) article.
 //!
 //! User-defined kernels should implement the Kernel trait.
 //! To learn more about the implementation of kernels adapted to a particular problem, we recommend the chapter two (*Expressing Structure with Kernels*) and three (*Automatic Model Construction*) of the very good [Automatic Model Construction with Gaussian Processes](http://www.cs.toronto.edu/~duvenaud/thesis.pdf).
@@ -16,12 +16,12 @@ use std::ops::{Add, Mul};
 //---------------------------------------------------------------------------------------
 // TRAIT
 
-/// The Kernel trait
+/// The Kernel trait.
 ///
 /// If you want to provide a user-defined kernel, you should implement this trait.
 pub trait Kernel: Default
 {
-    /// Numbers of parameters (such as bandwith and amplitude) of the kernel.
+    /// Numbers of parameters (such as bandwidth and amplitude) of the kernel.
     ///
     /// This should return a constant value for the kernel.
     fn nb_parameters(&self) -> usize;
@@ -30,22 +30,22 @@ pub trait Kernel: Default
     /// `false` by default.
     ///
     /// This should return constant value for the kernel.
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
-        false // TODO check whether more existing kernel can be made is_scaleable
+        false // TODO check whether more existing kernel can be made is_scalable
     }
 
-    /// Multiplies the amplitude of the kernel by the `scale` parameter such that a kernel `a*K(x,y)` becomes `scale*a*K(x,y)`
+    /// Multiplies the amplitude of the kernel by the `scale` parameter such that a kernel `a*K(x,y)` becomes `scale*a*K(x,y)`.
     ///
     /// When possible, do implement this function as it unlock a faster parameter fitting algorithm.
     ///
-    /// *WARNING:* the code will panic if you set `is_scaleable` to `true` without providing a user defined implementation of this function.
+    /// *WARNING:* the code will panic if you set `is_scalable` to `true` without providing a user defined implementation of this function.
     fn rescale(&mut self, _scale: f64)
     {
-        // TODO get rid of test and add ScalableKernel trait once specialization lands on stable
-        if self.is_scaleable()
+        // TODO Get rid of test and add ScalableKernel trait once specialization lands on stable.
+        if self.is_scalable()
         {
-            unimplemented!("Please implement the `rescale` function if you set `is_scaleable` to true.")
+            unimplemented!("Please implement the `rescale` function if you set `is_scalable` to true.")
         }
         else
         {
@@ -54,7 +54,7 @@ pub trait Kernel: Default
     }
     /// Takes two equal length slices (row vector) and returns a scalar.
     ///
-    /// NOTE: due to the optimization algorithm, this function might get illegal parameters (ie: negativ parameters),
+    /// NOTE: Due to the optimization algorithm, this function might get illegal parameters (ie: negative parameters),
     /// it is the duty of the function implementer to deal with them properly (ie : using an absolute value).
     fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                             x1: &SRowVector<S1>,
@@ -63,17 +63,17 @@ pub trait Kernel: Default
 
     /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter in an arbitrary order.
     ///
-    /// NOTE: due to the optimization algorithm, this function might get illegal parameters (ie: negativ parameters),
+    /// NOTE: Due to the optimization algorithm, this function might get illegal parameters (ie: negative parameters),
     /// it is the duty of the function implementer to deal with them properly (ie: using the absolute value of the parameter and multiplying its gradient by its original sign).
     fn gradient<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
                                                                               x1: &SRowVector<S1>,
                                                                               x2: &SRowVector<S2>)
                                                                               -> Vec<f64>;
 
-    /// Returns a vector containing all the parameters of the kernel in the same order as the outputs of the `gradient` function
+    /// Returns a vector containing all the parameters of the kernel in the same order as the outputs of the `gradient` function.
     fn get_parameters(&self) -> Vec<f64>;
 
-    /// Sets all the parameters of the kernel by reading them from a slice where they are in the same order as the outputs of the `gradient` function
+    /// Sets all the parameters of the kernel by reading them from a slice where they are in the same order as the outputs of the `gradient` function.
     fn set_parameters(&mut self, parameters: &[f64]);
 
     /// Optional, function that fits the kernel parameters on the training data using fast heuristics.
@@ -88,12 +88,12 @@ pub trait Kernel: Default
 //---------------------------------------------------------------------------------------
 // FIT
 
-/// provides a rough estimate for the bandwith
+/// Provides a rough estimate for the bandwidth.
 ///
-/// use the mean distance between points as a baseline for the bandwith
-fn fit_bandwith_mean<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatrix<S>) -> f64
+/// Use the mean distance between points as a baseline for the bandwidth.
+fn fit_bandwidth_mean<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatrix<S>) -> f64
 {
-    // builds the sum of all distances between different samples
+    // Builds the sum of all distances between different samples.
     let mut sum_distances = 0.;
     for (sample_index, sample) in training_inputs.row_iter().enumerate()
     {
@@ -104,15 +104,15 @@ fn fit_bandwith_mean<S: Storage<f64, Dynamic, Dynamic>>(training_inputs: &SMatri
         }
     }
 
-    // counts the number of distances that have been computed
+    // Counts the number of distances that have been computed.
     let nb_samples = training_inputs.nrows();
     let nb_distances = ((nb_samples * nb_samples - nb_samples) / 2) as f64;
 
-    // mean distance
+    // Mean distance.
     sum_distances / nb_distances
 }
 
-/// outputs the variance of the outputs as a best guess of the amplitude
+/// Outputs the variance of the outputs as a best guess of the amplitude.
 fn fit_amplitude_var<S: Storage<f64, Dynamic, U1>>(training_outputs: &SVector<S>) -> f64
 {
     training_outputs.variance()
@@ -121,7 +121,7 @@ fn fit_amplitude_var<S: Storage<f64, Dynamic, U1>>(training_outputs: &SVector<S>
 //---------------------------------------------------------------------------------------
 // KERNEL COMBINAISON
 
-/// The sum of two kernels
+/// The sum of two kernels.
 ///
 /// This struct should not be directly instantiated but instead is created when we add two kernels together.
 ///
@@ -147,9 +147,9 @@ impl<T, U> Kernel for KernelSum<T, U>
         self.k1.nb_parameters() + self.k2.nb_parameters()
     }
 
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
-        self.k1.is_scaleable() && self.k2.is_scaleable()
+        self.k1.is_scalable() && self.k2.is_scalable()
     }
 
     fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
@@ -210,7 +210,7 @@ impl<T: Kernel, U: Kernel> Default for KernelSum<T, U>
     }
 }
 
-/// The pointwise product of two kernels
+/// The point-wise product of two kernels.
 ///
 /// This struct should not be directly instantiated but instead is created when we multiply two kernels together.
 ///
@@ -236,9 +236,9 @@ impl<T, U> Kernel for KernelProd<T, U>
         self.k1.nb_parameters() + self.k2.nb_parameters()
     }
 
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
-        self.k1.is_scaleable() || self.k2.is_scaleable()
+        self.k1.is_scalable() || self.k2.is_scalable()
     }
 
     fn kernel<S1: Storage<f64, U1, Dynamic>, S2: Storage<f64, U1, Dynamic>>(&self,
@@ -263,7 +263,7 @@ impl<T, U> Kernel for KernelProd<T, U>
 
     fn rescale(&mut self, scale: f64)
     {
-        if self.k1.is_scaleable()
+        if self.k1.is_scalable()
         {
             self.k1.rescale(scale);
         }
@@ -334,7 +334,7 @@ impl<T: Kernel, U: Kernel> Mul<KernelArith<T>> for KernelArith<U>
 //---------------------------------------------------------------------------------------
 // CLASSICAL KERNELS
 
-/// The Linear Kernel
+/// The Linear Kernel.
 ///
 /// k(x,y) = x^Ty + c
 #[derive(Clone, Copy, Debug)]
@@ -354,7 +354,7 @@ impl Linear
     }
 }
 
-/// Constructs the default Linear Kernel
+/// Constructs the default Linear Kernel.
 ///
 /// The defaults are:
 /// - c = 0
@@ -403,7 +403,7 @@ impl Kernel for Linear
 
 //-----------------------------------------------
 
-/// The Polynomial Kernel
+/// The Polynomial Kernel.
 ///
 /// k(x,y) = (αx^Ty + c)^d
 #[derive(Clone, Copy, Debug)]
@@ -486,7 +486,7 @@ impl Kernel for Polynomial
 
 //-----------------------------------------------
 
-/// Gaussian kernel
+/// Gaussian kernel.
 ///
 /// Equivalent to a squared exponential kernel.
 ///
@@ -541,7 +541,7 @@ impl Kernel for SquaredExp
         2
     }
 
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
         true
     }
@@ -552,9 +552,9 @@ impl Kernel for SquaredExp
                                                                             x2: &SRowVector<S2>)
                                                                             -> f64
     {
-        // sanitize parameters
+        // Sanitize parameters.
         let ampl = self.ampl.abs();
-        // computes kernel
+        // Computes kernel.
         let distance_squared = (x1 - x2).norm_squared();
         let x = -distance_squared / (2f64 * self.ls * self.ls);
         ampl * x.exp()
@@ -565,9 +565,9 @@ impl Kernel for SquaredExp
                                                                               x2: &SRowVector<S2>)
                                                                               -> Vec<f64>
     {
-        // sanitize parameters
+        // Sanitize parameters.
         let ampl = self.ampl.abs();
-        // compute gradients
+        // Compute gradients.
         let distance_squared = (x1 - x2).norm_squared();
         let exponential = (-distance_squared / (2f64 * self.ls * self.ls)).exp();
         let grad_ls = (distance_squared * ampl * exponential) / self.ls.powi(3);
@@ -595,14 +595,14 @@ impl Kernel for SquaredExp
                                                                                         training_inputs: &SMatrix<SM>,
                                                                                         training_outputs: &SVector<SV>)
     {
-        self.ls = fit_bandwith_mean(training_inputs);
+        self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
     }
 }
 
 //-----------------------------------------------
 
-/// The Exponential Kernel
+/// The Exponential Kernel.
 ///
 /// k(x,y) = A exp(-||x-y|| / 2l²)
 ///
@@ -646,7 +646,7 @@ impl Kernel for Exponential
         2
     }
 
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
         true
     }
@@ -670,9 +670,9 @@ impl Kernel for Exponential
                                                                               x2: &SRowVector<S2>)
                                                                               -> Vec<f64>
     {
-        // sanitize parameters
+        // Sanitize parameters.
         let ampl = self.ampl.abs();
-        // compute gradients
+        // Compute gradients.
         let distance = (x1 - x2).norm();
         let exponential = (-distance / (2f64 * self.ls * self.ls)).exp();
         let grad_ls = (distance * ampl * exponential) / self.ls.powi(3);
@@ -700,14 +700,14 @@ impl Kernel for Exponential
                                                                                         training_inputs: &SMatrix<SM>,
                                                                                         training_outputs: &SVector<SV>)
     {
-        self.ls = fit_bandwith_mean(training_inputs);
+        self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
     }
 }
 
 //-----------------------------------------------
 
-/// The Matèrn1 kernel which is 1 differentiable and correspond to a classical Matèrn kernel with nu=3/2
+/// The Matèrn1 kernel which is 1 differentiable and correspond to a classical Matèrn kernel with nu=3/2.
 ///
 /// k(x,y) = A (1 + ||x-y||sqrt(3)/l) exp(-||x-y||sqrt(3)/l)
 ///
@@ -751,7 +751,7 @@ impl Kernel for Matern1
         2
     }
 
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
         true
     }
@@ -776,10 +776,10 @@ impl Kernel for Matern1
                                                                               x2: &SRowVector<S2>)
                                                                               -> Vec<f64>
     {
-        // sanitize parameters
+        // Sanitize parameters.
         let ampl = self.ampl.abs();
         let l = self.ls.abs();
-        // compute gradient
+        // Compute gradient.
         let distance = (x1 - x2).norm();
         let x = 3f64.sqrt() * distance / l;
         let grad_ls = (3. * ampl * distance.powi(2) * (-x).exp()) / (self.ls.powi(3));
@@ -807,14 +807,14 @@ impl Kernel for Matern1
                                                                                         training_inputs: &SMatrix<SM>,
                                                                                         training_outputs: &SVector<SV>)
     {
-        self.ls = fit_bandwith_mean(training_inputs);
+        self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
     }
 }
 
 //-----------------------------------------------
 
-/// The Matèrn2 kernel which is 2 differentiable and correspond to a classical Matèrn kernel with nu=5/2
+/// The Matèrn2 kernel which is 2 differentiable and correspond to a classical Matèrn kernel with nu=5/2.
 ///
 /// k(x,y) = A (1 + ||x-y||sqrt(5)/l + ||x-y||²5/3l²) exp(-||x-y||sqrt(5)/l)
 ///
@@ -858,7 +858,7 @@ impl Kernel for Matern2
         2
     }
 
-    fn is_scaleable(&self) -> bool
+    fn is_scalable(&self) -> bool
     {
         true
     }
@@ -883,10 +883,10 @@ impl Kernel for Matern2
                                                                               x2: &SRowVector<S2>)
                                                                               -> Vec<f64>
     {
-        // sanitize parameters
+        // Sanitize parameters.
         let ampl = self.ampl.abs();
         let l = self.ls.abs();
-        // compute gradient
+        // Compute gradient.
         let distance = (x1 - x2).norm();
         let x = (5f64).sqrt() * distance / self.ls;
         let grad_ls = self.ls.signum()
@@ -919,7 +919,7 @@ impl Kernel for Matern2
                                                                                         training_inputs: &SMatrix<SM>,
                                                                                         training_outputs: &SVector<SV>)
     {
-        self.ls = fit_bandwith_mean(training_inputs);
+        self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
     }
 }
@@ -1127,9 +1127,9 @@ impl Kernel for RationalQuadratic
                                                                               x2: &SRowVector<S2>)
                                                                               -> Vec<f64>
     {
-        // sanitize parameters
+        // Sanitize parameters.
         let l = self.ls.abs();
-        // compute gradient
+        // Compute gradient.
         let distance_squared = (x1 - x2).norm_squared();
         let grad_alpha =
             ((distance_squared + 2. * l.powi(2) * self.alpha) / (l.powi(2) * self.alpha)).powf(-self.alpha)

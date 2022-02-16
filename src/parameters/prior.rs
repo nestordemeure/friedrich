@@ -13,18 +13,18 @@ use nalgebra::{storage::Storage, Dynamic, U1};
 //---------------------------------------------------------------------------------------
 // TRAIT
 
-/// The Prior trait
+/// The Prior trait.
 ///
 /// User-defined kernels should implement this trait.
 pub trait Prior
 {
-    /// Default value for the prior
+    /// Default value for the prior.
     fn default(input_dimension: usize) -> Self;
 
     /// Takes and input and return an output.
     fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>;
 
-    /// Optional, function that fits the prior on training data
+    /// Optional, function that fits the prior on training data.
     fn fit<SM: Storage<f64, Dynamic, Dynamic> + Clone, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                                       _training_inputs: &SMatrix<SM>,
                                                                                       _training_outputs: &SVector<SV>)
@@ -35,9 +35,9 @@ pub trait Prior
 //---------------------------------------------------------------------------------------
 // CLASSICAL PRIOR
 
-/// The Zero prior
+/// The Zero prior.
 ///
-/// this prior always return zero.
+/// This prior always return zero.
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "friedrich_serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ZeroPrior {}
@@ -57,7 +57,7 @@ impl Prior for ZeroPrior
 
 //-----------------------------------------------
 
-/// The Constant prior
+/// The Constant prior.
 ///
 /// This prior returns a constant.
 /// It can be fit to return the mean of the training data.
@@ -100,7 +100,7 @@ impl Prior for ConstantPrior
 
 //-----------------------------------------------
 
-/// The Linear prior
+/// The Linear prior.
 ///
 /// This prior is a linear function which can be fit on the training data.
 #[derive(Clone, Debug)]
@@ -113,8 +113,8 @@ pub struct LinearPrior
 
 impl LinearPrior
 {
-    /// Constructs a new linear prior
-    /// the first row of w is the bias such that `prior = [1|input] * w`
+    /// Constructs a new linear prior.
+    /// The first row of w is the bias such that `prior = [1|input] * w`
     pub fn new(weights: DVector<f64>, intercept: f64) -> Self
     {
         LinearPrior { weights, intercept }
@@ -135,24 +135,25 @@ impl Prior for LinearPrior
         result
     }
 
-    /// performs a linear fit to set the value of the prior
+    /// Performs a linear fit to set the value of the prior.
     fn fit<SM: Storage<f64, Dynamic, Dynamic> + Clone, SV: Storage<f64, Dynamic, U1>>(&mut self,
                                                                                       training_inputs: &SMatrix<SM>,
                                                                                       training_outputs: &SVector<SV>)
     {
-        // solve linear system using an SVD decomposition
+        // Solve linear system using an SVD decomposition.
         let weights = training_inputs.clone()
-                                     .insert_column(0, 1.) // add constant term for non-zero intercept
+                                     .insert_column(0, 1.) // Add constant term for non-zero intercept.
                                      .svd(true, true)
                                      .solve(training_outputs, 0.)
                                      .expect("Linear prior fit : solve failed.");
 
-        // TODO solve cannot be used with qr and full_piv_lu due to issue 667
-        // https://github.com/rustsim/nalgebra/issues/667
-        // TODO solve_mut fails on non-square systems with both qr and full_piv_lu due to issue 672
-        // https://github.com/rustsim/nalgebra/issues/672
+        // TODO Solve cannot be used with qr and full_piv_lu due to issue 667
+        //  (https://github.com/rustsim/nalgebra/issues/667).
 
-        // extracts weights and intercept
+        // TODO Solve_mut fails on non-square systems with both qr and full_piv_lu due to issue 672
+        //  (https://github.com/rustsim/nalgebra/issues/672).
+
+        // Extracts weights and intercept.
         self.intercept = weights[0];
         self.weights = weights.remove_row(0);
     }
