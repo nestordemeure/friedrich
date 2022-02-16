@@ -182,7 +182,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
         // How well do we fit the training data?
         let output = self.training_outputs.as_vector();
-        // Transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
+        // transpose(ol)*ol = transpose(output)*cov(train,train)^-1*output
         let ol = self.covmat_cholesky.l().solve_lower_triangular(&output).expect("likelihood : solve failed");
         let data_fit: f64 = ol.norm_squared();
 
