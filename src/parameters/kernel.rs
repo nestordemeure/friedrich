@@ -544,9 +544,9 @@ impl Kernel for SquaredExp {
         x1: &SRowVector<S1>,
         x2: &SRowVector<S2>,
     ) -> f64 {
-        // sanitize parameters
+        // Sanitize parameters.
         let ampl = self.ampl.abs();
-        // computes kernel
+        // Computes kernel.
         let distance_squared = (x1 - x2).norm_squared();
         let x = -distance_squared / (2f64 * self.ls * self.ls);
         ampl * x.exp()

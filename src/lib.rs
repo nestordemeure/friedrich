@@ -12,27 +12,29 @@
 //!
 //! ## Functionalities
 //!
-//! This implementation lets you :
+//! This implementation lets you:
 //!
-//! - define a gaussian process with default parameters or using the builder pattern
-//! - train it on multidimensional data
-//! - fit the parameters (kernel, prior and noise) on the training data
-//! - add additional samples efficiently (`O(n^2)`) and refit the process
-//! - predict the mean, variance and covariance matrix for given inputs
-//! - sample the distribution at a given position
-//! - save and load a trained model with [serde](https://serde.rs/)
+//! - Define a gaussian process with default parameters or using the builder pattern.
+//! - Train it on multidimensional data.
+//! - Fit the parameters (kernel, prior and noise) on the training data.
+//! - Add additional samples efficiently (`O(n^2)`) and refit the process.
+//! - Predict the mean, variance and covariance matrix for given inputs.
+//! - Sample the distribution at a given position.
+//! - Save and load a trained model with [serde](https://serde.rs/).
 //!
 //! ## Inputs
 //!
 //! Most methods of this library can currently work with the following `input -> output` pairs :
 //!
-//! - `Vec<f64> -> f64` a single, multidimensional, sample
-//! - `Vec<Vec<f64>> -> Vec<f64>` each inner vector is a training sample
-//! - `DMatrix<f64> -> DVector<f64>` using a [nalgebra](https://www.nalgebra.org/) matrix with one row per sample
-//! - `ArrayBase<f64, Ix1> -> f64` a single sample stored in a [ndarray](https://crates.io/crates/ndarray) array (using the `friedrich_ndarray` feature)
-//! - `ArrayBase<f64, Ix2> -> Array1<f64>` each row is a sample (using the `friedrich_ndarray` feature)
+//! Input | Output | Description
+//! ---|---|---
+//! [`Vec<f64>`] | [`f64`] | A single, multidimensional, sample.
+//! [`Vec<Vec<f64>>`] | [`Vec<f64>`] | Each inner vector is a training sample.
+//! [`DMatrix<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DMatrix.html) | [`DVector<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DVector.html) | Using a [nalgebra](https://www.nalgebra.org/) matrix with one row per sample.
+//! [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | [`f64`] | A single sample stored in a [ndarray](https://crates.io/crates/ndarray) array (using the `friedrich_ndarray` feature).
+//! [`Array2<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array2.html) | [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | Each row is a sample (using the `friedrich_ndarray` feature).
 //!
-//! See the `Input` trait if you want to add you own input type.
+//! See the [`Input`] trait if you want to add you own input type.
 //!
 mod algebra;
 mod conversion;
