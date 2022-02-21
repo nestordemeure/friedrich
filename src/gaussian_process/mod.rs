@@ -62,6 +62,13 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
     pub kernel: KernelType,
     /// Amplitude of the noise of the data as provided by the user or deduced by the optimizer.
     pub noise: f64,
+    /// During Cholesky decomposition, this epsilon is used in place of the
+    /// diagonal term if and only if the decomposition would otherwise fail.
+    /// This is especially useful for noiseless sampling processes where very
+    /// small covariance can result in numerical errors causing Cholesky to
+    /// fail. See <https://github.com/nestordemeure/friedrich/issues/43> for
+    /// details.
+    pub cholesky_epsilon: Option<f64>,
     /// Data used for fit
     training_inputs: EMatrix,
     training_outputs: EVector,
@@ -133,6 +140,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     pub fn new<T: Input>(prior: PriorType,
                          kernel: KernelType,
                          noise: f64,
+                         cholesky_epsilon: Option<f64>,
                          training_inputs: T,
                          training_outputs: T::InVector)
                          -> Self
@@ -145,8 +153,15 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let training_inputs = EMatrix::new(training_inputs);
         let training_outputs = EVector::new(training_outputs - prior.prior(&training_inputs.as_matrix()));
         // computes cholesky decomposition
-        let covmat_cholesky = make_cholesky_cov_matrix(&training_inputs.as_matrix(), &kernel, noise);
-        GaussianProcess { prior, kernel, noise, training_inputs, training_outputs, covmat_cholesky }
+        let covmat_cholesky =
+            make_cholesky_cov_matrix(&training_inputs.as_matrix(), &kernel, noise, cholesky_epsilon);
+        GaussianProcess { prior,
+                          kernel,
+                          noise,
+                          cholesky_epsilon,
+                          training_inputs,
+                          training_outputs,
+                          covmat_cholesky }
     }
 
     /// Adds new samples to the model.
@@ -406,8 +421,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             if !fit_kernel
             {
                 // Retrains model from scratch.
-                self.covmat_cholesky =
-                    make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+                self.covmat_cholesky = make_cholesky_cov_matrix(&self.training_inputs.as_matrix(),
+                                                                &self.kernel,
+                                                                self.noise,
+                                                                self.cholesky_epsilon);
             }
         }
 

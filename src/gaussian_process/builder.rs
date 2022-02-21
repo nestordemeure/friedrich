@@ -39,6 +39,7 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
     kernel: KernelType,
     /// Amplitude of the noise of the data.
     noise: f64,
+    cholesky_epsilon: Option<f64>,
     /// Type of fit to be applied.
     should_fit_kernel: bool,
     should_fit_prior: bool,
@@ -74,9 +75,15 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         let max_iter = 100;
         let convergence_fraction = 0.05;
         let max_time = std::time::Duration::from_secs(3600);
+        // In most cases no Cholesky epsilon is needed, especially if user has
+        // has some noise set which is also the default. If some epsilon value
+        // turns out to be needed, we point the in the right direction via a
+        // runtime error message.
+        let cholesky_epsilon = None;
         GaussianProcessBuilder { prior,
                                  kernel,
                                  noise,
+                                 cholesky_epsilon,
                                  should_fit_kernel,
                                  should_fit_prior,
                                  max_iter,
@@ -98,6 +105,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         GaussianProcessBuilder { prior,
                                  kernel: self.kernel,
                                  noise: self.noise,
+                                 cholesky_epsilon: self.cholesky_epsilon,
                                  should_fit_kernel: self.should_fit_kernel,
                                  should_fit_prior: self.should_fit_prior,
                                  max_iter: self.max_iter,
@@ -124,6 +132,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         GaussianProcessBuilder { prior: self.prior,
                                  kernel,
                                  noise: self.noise,
+                                 cholesky_epsilon: self.cholesky_epsilon,
                                  should_fit_kernel: self.should_fit_kernel,
                                  should_fit_prior: self.should_fit_prior,
                                  max_iter: self.max_iter,
@@ -131,6 +140,21 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
                                  max_time: self.max_time,
                                  training_inputs: self.training_inputs,
                                  training_outputs: self.training_outputs }
+    }
+
+    /// When set to some strictly positive value the Cholesky decomposition is
+    /// guaranteed to suceed. This value will only be used when the Cholesky
+    /// decomposition fails, it will then be used in place of the diagonal term.
+    /// Otherwise it is ignored and the decomposition is done as usual.
+    ///
+    /// We recommend trying something along one percent of the noise squared
+    /// (both very large values and small values could lead to undesirable
+    /// approximations in the Cholesky decomposition).
+    ///
+    /// See <https://github.com/nestordemeure/friedrich/issues/43> for details.
+    pub fn set_cholesky_epsilon(self, cholesky_epsilon: Option<f64>) -> Self
+    {
+        GaussianProcessBuilder { cholesky_epsilon, ..self }
     }
 
     /// Modifies the stopping criteria of the gradient descent used to fit the noise and kernel parameters.
@@ -174,6 +198,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         let mut gp = GaussianProcess::<KernelType, PriorType>::new(self.prior,
                                                                    self.kernel,
                                                                    self.noise,
+                                                                   self.cholesky_epsilon,
                                                                    self.training_inputs,
                                                                    self.training_outputs);
 

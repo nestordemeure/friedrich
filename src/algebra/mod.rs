@@ -58,7 +58,8 @@ pub fn make_covariance_matrix<S1: Storage<f64, Dynamic, Dynamic>,
 /// Relies on the fact that only the lower triangular part of the matrix is needed for the decomposition.
 pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(inputs: &SMatrix<S>,
                                                                               kernel: &K,
-                                                                              diagonal_noise: f64)
+                                                                              diagonal_noise: f64,
+                                                                              cholesky_epsilon: Option<f64>)
                                                                               -> Cholesky<f64, Dynamic>
 {
     // Empty covariance matrix
@@ -77,7 +78,17 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(in
         covmatix[(col_index, col_index)] += diagonal_noise * diagonal_noise;
     }
 
-    covmatix.cholesky().expect("Cholesky decomposition failed!")
+    if let Some(cholesky_epsilon) = cholesky_epsilon
+    {
+        match Cholesky::new_with_substitute(covmatix, cholesky_epsilon) {
+            Some(v) => v,
+            None => panic!("Cholesky decomposition failed even though we used `cholesky_epsilon` value of {cholesky_epsilon}"),
+        }
+    }
+    else
+    {
+        covmatix.cholesky().expect("Cholesky decomposition failed, consider setting `cholesky_epsilon` via `GaussianProcessBuilder`")
+    }
 }
 
 /// Add rows to the covariance matrix by updating its Cholesky decomposition in place.
