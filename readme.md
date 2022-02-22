@@ -20,6 +20,7 @@ This implementation lets you:
 - define a gaussian process with default parameters or using the builder pattern
 - train it on multidimensional data
 - fit the parameters (kernel, prior and noise) on the training data
+- introduce an optional `cholesky_epsilon` to make the Cholesky decomposition [infallible](https://docs.rs/nalgebra/*/nalgebra/linalg/struct.Cholesky.html#method.new_with_substitute) in case of badly conditioned problem
 - add additional samples efficiently (`O(n^2)`) and refit the process
 - predict the mean, variance and covariance matrix for given inputs
 - sample the distribution at a given position
