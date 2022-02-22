@@ -128,8 +128,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             }
 
             // Fits model.
-            self.covmat_cholesky =
-                make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+            self.covmat_cholesky = make_cholesky_cov_matrix(&self.training_inputs.as_matrix(),
+                                                            &self.kernel,
+                                                            self.noise,
+                                                            self.cholesky_epsilon);
 
             if (!had_significant_progress) || (time_start.elapsed() > max_time)
             {
@@ -260,8 +262,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             parameters = self.kernel.get_parameters(); // Get parameters back as they have been rescaled.
 
             // Fits model.
-            self.covmat_cholesky =
-                make_cholesky_cov_matrix(&self.training_inputs.as_matrix(), &self.kernel, self.noise);
+            self.covmat_cholesky = make_cholesky_cov_matrix(&self.training_inputs.as_matrix(),
+                                                            &self.kernel,
+                                                            self.noise,
+                                                            self.cholesky_epsilon);
 
             if (!had_significant_progress) || (time_start.elapsed() > max_time)
             {
