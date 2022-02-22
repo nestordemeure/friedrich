@@ -2,8 +2,6 @@
 
 List of features and modification considered for inclusion (from most likely to least likely):
 
-- Add forced cholesky decomposition (once the [PR passes in nalgebra](https://github.com/dimforge/nalgebra/pull/979)) to eliminate Cholesky failures (update doc and readme accordingly)
-
 - Replace the builder pattern with a macro (might rely on [duang](https://crates.io/crates/duang) or something similar)
 - Improve test coverage
 
