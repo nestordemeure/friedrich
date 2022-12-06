@@ -1,6 +1,6 @@
 [package]
 name = "friedrich"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Nestor Demeure"]
 edition = "2021"
 
@@ -20,7 +20,7 @@ friedrich_ndarray = ["ndarray"]
 friedrich_serde = ["serde", "nalgebra/serde-serialize"]
 
 [dependencies]
-nalgebra = "0.30.1"
+nalgebra = "0.31.4"
 rand = "0.8"
 rand_distr = "0.4"
 ndarray = { version = "0.15", optional = true }
