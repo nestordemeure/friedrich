@@ -7,6 +7,7 @@
 //! to rescale the kernel at each step with the optimal magnitude which has the effect of fitting the noise without computing its gradient.
 //!
 //! Otherwise we fit the noise in log-scale as its magnitude matters more than its precise value.
+
 use chrono::{Duration, Utc};
 
 use super::GaussianProcess;
@@ -65,12 +66,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// Stops prematurely if the runtime exceeds `max_time`.
     ///
     /// The `noise` parameter is fitted in log-scale as its magnitude matters more than its precise value.
-    pub(super) fn optimize_parameters(
-        &mut self,
-        max_iter: usize,
-        convergence_fraction: f64,
-        max_time: Duration,
-    ) {
+    pub(super) fn optimize_parameters(&mut self,
+                                      max_iter: usize,
+                                      convergence_fraction: f64,
+                                      max_time: Duration)
+    {
         // use the ADAM gradient descent algorithm
         // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
         // for a good point on current gradient descent algorithms
@@ -100,6 +100,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut var_grad = vec![0.; parameters.len()];
 
         let time_start = Utc::now();
+        for i in 1..=max_iter
+        {
             let mut gradients = self.gradient_marginal_likelihood();
             if let Some(noise_grad) = gradients.last_mut()
             {
@@ -133,7 +135,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                                                             self.noise,
                                                             self.cholesky_epsilon);
 
-            if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time) {
+            if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time)
+            {
                 //println!("Iterations:{}", i);
                 break;
             };
@@ -205,12 +208,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// Runs for a maximum of `max_iter` iterations (100 is a good default value).
     /// Stops prematurely if all the components of the gradient go below `convergence_fraction` time the value of their respectively parameter (0.05 is a good default value).
     /// Stops prematurely if the runtime exceeds `max_time`.
-    pub(super) fn scaled_optimize_parameters(
-        &mut self,
-        max_iter: usize,
-        convergence_fraction: f64,
-        max_time: Duration,
-    ) {
+    pub(super) fn scaled_optimize_parameters(&mut self,
+                                             max_iter: usize,
+                                             convergence_fraction: f64,
+                                             max_time: Duration)
+    {
         // use the ADAM gradient descent algorithm
         // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
         // for a good point on current gradient descent algorithms
@@ -239,6 +241,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut var_grad = vec![0.; parameters.len()];
 
         let time_start = Utc::now();
+        for i in 1..=max_iter
+        {
             let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
 
             let mut had_significant_progress = false;
@@ -265,7 +269,8 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                                                             self.noise,
                                                             self.cholesky_epsilon);
 
-            if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time) {
+            if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time)
+            {
                 //println!("Iterations:{}", i);
                 break;
             };
@@ -277,3 +282,4 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         self.noise);*/
     }
 }
+
