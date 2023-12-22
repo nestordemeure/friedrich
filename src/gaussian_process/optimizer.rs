@@ -8,6 +8,8 @@
 //!
 //! Otherwise we fit the noise in log-scale as its magnitude matters more than its precise value.
 
+use chrono::{Duration, Utc};
+
 use super::GaussianProcess;
 use crate::algebra::{make_cholesky_cov_matrix, make_gradient_covariance_matrices};
 use crate::parameters::{kernel::Kernel, prior::Prior};
@@ -67,7 +69,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     pub(super) fn optimize_parameters(&mut self,
                                       max_iter: usize,
                                       convergence_fraction: f64,
-                                      max_time: std::time::Duration)
+                                      max_time: Duration)
     {
         // use the ADAM gradient descent algorithm
         // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
@@ -97,7 +99,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
 
-        let time_start = std::time::Instant::now();
+        let time_start = Utc::now();
         for i in 1..=max_iter
         {
             let mut gradients = self.gradient_marginal_likelihood();
@@ -133,7 +135,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                                                             self.noise,
                                                             self.cholesky_epsilon);
 
-            if (!had_significant_progress) || (time_start.elapsed() > max_time)
+            if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time)
             {
                 //println!("Iterations:{}", i);
                 break;
@@ -209,7 +211,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     pub(super) fn scaled_optimize_parameters(&mut self,
                                              max_iter: usize,
                                              convergence_fraction: f64,
-                                             max_time: std::time::Duration)
+                                             max_time: Duration)
     {
         // use the ADAM gradient descent algorithm
         // see [optimizing-gradient-descent](https://ruder.io/optimizing-gradient-descent/)
@@ -238,7 +240,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
 
-        let time_start = std::time::Instant::now();
+        let time_start = Utc::now();
         for i in 1..=max_iter
         {
             let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
@@ -267,7 +269,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                                                             self.noise,
                                                             self.cholesky_epsilon);
 
-            if (!had_significant_progress) || (time_start.elapsed() > max_time)
+            if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time)
             {
                 //println!("Iterations:{}", i);
                 break;
@@ -280,3 +282,4 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         self.noise);*/
     }
 }
+

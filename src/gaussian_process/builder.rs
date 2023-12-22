@@ -2,6 +2,7 @@ use super::GaussianProcess;
 use crate::conversion::Input;
 use crate::parameters::kernel::Kernel;
 use crate::parameters::prior::Prior;
+use chrono::Duration;
 use nalgebra::{DMatrix, DVector};
 
 /// Builder to set the parameters of a gaussian process.
@@ -46,7 +47,7 @@ pub struct GaussianProcessBuilder<KernelType: Kernel, PriorType: Prior>
     /// Fit parameters.
     max_iter: usize,
     convergence_fraction: f64,
-    max_time: std::time::Duration,
+    max_time: Duration,
     /// Data use for training.
     training_inputs: DMatrix<f64>,
     training_outputs: DVector<f64>
@@ -74,7 +75,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcessBuilder<KernelType, Pr
         let should_fit_prior = false;
         let max_iter = 100;
         let convergence_fraction = 0.05;
-        let max_time = std::time::Duration::from_secs(3600);
+        let max_time = Duration::seconds(3600);
         // In most cases no Cholesky epsilon is needed, especially if user has
         // has some noise set which is also the default. If some epsilon value
         // turns out to be needed, we point the in the right direction via a
