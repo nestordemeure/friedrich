@@ -13,15 +13,13 @@ use super::GaussianProcess;
 use crate::algebra::{make_cholesky_cov_matrix, make_gradient_covariance_matrices};
 use crate::parameters::{kernel::Kernel, prior::Prior};
 
-impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType>
-{
+impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType> {
     //-------------------------------------------------------------------------------------------------
     // NON-SCALABLE KERNEL
 
     /// Computes the gradient of the marginal likelihood for the current value of each parameter.
     /// The produced vector contains the gradient per kernel parameter followed by the gradient for the noise parameter.
-    fn gradient_marginal_likelihood(&self) -> Vec<f64>
-    {
+    fn gradient_marginal_likelihood(&self) -> Vec<f64> {
         // formula: 1/2 ( transpose(alpha) * dp * alpha - trace(K^-1 * dp) )
         // K = cov(train,train)
         // alpha = K^-1 * output
@@ -36,10 +34,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         for cov_gradient in make_gradient_covariance_matrices(&self.training_inputs.as_matrix(), &self.kernel)
         {
             // transpose(alpha) * cov_gradient * alpha
-            let data_fit: f64 = cov_gradient.column_iter()
-                                            .zip(alpha.iter())
-                                            .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
-                                            .sum();
+            let data_fit: f64 = cov_gradient
+                .column_iter()
+                .zip(alpha.iter())
+                .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
+                .sum();
 
             // trace(cov_inv * cov_gradient)
             let complexity_penalty: f64 =
@@ -81,35 +80,26 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let epsilon = 1e-8;
         let learning_rate = 0.1;
 
-        let mut parameters: Vec<_> = self.kernel
-                                         .get_parameters()
-                                         .iter()
-                                         .map(|&p| {
-                                             if p == 0.
-                                             {
-                                                 epsilon
-                                             }
-                                             else
-                                             {
-                                                 p
-                                             }
-                                         }) // Insures no parameter is 0 (which would block the algorithm).
-                                         .collect();
+        let mut parameters: Vec<_> = self
+            .kernel
+            .get_parameters()
+            .iter()
+            .map(|&p| if p == 0. { epsilon } else { p }) // Insures no parameter is 0 (which would block the algorithm).
+            .collect();
         parameters.push(self.noise.ln()); // Adds noise in log-space.
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
 
         let time_start = Utc::now();
+        for i in 1..=max_iter {
             let mut gradients = self.gradient_marginal_likelihood();
-            if let Some(noise_grad) = gradients.last_mut()
-            {
+            if let Some(noise_grad) = gradients.last_mut() {
                 // Corrects gradient of noise for log-space.
                 *noise_grad *= self.noise
             }
 
             let mut had_significant_progress = false;
-            for p in 0..parameters.len()
-            {
+            for p in 0..parameters.len() {
                 mean_grad[p] = beta1 * mean_grad[p] + (1. - beta1) * gradients[p];
                 var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
                 let bias_corrected_mean = mean_grad[p] / (1. - beta1.powi(i as i32));
@@ -121,17 +111,18 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
 
             // Sets parameters.
             self.kernel.set_parameters(&parameters);
-            if let Some(noise) = parameters.last()
-            {
+            if let Some(noise) = parameters.last() {
                 // Gets out of log-space before setting noise.
                 self.noise = noise.exp()
             }
 
             // Fits model.
-            self.covmat_cholesky = make_cholesky_cov_matrix(&self.training_inputs.as_matrix(),
-                                                            &self.kernel,
-                                                            self.noise,
-                                                            self.cholesky_epsilon);
+            self.covmat_cholesky = make_cholesky_cov_matrix(
+                &self.training_inputs.as_matrix(),
+                &self.kernel,
+                self.noise,
+                self.cholesky_epsilon,
+            );
 
             if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time) {
                 //println!("Iterations:{}", i);
@@ -153,8 +144,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     ///
     /// See [Fast methods for training Gaussian processes on large datasets](https://arxiv.org/pdf/1604.01250.pdf)
     /// for the formula used to compute the scale and the modification to the gradient.
-    fn scaled_gradient_marginal_likelihood(&self) -> (f64, Vec<f64>)
-    {
+    fn scaled_gradient_marginal_likelihood(&self) -> (f64, Vec<f64>) {
         // formula:
         // gradient = 1/2 ( transpose(alpha) * dp * alpha / scale - trace(K^-1 * dp) )
         // scale = transpose(output) * K^-1 * output / n
@@ -176,11 +166,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         {
             // transpose(alpha) * cov_gradient * alpha / scale
             // NOTE: This quantity is divided by the scale which is not the case for the unscaled gradient.
-            let data_fit = cov_gradient.column_iter()
-                                       .zip(alpha.iter())
-                                       .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
-                                       .sum::<f64>()
-                           / scale;
+            let data_fit = cov_gradient
+                .column_iter()
+                .zip(alpha.iter())
+                .map(|(col, alpha_col)| alpha.dot(&col) * alpha_col)
+                .sum::<f64>()
+                / scale;
 
             // trace(cov_inv * cov_gradient)
             let complexity_penalty: f64 =
@@ -221,29 +212,21 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let epsilon = 1e-8;
         let learning_rate = 0.1;
 
-        let mut parameters: Vec<_> = self.kernel
-                                         .get_parameters()
-                                         .iter()
-                                         .map(|&p| {
-                                             if p == 0.
-                                             {
-                                                 epsilon
-                                             }
-                                             else
-                                             {
-                                                 p
-                                             }
-                                         }) // Insures no parameter is 0 (which would block the algorithm).
-                                         .collect();
+        let mut parameters: Vec<_> = self
+            .kernel
+            .get_parameters()
+            .iter()
+            .map(|&p| if p == 0. { epsilon } else { p }) // Insures no parameter is 0 (which would block the algorithm).
+            .collect();
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
 
         let time_start = Utc::now();
+        for i in 1..=max_iter {
             let (scale, gradients) = self.scaled_gradient_marginal_likelihood();
 
             let mut had_significant_progress = false;
-            for p in 0..parameters.len()
-            {
+            for p in 0..parameters.len() {
                 mean_grad[p] = beta1 * mean_grad[p] + (1. - beta1) * gradients[p];
                 var_grad[p] = beta2 * var_grad[p] + (1. - beta2) * gradients[p].powi(2);
                 let bias_corrected_mean = mean_grad[p] / (1. - beta1.powi(i as i32));
@@ -260,10 +243,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             parameters = self.kernel.get_parameters(); // Get parameters back as they have been rescaled.
 
             // Fits model.
-            self.covmat_cholesky = make_cholesky_cov_matrix(&self.training_inputs.as_matrix(),
-                                                            &self.kernel,
-                                                            self.noise,
-                                                            self.cholesky_epsilon);
+            self.covmat_cholesky = make_cholesky_cov_matrix(
+                &self.training_inputs.as_matrix(),
+                &self.kernel,
+                self.noise,
+                self.cholesky_epsilon,
+            );
 
             if (!had_significant_progress) || (Utc::now().signed_duration_since(time_start) > max_time) {
                 //println!("Iterations:{}", i);
