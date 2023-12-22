@@ -41,7 +41,7 @@
 
 use crate::algebra::{add_rows_cholesky_cov_matrix, make_cholesky_cov_matrix, make_covariance_matrix, EMatrix,
                  EVector};
-use crate::conversion::Input;
+use crate::conversion::{Input, InternalConvert};
 use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
 use chrono::Duration;
 use nalgebra::{Cholesky, DMatrix, DVector, Dynamic};
@@ -93,7 +93,7 @@ impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
     /// let gp = GaussianProcess::default(training_inputs, training_outputs);
     /// # }
     /// ```
-    pub fn default<T: Input>(training_inputs: T, training_outputs: T::InVector) -> Self
+    pub fn default<T: Input>(training_inputs: T, training_outputs: T::Output) -> Self
     {
         GaussianProcessBuilder::<kernel::Gaussian, prior::ConstantPrior>::new(training_inputs,
                                                                               training_outputs).fit_kernel()
@@ -127,7 +127,7 @@ impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>
     /// # }
     /// ```
     pub fn builder<T: Input>(training_inputs: T,
-                             training_outputs: T::InVector)
+                             training_outputs: T::Output)
                              -> GaussianProcessBuilder<kernel::Gaussian, prior::ConstantPrior>
     {
         GaussianProcessBuilder::<kernel::Gaussian, prior::ConstantPrior>::new(training_inputs,
@@ -144,12 +144,12 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                          noise: f64,
                          cholesky_epsilon: Option<f64>,
                          training_inputs: T,
-                         training_outputs: T::InVector)
+                         training_outputs: T::Output)
                          -> Self
     {
         assert!(noise >= 0., "The noise parameter should non-negative but we tried to set it to {}", noise);
-        let training_inputs = T::into_dmatrix(training_inputs);
-        let training_outputs = T::into_dvector(training_outputs);
+        let training_inputs = training_inputs.i_into();
+        let training_outputs = training_outputs.i_into();
         assert_eq!(training_inputs.nrows(), training_outputs.nrows());
         // converts training data into extendable matrix
         let training_inputs = EMatrix::new(training_inputs);
@@ -170,10 +170,10 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     ///
     /// Updates the model (which is faster than a retraining from scratch)
     /// but does not refit the parameters.
-    pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::InVector)
+    pub fn add_samples<T: Input>(&mut self, inputs: &T, outputs: &T::Output)
     {
-        let inputs = T::to_dmatrix(inputs);
-        let outputs = T::to_dvector(outputs);
+        let inputs = inputs.clone().i_into();
+        let outputs = outputs.clone().i_into();
         assert_eq!(inputs.nrows(), outputs.nrows());
         assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
         // grows the training matrix
@@ -223,11 +223,11 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     // PREDICT
 
     /// Makes a prediction (the mean of the gaussian process) for each row of the input.
-    pub fn predict<T: Input>(&self, inputs: &T) -> T::OutVector
+    pub fn predict<T: Input>(&self, inputs: &T) -> T::Output
     {
         // formula : prior + cov(input,train)*cov(train,train)^-1 * output
 
-        let inputs = T::to_dmatrix(inputs);
+        let inputs = inputs.clone().i_into();
         assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
         // computes weights to give each training sample
@@ -240,16 +240,16 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         // weights.transpose() * &self.training_outputs + prior
         prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
 
-        T::from_dvector(&prior)
+        T::Output::i_from(prior)
     }
 
     /// Predicts the variance of the gaussian process for each row of the input.
     /// This quantity (and its square root) can be used as a proxy for the uncertainty of the prediction.
-    pub fn predict_variance<T: Input>(&self, inputs: &T) -> T::OutVector
+    pub fn predict_variance<T: Input>(&self, inputs: &T) -> T::Output
     {
         // formula, diagonal of : cov(input,input) - cov(input,train)*cov(train,train)^-1*cov(train,input)
 
-        let inputs = T::to_dmatrix(inputs);
+        let inputs = inputs.clone().i_into();
         assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
         // compute the covariances
@@ -269,7 +269,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
                               .map(|(base_cov, predicted_cov)| base_cov - predicted_cov);
         let variances = DVector::<f64>::from_iterator(inputs.nrows(), variances);
 
-        T::from_dvector(&variances)
+        T::Output::i_from(variances)
     }
 
     /// Predicts both the mean and the variance of the gaussian process for each row of the input.
@@ -287,9 +287,9 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// println!("prediction: {} ± {}", mean, var.sqrt());
     /// # }
     /// ```
-    pub fn predict_mean_variance<T: Input>(&self, inputs: &T) -> (T::OutVector, T::OutVector)
+    pub fn predict_mean_variance<T: Input + Clone>(&self, inputs: &T) -> (T::Output, T::Output)
     {
-        let inputs = T::to_dmatrix(inputs);
+        let inputs = inputs.clone().i_into();
         assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
         // computes weights to give each training sample
@@ -305,7 +305,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         // weights.transpose() * &self.training_outputs + prior
         prior.gemm_tr(1f64, &weights, &self.training_outputs.as_vector(), 1f64);
 
-        let mean = T::from_dvector(&prior);
+        let mean = T::Output::i_from(prior);
 
         // ----- variance -----
 
@@ -318,7 +318,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
             variances[i] = base_cov - predicted_cov;
         }
 
-        let variance = T::from_dvector(&variances);
+        let variance = T::Output::i_from(variances);
 
         // ----- result -----
 
@@ -330,7 +330,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     {
         // formula : cov(input,input) - cov(input,train)*cov(train,train)^-1*cov(train,input)
 
-        let inputs = T::to_dmatrix(inputs);
+        let inputs = inputs.clone().i_into();
         assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
         // compute the covariances
@@ -370,7 +370,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// ```
     pub fn sample_at<T: Input>(&self, inputs: &T) -> MultivariateNormal<T>
     {
-        let inputs = T::to_dmatrix(inputs);
+        let inputs = inputs.clone().i_into();
         assert_eq!(inputs.ncols(), self.training_inputs.as_matrix().ncols());
 
         // compute the weights

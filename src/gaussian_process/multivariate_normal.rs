@@ -1,4 +1,4 @@
-use crate::conversion::Input;
+use crate::conversion::{Input, InternalConvert};
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 use rand_distr::StandardNormal;
@@ -59,16 +59,16 @@ impl<T: Input> MultivariateNormal<T>
     }
 
     /// Outputs the mean of the distribution.
-    pub fn mean(&self) -> T::OutVector
+    pub fn mean(&self) -> T::Output
     {
-        T::from_dvector(&self.mean)
+        T::Output::i_from(self.mean.clone())
     }
 
     /// Takes a random number generator and uses it to sample from the distribution.
-    pub fn sample<RNG: Rng>(&self, rng: &mut RNG) -> T::OutVector
+    pub fn sample<RNG: Rng>(&self, rng: &mut RNG) -> T::Output
     {
         let normal = DVector::from_fn(self.mean.nrows(), |_, _| rng.sample(StandardNormal));
         let sample = &self.mean + &self.cholesky_covariance * normal;
-        T::from_dvector(&sample)
+        T::Output::i_from(sample)
     }
 }

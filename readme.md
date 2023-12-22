@@ -60,11 +60,14 @@ println!("samples: {:?}", sampler.sample(&mut rng));
 
 Most methods of this library can currently work with the following `input -> output` pairs :
 
-- `Vec<f64> -> f64` a single, multidimensional, sample
-- `Vec<Vec<f64>> -> Vec<f64>` each inner vector is a training sample
-- `DMatrix<f64> -> DVector<f64>` using a [nalgebra](https://www.nalgebra.org/) matrix with one row per sample
-- `ArrayBase<f64, Ix1> -> f64` a single sample stored in a [ndarray](https://crates.io/crates/ndarray) array (using the `friedrich_ndarray` feature)
-- `ArrayBase<f64, Ix2> -> Array1<f64>` each row is a sample (using the `friedrich_ndarray` feature)
+Input | Output | Description
+---|---|---
+[`Array2<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array2.html) | [`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | Multiple input vectors to multiple output values (with `friedrich_ndarray` feature).
+[`Array1<f64>`](https://docs.rs/ndarray/0.15/ndarray/type.Array1.html) | [`f64`](https://doc.rust-lang.org/std/primitive.f64.html) | A single input vector to a single output value (with `friedrich_ndarray` feature).
+[`DMatrix<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DMatrix.html) | [`DVector<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DVector.html) | Multiple input vectors to multiple output values.
+[`DVector<f64>`](https://docs.rs/nalgebra/0.29/nalgebra/base/type.DVector.html) | [`f64`](https://doc.rust-lang.org/std/primitive.f64.html) | A single input vector to a single output value.
+[`Vec<Vec<f64>>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) | [`Vec<f64>` ](https://doc.rust-lang.org/std/vec/struct.Vec.html) | Multiple input vectors to multiple output values.
+[`Vec<f64>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) | [`f64` ](https://doc.rust-lang.org/std/primitive.f64.html) | A single input vector to a single input value.
 
 The [Input trait](https://docs.rs/friedrich/latest/friedrich/trait.Input.html) is provided to add your own pairs.
 
