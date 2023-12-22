@@ -5,6 +5,8 @@ mod conversion;
 mod gaussian_process;
 mod parameters;
 
+use chrono::Duration;
+
 use crate::gaussian_process::GaussianProcess;
 
 fn main()
@@ -32,7 +34,7 @@ fn main()
         let fit_kernel = true;
         let max_iter = 100;
         let convergence_fraction = 0.05;
-        let max_time = std::time::Duration::from_secs(3600);
+        let max_time = Duration::seconds(3600);
         gp.add_samples(&additional_inputs, &additional_outputs);
         gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction, max_time);
         println!("model is now updated.");

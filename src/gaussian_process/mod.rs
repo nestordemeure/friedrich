@@ -2,6 +2,7 @@
 //!
 //! ```rust
 //! # use friedrich::gaussian_process::GaussianProcess;
+//! # use chrono::Duration;
 //! // Trains a gaussian process on a dataset of one dimension vectors.
 //! let training_inputs = vec![vec![0.8], vec![1.2], vec![3.8], vec![4.2]];
 //! let training_outputs = vec![3.0, 4.0, -2.0, -2.0];
@@ -25,7 +26,7 @@
 //! let fit_kernel = true;
 //! let max_iter = 100;
 //! let convergence_fraction = 0.05;
-//! let max_time = std::time::Duration::from_secs(3600);
+//! let max_time = Duration::seconds(3600);
 //! gp.add_samples(&additional_inputs, &additional_outputs);
 //! gp.fit_parameters(fit_prior, fit_kernel, max_iter, convergence_fraction, max_time);
 //!
@@ -42,6 +43,7 @@ use crate::algebra::{add_rows_cholesky_cov_matrix, make_cholesky_cov_matrix, mak
                  EVector};
 use crate::conversion::Input;
 use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
+use chrono::Duration;
 use nalgebra::{Cholesky, DMatrix, DVector, Dynamic};
 
 mod multivariate_normal;
@@ -398,18 +400,18 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// It runs for a maximum of `max_iter` iterations and stops prematurely if all gradients are below `convergence_fraction` time their associated parameter
     /// or if it runs for more than `max_time`.
     ///
-    /// Good default values for `max_iter`, `convergence_fraction` and `max_time` are `100`, `0.05` and `std::time::Duration::from_secs(3600)` (one hour)
+    /// Good default values for `max_iter`, `convergence_fraction` and `max_time` are `100`, `0.05` and `chrono::Duration::seconds(3600)` (one hour)
     ///
     /// Note that, if the `noise` parameter ends up unnaturally large after the fit, it is a good sign that the kernel is unadapted to the data.
-    pub fn fit_parameters(&mut self,
-                          fit_prior: bool,
-                          fit_kernel: bool,
-                          max_iter: usize,
-                          convergence_fraction: f64,
-                          max_time: std::time::Duration)
-    {
-        if fit_prior
-        {
+    pub fn fit_parameters(
+        &mut self,
+        fit_prior: bool,
+        fit_kernel: bool,
+        max_iter: usize,
+        convergence_fraction: f64,
+        max_time: Duration,
+    ) {
+        if fit_prior {
             // Gets the original data back in order to update the prior.
             let training_outputs =
                 self.training_outputs.as_vector() + self.prior.prior(&self.training_inputs.as_matrix());
