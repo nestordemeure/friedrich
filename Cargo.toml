@@ -20,7 +20,7 @@ friedrich_ndarray = ["ndarray"]
 friedrich_serde = ["serde", "nalgebra/serde-serialize"]
 
 [dependencies]
-nalgebra = "0.31.4"
+nalgebra = "0.34"
 rand = "0.10"
 rand_distr = "0.6"
 ndarray = { version = "0.17", optional = true }

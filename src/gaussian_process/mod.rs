@@ -44,7 +44,7 @@ use crate::algebra::{add_rows_cholesky_cov_matrix, make_cholesky_cov_matrix, mak
 use crate::conversion::Input;
 use crate::parameters::{kernel, kernel::Kernel, prior, prior::Prior};
 use chrono::Duration;
-use nalgebra::{Cholesky, DMatrix, DVector, Dynamic};
+use nalgebra::{Cholesky, DMatrix, DVector, Dyn};
 
 mod multivariate_normal;
 pub use multivariate_normal::MultivariateNormal;
@@ -75,7 +75,7 @@ pub struct GaussianProcess<KernelType: Kernel, PriorType: Prior>
     training_inputs: EMatrix,
     training_outputs: EVector,
     /// Cholesky decomposition of the covariance matrix trained on the current data points.
-    covmat_cholesky: Cholesky<f64, Dynamic>
+    covmat_cholesky: Cholesky<f64, Dyn>
 }
 
 impl GaussianProcess<kernel::Gaussian, prior::ConstantPrior>

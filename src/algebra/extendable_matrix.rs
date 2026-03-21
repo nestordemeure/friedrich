@@ -5,7 +5,7 @@
 use super::{MatrixSlice, VectorSlice};
 use crate::algebra::{SMatrix, SVector};
 use nalgebra::*;
-use nalgebra::{storage::Storage, Dynamic, U1};
+use nalgebra::{storage::Storage, Dyn, U1};
 
 //-----------------------------------------------------------------------------
 // MATRIX
@@ -27,7 +27,7 @@ impl EMatrix
     }
 
     /// Adds rows to the matrix.
-    pub fn add_rows<S: Storage<f64, Dynamic, Dynamic>>(&mut self, rows: &SMatrix<S>)
+    pub fn add_rows<S: Storage<f64, Dyn, Dyn>>(&mut self, rows: &SMatrix<S>)
     {
         // If we do not have enough rows, we grow the underlying matrix.
         let capacity = self.data.nrows();
@@ -75,7 +75,7 @@ impl EVector
     }
 
     /// Add rows to the vector.
-    pub fn add_rows<S: Storage<f64, Dynamic, U1>>(&mut self, rows: &SVector<S>)
+    pub fn add_rows<S: Storage<f64, Dyn, U1>>(&mut self, rows: &SVector<S>)
     {
         // If we do not have enough rows, we grow the underlying vector.
         let capacity = self.data.nrows();
@@ -104,7 +104,7 @@ impl EVector
 
     /// assigns new content to the vector
     /// the new vector must be of the same size as the old vector
-    pub fn assign<S: Storage<f64, Dynamic, U1>>(&mut self, rows: &SVector<S>)
+    pub fn assign<S: Storage<f64, Dyn, U1>>(&mut self, rows: &SVector<S>)
     {
         assert_eq!(rows.nrows(), self.nrows);
         self.data.index_mut((..rows.nrows(), ..)).copy_from(rows);

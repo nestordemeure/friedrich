@@ -8,7 +8,7 @@
 
 use crate::algebra::{SMatrix, SVector};
 use nalgebra::DVector;
-use nalgebra::{storage::Storage, Dynamic, U1};
+use nalgebra::{storage::Storage, Dyn, U1};
 
 //---------------------------------------------------------------------------------------
 // TRAIT
@@ -22,10 +22,10 @@ pub trait Prior
     fn default(input_dimension: usize) -> Self;
 
     /// Takes and input and return an output.
-    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>;
+    fn prior<S: Storage<f64, Dyn, Dyn>>(&self, input: &SMatrix<S>) -> DVector<f64>;
 
     /// Optional, function that fits the prior on training data.
-    fn fit<SM: Storage<f64, Dynamic, Dynamic> + Clone, SV: Storage<f64, Dynamic, U1>>(&mut self,
+    fn fit<SM: Storage<f64, Dyn, Dyn> + Clone, SV: Storage<f64, Dyn, U1>>(&mut self,
                                                                                       _training_inputs: &SMatrix<SM>,
                                                                                       _training_outputs: &SVector<SV>)
     {
@@ -49,7 +49,7 @@ impl Prior for ZeroPrior
         Self {}
     }
 
-    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>
+    fn prior<S: Storage<f64, Dyn, Dyn>>(&self, input: &SMatrix<S>) -> DVector<f64>
     {
         DVector::zeros(input.nrows())
     }
@@ -84,13 +84,13 @@ impl Prior for ConstantPrior
         Self::new(0f64)
     }
 
-    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>
+    fn prior<S: Storage<f64, Dyn, Dyn>>(&self, input: &SMatrix<S>) -> DVector<f64>
     {
         DVector::from_element(input.nrows(), self.c)
     }
 
     /// the prior is fitted on the mean of the training outputs
-    fn fit<SM: Storage<f64, Dynamic, Dynamic>, SV: Storage<f64, Dynamic, U1>>(&mut self,
+    fn fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
                                                                               _training_inputs: &SMatrix<SM>,
                                                                               training_outputs: &SVector<SV>)
     {
@@ -128,7 +128,7 @@ impl Prior for LinearPrior
         Self { weights: DVector::zeros(input_dimension), intercept: 0f64 }
     }
 
-    fn prior<S: Storage<f64, Dynamic, Dynamic>>(&self, input: &SMatrix<S>) -> DVector<f64>
+    fn prior<S: Storage<f64, Dyn, Dyn>>(&self, input: &SMatrix<S>) -> DVector<f64>
     {
         let mut result = input * &self.weights;
         result.add_scalar_mut(self.intercept);
@@ -136,7 +136,7 @@ impl Prior for LinearPrior
     }
 
     /// Performs a linear fit to set the value of the prior.
-    fn fit<SM: Storage<f64, Dynamic, Dynamic> + Clone, SV: Storage<f64, Dynamic, U1>>(&mut self,
+    fn fit<SM: Storage<f64, Dyn, Dyn> + Clone, SV: Storage<f64, Dyn, U1>>(&mut self,
                                                                                       training_inputs: &SMatrix<SM>,
                                                                                       training_outputs: &SVector<SV>)
     {

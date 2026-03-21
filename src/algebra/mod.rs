@@ -6,40 +6,40 @@ mod extendable_matrix;
 pub use extendable_matrix::{EMatrix, EVector};
 
 use crate::parameters::kernel::Kernel;
-use nalgebra::{storage::Storage, Cholesky, DMatrix, DVector, Dynamic, Matrix, SliceStorage, U1};
+use nalgebra::{storage::Storage, Cholesky, DMatrix, DVector, Dyn, Matrix, ViewStorage, U1};
 
 //-----------------------------------------------------------------------------
 // ARBITRARY STORAGE TYPES
 
 /// matrix with arbitrary storage
-/// S: Storage<f64, Dynamic, Dynamic>
-pub type SMatrix<S> = Matrix<f64, Dynamic, Dynamic, S>;
+/// S: Storage<f64, Dyn, Dyn>
+pub type SMatrix<S> = Matrix<f64, Dyn, Dyn, S>;
 
 /// row vector with arbitrary storage
-/// S: Storage<f64, U1, Dynamic>
-pub type SRowVector<S> = Matrix<f64, U1, Dynamic, S>;
+/// S: Storage<f64, U1, Dyn>
+pub type SRowVector<S> = Matrix<f64, U1, Dyn, S>;
 
 /// vector with arbitrary storage
-/// S: Storage<f64, Dynamic, U1>
-pub type SVector<S> = Matrix<f64, Dynamic, U1, S>;
+/// S: Storage<f64, Dyn, U1>
+pub type SVector<S> = Matrix<f64, Dyn, U1, S>;
 
 //-----------------------------------------------------------------------------
 // SLICE TYPES
 
 /// represents a slice of a matrix
 pub type MatrixSlice<'a> =
-    Matrix<f64, Dynamic, Dynamic, SliceStorage<'a, f64, Dynamic, Dynamic, U1, Dynamic>>;
+    Matrix<f64, Dyn, Dyn, ViewStorage<'a, f64, Dyn, Dyn, U1, Dyn>>;
 
 /// represents a view to a column from a matrix
-pub type VectorSlice<'a> = Matrix<f64, Dynamic, U1, SliceStorage<'a, f64, Dynamic, U1, U1, Dynamic>>;
+pub type VectorSlice<'a> = Matrix<f64, Dyn, U1, ViewStorage<'a, f64, Dyn, U1, U1, Dyn>>;
 
 //-----------------------------------------------------------------------------
 // COVARIANCE MATRIX
 
 /// computes a covariance matrix using a given kernel and two matrices
 /// the output has one row per row in m1 and one column per row in m2
-pub fn make_covariance_matrix<S1: Storage<f64, Dynamic, Dynamic>,
-                              S2: Storage<f64, Dynamic, Dynamic>,
+pub fn make_covariance_matrix<S1: Storage<f64, Dyn, Dyn>,
+                              S2: Storage<f64, Dyn, Dyn>,
                               K: Kernel>(
     m1: &SMatrix<S1>,
     m2: &SMatrix<S2>,
@@ -56,11 +56,11 @@ pub fn make_covariance_matrix<S1: Storage<f64, Dynamic, Dynamic>,
 /// Computes the cholesky decomposition of the covariance matrix of some inputs.
 /// Adds a given diagonal noise.
 /// Relies on the fact that only the lower triangular part of the matrix is needed for the decomposition.
-pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(inputs: &SMatrix<S>,
+pub fn make_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &SMatrix<S>,
                                                                               kernel: &K,
                                                                               diagonal_noise: f64,
                                                                               cholesky_epsilon: Option<f64>)
-                                                                              -> Cholesky<f64, Dynamic>
+                                                                              -> Cholesky<f64, Dyn>
 {
     // Empty covariance matrix
     // TODO It would be faster to start with an an uninitialized matrix but it would require unsafe.
@@ -94,7 +94,7 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(in
 /// Add rows to the covariance matrix by updating its Cholesky decomposition in place.
 /// This is a O(n²*c) operation where n is the number of rows of the covariance matrix and c the number of new rows.
 /// `all_inputs` is a matrix with one row per input, the `nb_new_inputs` last rows are the one we want to add.
-pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(covmat_cholesky: &mut Cholesky<f64, Dynamic>,
+pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(covmat_cholesky: &mut Cholesky<f64, Dyn>,
                                                                                   all_inputs: &SMatrix<S>,
                                                                                   nb_new_inputs: usize,
                                                                                   kernel: &K,
@@ -126,7 +126,7 @@ pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel
 }
 
 /// Returns a vector with the gradient of the covariance matrix (which is a matrix) for each kernel parameter.
-pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(inputs: &SMatrix<S>,
+pub fn make_gradient_covariance_matrices<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &SMatrix<S>,
                                                                                        kernel: &K)
                                                                                        -> Vec<DMatrix<f64>>
 {
