@@ -282,4 +282,3 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         self.noise);*/
     }
 }
-

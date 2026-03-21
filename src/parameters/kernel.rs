@@ -57,18 +57,18 @@ pub trait Kernel: Default
     /// NOTE: Due to the optimization algorithm, this function might get illegal parameters (ie: negative parameters),
     /// it is the duty of the function implementer to deal with them properly (ie : using an absolute value).
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64;
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64;
 
     /// Takes two equal length slices (row vector) and returns a vector containing the value of the gradient for each parameter in an arbitrary order.
     ///
     /// NOTE: Due to the optimization algorithm, this function might get illegal parameters (ie: negative parameters),
     /// it is the duty of the function implementer to deal with them properly (ie: using the absolute value of the parameter and multiplying its gradient by its original sign).
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>;
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>;
 
     /// Returns a vector containing all the parameters of the kernel in the same order as the outputs of the `gradient` function.
     fn get_parameters(&self) -> Vec<f64>;
@@ -79,8 +79,8 @@ pub trait Kernel: Default
     /// Optional, function that fits the kernel parameters on the training data using fast heuristics.
     /// This is used as a starting point for gradient descent.
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        _training_inputs: &SMatrix<SM>,
-                                                                                        _training_outputs: &SVector<SV>)
+                                                                            _training_inputs: &SMatrix<SM>,
+                                                                            _training_outputs: &SVector<SV>)
     {
     }
 }
@@ -153,17 +153,17 @@ impl<T, U> Kernel for KernelSum<T, U>
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         self.k1.kernel(x1, x2) + self.k2.kernel(x1, x2)
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         let mut g1 = self.k1.gradient(x1, x2);
         let mut g2 = self.k2.gradient(x1, x2);
@@ -192,8 +192,8 @@ impl<T, U> Kernel for KernelSum<T, U>
     }
 
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        training_inputs: &SMatrix<SM>,
-                                                                                        training_outputs: &SVector<SV>)
+                                                                            training_inputs: &SMatrix<SM>,
+                                                                            training_outputs: &SVector<SV>)
     {
         self.k1.heuristic_fit(training_inputs, training_outputs);
         self.k2.heuristic_fit(training_inputs, training_outputs);
@@ -242,17 +242,17 @@ impl<T, U> Kernel for KernelProd<T, U>
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         self.k1.kernel(x1, x2) * self.k2.kernel(x1, x2)
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         let k1 = self.k1.kernel(x1, x2);
         let k2 = self.k2.kernel(x1, x2);
@@ -288,8 +288,8 @@ impl<T, U> Kernel for KernelProd<T, U>
     }
 
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        training_inputs: &SMatrix<SM>,
-                                                                                        training_outputs: &SVector<SV>)
+                                                                            training_inputs: &SMatrix<SM>,
+                                                                            training_outputs: &SVector<SV>)
     {
         self.k1.heuristic_fit(training_inputs, training_outputs);
         self.k2.heuristic_fit(training_inputs, training_outputs);
@@ -374,17 +374,17 @@ impl Kernel for Linear
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         x1.dot(x2) + self.c
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              _x1: &SRowVector<S1>,
-                                                                              _x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      _x1: &SRowVector<S1>,
+                                                                      _x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         let grad_c = 1.;
         vec![grad_c]
@@ -449,17 +449,17 @@ impl Kernel for Polynomial
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         (self.alpha * x1.dot(x2) + self.c).powf(self.d)
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         let x = x1.dot(x2);
         let inner_term = self.alpha * x + self.c;
@@ -548,9 +548,9 @@ impl Kernel for SquaredExp
 
     /// The squared exponential kernel function.
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         // Sanitize parameters.
         let ampl = self.ampl.abs();
@@ -561,9 +561,9 @@ impl Kernel for SquaredExp
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         // Sanitize parameters.
         let ampl = self.ampl.abs();
@@ -592,8 +592,8 @@ impl Kernel for SquaredExp
     }
 
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        training_inputs: &SMatrix<SM>,
-                                                                                        training_outputs: &SVector<SV>)
+                                                                            training_inputs: &SMatrix<SM>,
+                                                                            training_outputs: &SVector<SV>)
     {
         self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
@@ -653,9 +653,9 @@ impl Kernel for Exponential
 
     /// The squared exponential kernel function.
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         // sanitize parameters
         let ampl = self.ampl.abs();
@@ -666,9 +666,9 @@ impl Kernel for Exponential
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         // Sanitize parameters.
         let ampl = self.ampl.abs();
@@ -697,8 +697,8 @@ impl Kernel for Exponential
     }
 
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        training_inputs: &SMatrix<SM>,
-                                                                                        training_outputs: &SVector<SV>)
+                                                                            training_inputs: &SMatrix<SM>,
+                                                                            training_outputs: &SVector<SV>)
     {
         self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
@@ -758,9 +758,9 @@ impl Kernel for Matern1
 
     /// The matèrn1 kernel function.
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         // sanitize parameters
         let ampl = self.ampl.abs();
@@ -772,9 +772,9 @@ impl Kernel for Matern1
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         // Sanitize parameters.
         let ampl = self.ampl.abs();
@@ -804,8 +804,8 @@ impl Kernel for Matern1
     }
 
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        training_inputs: &SMatrix<SM>,
-                                                                                        training_outputs: &SVector<SV>)
+                                                                            training_inputs: &SMatrix<SM>,
+                                                                            training_outputs: &SVector<SV>)
     {
         self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
@@ -865,9 +865,9 @@ impl Kernel for Matern2
 
     /// The matèrn2 kernel function.
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         // sanitize parameters
         let ampl = self.ampl.abs();
@@ -879,9 +879,9 @@ impl Kernel for Matern2
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         // Sanitize parameters.
         let ampl = self.ampl.abs();
@@ -916,8 +916,8 @@ impl Kernel for Matern2
     }
 
     fn heuristic_fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                        training_inputs: &SMatrix<SM>,
-                                                                                        training_outputs: &SVector<SV>)
+                                                                            training_inputs: &SMatrix<SM>,
+                                                                            training_outputs: &SVector<SV>)
     {
         self.ls = fit_bandwidth_mean(training_inputs);
         self.ampl = fit_amplitude_var(training_outputs);
@@ -969,17 +969,17 @@ impl Kernel for HyperTan
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         (self.alpha * x1.dot(x2) + self.c).tanh()
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         let x = x1.dot(x2);
         let grad_c = 1. / (self.alpha * x + self.c).cosh().powi(2);
@@ -1042,17 +1042,17 @@ impl Kernel for Multiquadric
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         (x1 - x2).norm_squared().hypot(self.c)
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         let grad_c = self.c / (x1 - x2).norm().hypot(self.c);
         vec![grad_c]
@@ -1114,18 +1114,18 @@ impl Kernel for RationalQuadratic
     }
 
     fn kernel<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                            x1: &SRowVector<S1>,
-                                                                            x2: &SRowVector<S2>)
-                                                                            -> f64
+                                                                    x1: &SRowVector<S1>,
+                                                                    x2: &SRowVector<S2>)
+                                                                    -> f64
     {
         let distance_squared = (x1 - x2).norm_squared();
         (1f64 + distance_squared / (2f64 * self.alpha * self.ls * self.ls)).powf(-self.alpha)
     }
 
     fn gradient<S1: Storage<f64, U1, Dyn>, S2: Storage<f64, U1, Dyn>>(&self,
-                                                                              x1: &SRowVector<S1>,
-                                                                              x2: &SRowVector<S2>)
-                                                                              -> Vec<f64>
+                                                                      x1: &SRowVector<S1>,
+                                                                      x2: &SRowVector<S2>)
+                                                                      -> Vec<f64>
     {
         // Sanitize parameters.
         let l = self.ls.abs();

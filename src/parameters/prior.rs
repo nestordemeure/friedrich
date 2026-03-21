@@ -26,8 +26,8 @@ pub trait Prior
 
     /// Optional, function that fits the prior on training data.
     fn fit<SM: Storage<f64, Dyn, Dyn> + Clone, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                      _training_inputs: &SMatrix<SM>,
-                                                                                      _training_outputs: &SVector<SV>)
+                                                                          _training_inputs: &SMatrix<SM>,
+                                                                          _training_outputs: &SVector<SV>)
     {
     }
 }
@@ -91,8 +91,8 @@ impl Prior for ConstantPrior
 
     /// the prior is fitted on the mean of the training outputs
     fn fit<SM: Storage<f64, Dyn, Dyn>, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                              _training_inputs: &SMatrix<SM>,
-                                                                              training_outputs: &SVector<SV>)
+                                                                  _training_inputs: &SMatrix<SM>,
+                                                                  training_outputs: &SVector<SV>)
     {
         self.c = training_outputs.mean();
     }
@@ -137,8 +137,8 @@ impl Prior for LinearPrior
 
     /// Performs a linear fit to set the value of the prior.
     fn fit<SM: Storage<f64, Dyn, Dyn> + Clone, SV: Storage<f64, Dyn, U1>>(&mut self,
-                                                                                      training_inputs: &SMatrix<SM>,
-                                                                                      training_outputs: &SVector<SV>)
+                                                                          training_inputs: &SMatrix<SM>,
+                                                                          training_outputs: &SVector<SV>)
     {
         // Solve linear system using an SVD decomposition.
         let weights = training_inputs.clone()

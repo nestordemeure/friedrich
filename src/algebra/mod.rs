@@ -27,8 +27,7 @@ pub type SVector<S> = Matrix<f64, Dyn, U1, S>;
 // SLICE TYPES
 
 /// represents a slice of a matrix
-pub type MatrixSlice<'a> =
-    Matrix<f64, Dyn, Dyn, ViewStorage<'a, f64, Dyn, Dyn, U1, Dyn>>;
+pub type MatrixSlice<'a> = Matrix<f64, Dyn, Dyn, ViewStorage<'a, f64, Dyn, Dyn, U1, Dyn>>;
 
 /// represents a view to a column from a matrix
 pub type VectorSlice<'a> = Matrix<f64, Dyn, U1, ViewStorage<'a, f64, Dyn, U1, U1, Dyn>>;
@@ -38,9 +37,7 @@ pub type VectorSlice<'a> = Matrix<f64, Dyn, U1, ViewStorage<'a, f64, Dyn, U1, U1
 
 /// computes a covariance matrix using a given kernel and two matrices
 /// the output has one row per row in m1 and one column per row in m2
-pub fn make_covariance_matrix<S1: Storage<f64, Dyn, Dyn>,
-                              S2: Storage<f64, Dyn, Dyn>,
-                              K: Kernel>(
+pub fn make_covariance_matrix<S1: Storage<f64, Dyn, Dyn>, S2: Storage<f64, Dyn, Dyn>, K: Kernel>(
     m1: &SMatrix<S1>,
     m2: &SMatrix<S2>,
     kernel: &K)
@@ -57,10 +54,10 @@ pub fn make_covariance_matrix<S1: Storage<f64, Dyn, Dyn>,
 /// Adds a given diagonal noise.
 /// Relies on the fact that only the lower triangular part of the matrix is needed for the decomposition.
 pub fn make_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &SMatrix<S>,
-                                                                              kernel: &K,
-                                                                              diagonal_noise: f64,
-                                                                              cholesky_epsilon: Option<f64>)
-                                                                              -> Cholesky<f64, Dyn>
+                                                                      kernel: &K,
+                                                                      diagonal_noise: f64,
+                                                                      cholesky_epsilon: Option<f64>)
+                                                                      -> Cholesky<f64, Dyn>
 {
     // Empty covariance matrix
     // TODO It would be faster to start with an an uninitialized matrix but it would require unsafe.
@@ -87,7 +84,9 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &S
     }
     else
     {
-        covmatix.cholesky().expect("Cholesky decomposition failed, consider setting `cholesky_epsilon` via `GaussianProcessBuilder`")
+        covmatix.cholesky().expect(
+            "Cholesky decomposition failed, consider setting `cholesky_epsilon` via `GaussianProcessBuilder`",
+        )
     }
 }
 
@@ -95,10 +94,10 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &S
 /// This is a O(n²*c) operation where n is the number of rows of the covariance matrix and c the number of new rows.
 /// `all_inputs` is a matrix with one row per input, the `nb_new_inputs` last rows are the one we want to add.
 pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(covmat_cholesky: &mut Cholesky<f64, Dyn>,
-                                                                                  all_inputs: &SMatrix<S>,
-                                                                                  nb_new_inputs: usize,
-                                                                                  kernel: &K,
-                                                                                  diagonal_noise: f64)
+                                                                          all_inputs: &SMatrix<S>,
+                                                                          nb_new_inputs: usize,
+                                                                          kernel: &K,
+                                                                          diagonal_noise: f64)
 {
     // Extracts the number of old inputs and new inputs from full inputs.
     let nb_old_inputs = all_inputs.nrows() - nb_new_inputs;
@@ -127,16 +126,15 @@ pub fn add_rows_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(covmat
 
 /// Returns a vector with the gradient of the covariance matrix (which is a matrix) for each kernel parameter.
 pub fn make_gradient_covariance_matrices<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &SMatrix<S>,
-                                                                                       kernel: &K)
-                                                                                       -> Vec<DMatrix<f64>>
+                                                                               kernel: &K)
+                                                                               -> Vec<DMatrix<f64>>
 {
     // Empty covariance matrices.
-    let mut covmatrices: Vec<_> = (0..kernel.nb_parameters()).map(|_| {
-                                                                 DMatrix::<f64>::from_element(inputs.nrows(),
-                                                                                              inputs.nrows(),
-                                                                                              f64::NAN)
-                                                             })
-                                                             .collect();
+    let mut covmatrices: Vec<_> =
+        (0..kernel.nb_parameters()).map(|_| {
+                                       DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), f64::NAN)
+                                   })
+                                   .collect();
 
     // Computes the covariance for all the lower triangular matrix.
     for (col_index, x) in inputs.row_iter().enumerate()

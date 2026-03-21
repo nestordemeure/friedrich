@@ -403,15 +403,15 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
     /// Good default values for `max_iter`, `convergence_fraction` and `max_time` are `100`, `0.05` and `chrono::Duration::seconds(3600)` (one hour)
     ///
     /// Note that, if the `noise` parameter ends up unnaturally large after the fit, it is a good sign that the kernel is unadapted to the data.
-    pub fn fit_parameters(
-        &mut self,
-        fit_prior: bool,
-        fit_kernel: bool,
-        max_iter: usize,
-        convergence_fraction: f64,
-        max_time: Duration,
-    ) {
-        if fit_prior {
+    pub fn fit_parameters(&mut self,
+                          fit_prior: bool,
+                          fit_kernel: bool,
+                          max_iter: usize,
+                          convergence_fraction: f64,
+                          max_time: Duration)
+    {
+        if fit_prior
+        {
             // Gets the original data back in order to update the prior.
             let training_outputs =
                 self.training_outputs.as_vector() + self.prior.prior(&self.training_inputs.as_matrix());
