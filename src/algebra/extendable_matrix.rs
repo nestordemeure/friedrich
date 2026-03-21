@@ -49,7 +49,7 @@ impl EMatrix
     }
 
     /// returns a slice to the data inside the extendable matrix
-    pub fn as_matrix(&self) -> MatrixSlice
+    pub fn as_matrix(&self) -> MatrixSlice<'_>
     {
         self.data.index((..self.nrows, ..))
     }
@@ -97,7 +97,7 @@ impl EVector
     }
 
     /// Returns a slice to the data inside the extendable matrix.
-    pub fn as_vector(&self) -> VectorSlice
+    pub fn as_vector(&self) -> VectorSlice<'_>
     {
         self.data.index((..self.nrows, ..))
     }
