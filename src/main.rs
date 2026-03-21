@@ -47,7 +47,7 @@ fn main()
         // Samples from the distribution.
         let new_inputs = vec![vec![1.0], vec![2.0]];
         let sampler = gp.sample_at(&new_inputs);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for i in 1..=5
         {
             println!("sample {} : {:?}", i, sampler.sample(&mut rng));

@@ -1,6 +1,6 @@
 use crate::conversion::Input;
 use nalgebra::{DMatrix, DVector};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::StandardNormal;
 use std::marker::PhantomData;
 
@@ -21,7 +21,7 @@ use std::marker::PhantomData;
 /// let sampler = gp.sample_at(&new_inputs);
 ///
 /// // Samples from the distribution.
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// println!("samples a vector : {:?}", sampler.sample(&mut rng));
 /// ```
 ///
@@ -38,7 +38,7 @@ use std::marker::PhantomData;
 /// let sampler = gp.sample_at(&new_input);
 ///
 /// // Samples from the distribution.
-/// let mut rng = rand::thread_rng();
+/// let mut rng = rand::rng();
 /// println!("samples a value : {}", sampler.sample(&mut rng));
 /// ```
 pub struct MultivariateNormal<T: Input>
