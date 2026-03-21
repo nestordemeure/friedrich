@@ -23,6 +23,6 @@ friedrich_serde = ["serde", "nalgebra/serde-serialize"]
 nalgebra = "0.31.4"
 rand = "0.10"
 rand_distr = "0.6"
-ndarray = { version = "0.15", optional = true }
+ndarray = { version = "0.17", optional = true }
 serde = { version = "1.0", optional = true, features = ["derive"] }
 chrono = "0.4.31"
