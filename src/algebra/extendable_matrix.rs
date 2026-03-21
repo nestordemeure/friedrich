@@ -38,7 +38,7 @@ impl EMatrix
             let growed_capacity = (3 * capacity) / 2; // capacity increased by a factor 1.5
             let new_capacity = std::cmp::max(required_size, growed_capacity);
             // Builds new matrix with more rows.
-            let mut new_data = DMatrix::from_element(new_capacity, self.data.ncols(), std::f64::NAN);
+            let mut new_data = DMatrix::from_element(new_capacity, self.data.ncols(), f64::NAN);
             new_data.index_mut((..self.nrows, ..)).copy_from(&self.as_matrix());
             self.data = new_data;
         }
@@ -86,7 +86,7 @@ impl EVector
             let growed_capacity = (3 * capacity) / 2; // capacity increased by a factor 1.5
             let new_capacity = std::cmp::max(required_size, growed_capacity);
             // Builds new matrix with more rows.
-            let mut new_data = DVector::from_element(new_capacity, std::f64::NAN);
+            let mut new_data = DVector::from_element(new_capacity, f64::NAN);
             new_data.index_mut((..self.nrows, ..)).copy_from(&self.as_vector());
             self.data = new_data;
         }

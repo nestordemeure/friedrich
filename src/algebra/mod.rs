@@ -64,7 +64,7 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dynamic, Dynamic>, K: Kernel>(in
 {
     // Empty covariance matrix
     // TODO It would be faster to start with an an uninitialized matrix but it would require unsafe.
-    let mut covmatix = DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), std::f64::NAN);
+    let mut covmatix = DMatrix::<f64>::from_element(inputs.nrows(), inputs.nrows(), f64::NAN);
 
     // computes the covariance for all the lower triangular matrix
     for (col_index, x) in inputs.row_iter().enumerate()
@@ -134,7 +134,7 @@ pub fn make_gradient_covariance_matrices<S: Storage<f64, Dynamic, Dynamic>, K: K
     let mut covmatrices: Vec<_> = (0..kernel.nb_parameters()).map(|_| {
                                                                  DMatrix::<f64>::from_element(inputs.nrows(),
                                                                                               inputs.nrows(),
-                                                                                              std::f64::NAN)
+                                                                                              f64::NAN)
                                                              })
                                                              .collect();
 
