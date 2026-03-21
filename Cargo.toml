@@ -2,7 +2,7 @@
 name = "friedrich"
 version = "0.6.0"
 authors = ["Nestor Demeure"]
-edition = "2021"
+edition = "2024"
 
 # description of the crate
 # see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
