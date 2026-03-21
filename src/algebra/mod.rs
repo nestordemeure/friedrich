@@ -77,9 +77,13 @@ pub fn make_cholesky_cov_matrix<S: Storage<f64, Dyn, Dyn>, K: Kernel>(inputs: &S
 
     if let Some(cholesky_epsilon) = cholesky_epsilon
     {
-        match Cholesky::new_with_substitute(covmatix, cholesky_epsilon) {
+        match Cholesky::new_with_substitute(covmatix, cholesky_epsilon)
+        {
             Some(v) => v,
-            None => panic!("Cholesky decomposition failed even though we used `cholesky_epsilon` value of {cholesky_epsilon}"),
+            None =>
+            {
+                panic!("Cholesky decomposition failed even though we used `cholesky_epsilon` value of {cholesky_epsilon}")
+            }
         }
     }
     else

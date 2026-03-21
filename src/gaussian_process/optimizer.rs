@@ -84,16 +84,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut parameters: Vec<_> = self.kernel
                                          .get_parameters()
                                          .iter()
-                                         .map(|&p| {
-                                             if p == 0.
-                                             {
-                                                 epsilon
-                                             }
-                                             else
-                                             {
-                                                 p
-                                             }
-                                         }) // Insures no parameter is 0 (which would block the algorithm).
+                                         .map(|&p| if p == 0. { epsilon } else { p }) // Insures no parameter is 0 (which would block the algorithm).
                                          .collect();
         parameters.push(self.noise.ln()); // Adds noise in log-space.
         let mut mean_grad = vec![0.; parameters.len()];
@@ -226,16 +217,7 @@ impl<KernelType: Kernel, PriorType: Prior> GaussianProcess<KernelType, PriorType
         let mut parameters: Vec<_> = self.kernel
                                          .get_parameters()
                                          .iter()
-                                         .map(|&p| {
-                                             if p == 0.
-                                             {
-                                                 epsilon
-                                             }
-                                             else
-                                             {
-                                                 p
-                                             }
-                                         }) // Insures no parameter is 0 (which would block the algorithm).
+                                         .map(|&p| if p == 0. { epsilon } else { p }) // Insures no parameter is 0 (which would block the algorithm).
                                          .collect();
         let mut mean_grad = vec![0.; parameters.len()];
         let mut var_grad = vec![0.; parameters.len()];
